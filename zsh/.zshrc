@@ -29,7 +29,7 @@ eval "$(atuin init zsh)"
 # Aliases
 alias explorer="explorer.exe"
 alias open="explorer.exe"
-alias ghcs='gh copilot suggest'
+alias ghcs='gh copilot explain'
 alias kubectl='kubectl.exe'
 alias minikube='minikube.exe'
 
