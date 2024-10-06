@@ -3,6 +3,9 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+export ZSH="$HOME/.oh-my-zsh"
+source $ZSH/oh-my-zsh.sh
+
 # Initialize zinit
 source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
 
@@ -24,7 +27,12 @@ eval "$(atuin init zsh)"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Aliases
+alias explorer="explorer.exe"
+alias open="explorer.exe"
 alias ghcs='gh copilot suggest'
+alias kubectl='kubectl.exe'
+alias minikube='minikube.exe'
+
 alias ta="tmux attach-session -t"
 alias tn="tmux new -s"
 alias tls="tmux list-sessions"
@@ -37,13 +45,7 @@ alias tnw="tmux new-window"
 alias th="tmux split-window -h"
 alias tv="tmux split-window -v"
 alias tkp="tmux kill-pane"
-# windows WSL
-alias explorer="explorer.exe"
-alias kubectl='/mnt/c/Program\ Files/Docker/Docker/resources/bin/kubectl.exe'
-alias open="explorer.exe"
-#############################
 
-# neovim
 NEOVIM_PATH="/opt/nvim-linux64/bin"
 if [ -d "$NEOVIM_PATH" ]; then
   export PATH="$NEOVIM_PATH:$PATH"
