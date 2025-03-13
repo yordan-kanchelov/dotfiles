@@ -36,7 +36,7 @@ if grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   alias minikube='minikube.exe'
 fi
 
-alias ghcs='gh copilot explain'
+alias ghcs='gh copilot suggest'
 alias ta="tmux attach-session -t"
 alias tn="tmux new -s"
 alias tls="tmux list-sessions"
