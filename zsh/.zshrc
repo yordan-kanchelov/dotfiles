@@ -1,38 +1,42 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# zplug initialization
+if [[ ! -d ~/.zplug ]]; then
+  echo "Installing zplug..."
+  curl -sL https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
+fi
+source ~/.zplug/init.zsh
+
+# Load plugins using zplug
+zplug "zsh-users/zsh-autosuggestions", defer:2
+zplug "zsh-users/zsh-syntax-highlighting", defer:3
+
+if ! zplug check --verbose; then
+  echo "Installing missing plugins..."
+  zplug install
+fi
+zplug load
+
+# Initialize Starship prompt (add this line)
+eval "$(starship init zsh)"
+
+eval "$(atuin init zsh)"
+eval "$(fnm env --use-on-cd --shell zsh)"
+eval "$(ssh-agent -s)"
+
+# pnpm setup
+export PNPM_HOME="/Users/yordan.kanchelov/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+if grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
+  alias explorer="explorer.exe"
+  alias open="explorer.exe"
+  alias kubectl='kubectl.exe'
+  alias minikube='minikube.exe'
 fi
 
-export ZSH="$HOME/.oh-my-zsh"
-source $ZSH/oh-my-zsh.sh
-
-# Initialize zinit
-source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
-
-# Install Powerlevel10k theme using zplug
-zinit light romkatv/powerlevel10k
-
-# Install plugins
-zinit light zsh-users/zsh-autosuggestions
-zinit light zsh-users/zsh-syntax-highlighting
-zinit light zsh-users/zsh-completions
-
-plugins=(git fnm colorize)
-
-# Initialize atuin
-. "$HOME/.atuin/bin/env"
-eval "$(atuin init zsh)"
-
-# To customize prompt, run p10k configure or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# Aliases
-alias explorer="explorer.exe"
-alias open="explorer.exe"
 alias ghcs='gh copilot explain'
-alias kubectl='kubectl.exe'
-alias minikube='minikube.exe'
-
 alias ta="tmux attach-session -t"
 alias tn="tmux new -s"
 alias tls="tmux list-sessions"
@@ -45,28 +49,28 @@ alias tnw="tmux new-window"
 alias th="tmux split-window -h"
 alias tv="tmux split-window -v"
 alias tkp="tmux kill-pane"
+alias vim="nvim"
+alias cat="bat"
+alias ':q'='exit'
 
-NEOVIM_PATH="/opt/nvim-linux64/bin"
-if [ -d "$NEOVIM_PATH" ]; then
-  export PATH="$NEOVIM_PATH:$PATH"
-fi
-# fnm
-FNM_PATH="/home/yordan/.local/share/fnm"
-if [ -d "$FNM_PATH" ]; then
-  export PATH="/home/yordan/.local/share/fnm:$PATH"
-  eval "`fnm env`"
-fi
+# --- Enable colored ls output (platform independent) ---
+case "$OSTYPE" in
+  darwin*)
+    # macOS settings
+    export CLICOLOR=1
+    export LSCOLORS="GxFxCxDxBxegedabagacad"
+    alias ls='ls -G'
+    ;;
+  linux*)
+    # Linux settings
+    alias ls='ls --color=auto'
+    ;;
+  *)
+    # Fallback (if needed)
+    alias ls='ls'
+    ;;
+    esac
 
-### Added by Zinit's installer
-if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
-    print -P "%F{33} %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
-    command mkdir -p "$HOME/.local/share/zinit" && command chmod g-rwX "$HOME/.local/share/zinit"
-    command git clone https://github.com/zdharma-continuum/zinit "$HOME/.local/share/zinit/zinit.git" && \
-        print -P "%F{33} %F{34}Installation successful.%f%b" || \
-        print -P "%F{160} The clone has failed.%f%b"
-fi
-
-autoload -Uz _zinit
-
-(( ${+_comps} )) && _comps[zinit]=_zinit
-### End of Zinit's installer chunk
+# Additional sources
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
