@@ -1,1 +1,2 @@
 font-family = "Fira Code Nerd Font Mono"
+theme = dark:dracula,light:Terminal Basic
