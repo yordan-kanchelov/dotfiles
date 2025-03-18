@@ -52,6 +52,7 @@ alias tkp="tmux kill-pane"
 alias vim="nvim"
 alias cat="bat"
 alias ':q'='exit'
+alias l='ls -lAh'
 
 # --- Enable colored ls output (platform independent) ---
 case "$OSTYPE" in
