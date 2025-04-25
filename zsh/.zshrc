@@ -4,10 +4,14 @@ if [[ ! -d ~/.zplug ]]; then
   curl -sL https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
 fi
 source ~/.zplug/init.zsh
+source <(fzf --zsh)
 
 # Load plugins using zplug
 zplug "zsh-users/zsh-autosuggestions", defer:2
 zplug "zsh-users/zsh-syntax-highlighting", defer:3
+
+# zsh vim mode
+zplug "jeffreytse/zsh-vi-mode"
 
 if ! zplug check --verbose; then
   echo "Installing missing plugins..."
@@ -53,6 +57,7 @@ alias vim="nvim"
 alias cat="bat"
 alias ':q'='exit'
 alias l='ls -lAh'
+alias fvim='nvim $(fzf --preview="bat --color=always {}")'
 
 # --- Enable colored ls output (platform independent) ---
 case "$OSTYPE" in
