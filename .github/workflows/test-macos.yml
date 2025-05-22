@@ -31,6 +31,9 @@ jobs:
         mkdir -p "$TEST_HOME/.config/ghostty"
         touch "$TEST_HOME/.config/ghostty/config"
         echo "# Existing starship config" > "$TEST_HOME/.config/starship.toml"
+        
+        # Set TERM variable to prevent tput errors
+        echo "TERM=xterm-256color" >> $GITHUB_ENV
 
     - name: Run fresh install test
       shell: bash
@@ -39,7 +42,7 @@ jobs:
       run: |
         echo "=== Testing fresh install ==="
         rm -rf "$TEST_HOME/"*
-        ./setup.sh --non-interactive --force-overwrite --skip-packages
+        ./setup.sh --non-interactive --force-overwrite
 
         # Verify symlinks were created
         [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc symlink not created"; exit 1; }
@@ -56,7 +59,7 @@ jobs:
         touch "$TEST_HOME/.zshrc"
         touch "$TEST_HOME/.tmux.conf"
 
-        ./setup.sh --non-interactive --force-overwrite --skip-packages
+        ./setup.sh --non-interactive --force-overwrite
 
         # Verify files were replaced with symlinks
         [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was not replaced with symlink"; exit 1; }
@@ -73,7 +76,7 @@ jobs:
         echo "# Original content" > "$TEST_HOME/.zshrc"
         echo "# Original content" > "$TEST_HOME/.tmux.conf"
 
-        ./setup.sh --non-interactive --append --skip-packages
+        ./setup.sh --non-interactive --append
 
         # Verify files were appended to, not overwritten
         [ -f "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was overwritten"; exit 1; }

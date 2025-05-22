@@ -16,7 +16,6 @@ NC='\033[0m' # No Color
 INTERACTIVE=true
 FORCE_OVERWRITE=false
 APPEND_CONFIGS=false
-SKIP_PACKAGES=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -31,10 +30,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --append)
             APPEND_CONFIGS=true
-            shift
-            ;;
-        --skip-packages)
-            SKIP_PACKAGES=true
             shift
             ;;
         *)
@@ -180,12 +175,6 @@ create_symlink() {
 
 # Function to install required packages using Homebrew (macOS only)
 install_packages() {
-    # Skip package installation if requested
-    if [ "$SKIP_PACKAGES" = true ]; then
-        echo -e "${YELLOW}Skipping package installation as requested...${NC}"
-        return 0
-    fi
-    
     # Check if running on macOS
     if [[ "$OSTYPE" != "darwin"* ]]; then
         echo -e "${YELLOW}Warning: This script is optimized for macOS. Some features may not work on this platform.${NC}"
@@ -232,29 +221,34 @@ install_packages() {
 
 # Function to install tmux plugin manager
 install_tpm() {
+    
     echo -e "${GREEN}Setting up Tmux Plugin Manager (TPM)...${NC}"
-    TPM_DIR="$HOME/.tmux/plugins/tpm"
-
-    if [ -d "$TPM_DIR" ]; then
-        echo -e "${YELLOW}TPM already installed, updating...${NC}"
-        (cd "$TPM_DIR" && git pull)
-    else
+    
+    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
         echo -e "${GREEN}Installing TPM...${NC}"
-        mkdir -p "$(dirname "$TPM_DIR")"
-        git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+        mkdir -p "$HOME/.tmux/plugins"
+        git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+    else
+        echo -e "${GREEN}TPM is already installed${NC}"
     fi
 }
 
 # Function to automatically install tmux plugins
 install_tmux_plugins() {
     echo -e "${GREEN}Installing tmux plugins automatically...${NC}"
+    
+    # Check if TPM is installed
     if [ -f "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
-        # Install plugins in a non-interactive way
-        "$HOME/.tmux/plugins/tpm/bin/install_plugins"
-        echo -e "${GREEN}Tmux plugins installed successfully!${NC}"
+        # First check if tmux command exists
+        if command -v tmux &> /dev/null; then
+            # Run the TPM install script
+            "$HOME/.tmux/plugins/tpm/bin/install_plugins" || \
+            echo -e "${YELLOW}Run 'tmux' and then press 'prefix + I' to install tmux plugins manually${NC}"
+        else
+            echo -e "${YELLOW}tmux command not found, skipping plugin installation${NC}"
+        fi
     else
-        echo -e "${RED}TPM install_plugins script not found${NC}"
-        echo -e "${YELLOW}Run 'tmux' and then press 'prefix + I' to install tmux plugins manually${NC}"
+        echo -e "${YELLOW}TPM not installed or not found, skipping plugin installation${NC}"
     fi
 }
 
@@ -263,7 +257,8 @@ source_zshrc() {
     echo -e "${GREEN}Attempting to source .zshrc...${NC}"
     if command -v zsh &> /dev/null; then
         # Execute zsh and attempt to source the zshrc
-        zsh -c "source ~/.zshrc && echo -e '${GREEN}zshrc sourced successfully!${NC}'" ||
+        # Use || true to prevent script from failing if commands in zshrc fail
+        zsh -c "source ~/.zshrc 2>/dev/null || true && echo -e '${GREEN}zshrc sourced successfully!${NC}'" || \
         echo -e "${YELLOW}Couldn't automatically source .zshrc${NC}"
     else
         echo -e "${YELLOW}zsh shell not found. Please run 'source ~/.zshrc' manually${NC}"
