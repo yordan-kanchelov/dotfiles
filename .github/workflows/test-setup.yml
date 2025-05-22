@@ -1,0 +1,70 @@
+name: Test Setup Script
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-setup:
+    name: Test Setup Script
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up shell
+      shell: bash
+      run: |
+        # Create a test home directory
+        export TEST_HOME="${{ github.workspace }}/test_home"
+        mkdir -p "$TEST_HOME"
+        echo "TEST_HOME=$TEST_HOME" >> $GITHUB_ENV
+
+    - name: Test setup script
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+      run: |
+        set -e
+        cd "$GITHUB_WORKSPACE"
+        
+        # Make the script executable
+        chmod +x setup.sh
+        
+        # Run the setup script with a test home directory
+        ./setup.sh || (echo "Setup script failed" && exit 1)
+        
+        # Verify symlinks were created
+        echo "Verifying symlinks..."
+        [ -L "$TEST_HOME/.zshrc" ] || (echo ".zshrc symlink not created" && exit 1)
+        [ -L "$TEST_HOME/.tmux.conf" ] || (echo ".tmux.conf symlink not created" && exit 1)
+        [ -L "$TEST_HOME/.config/ghostty" ] || (echo "ghostty config symlink not created" && exit 1)
+        [ -L "$TEST_HOME/.config/starship.toml" ] || (echo "starship.toml symlink not created" && exit 1)
+        
+        # Verify TPM was installed
+        echo "Verifying TPM installation..."
+        [ -d "$TEST_HOME/.tmux/plugins/tpm" ] || (echo "TPM not installed" && exit 1)
+        
+        echo "All tests passed!"
+
+    - name: Cleanup (macOS)
+      if: ${{ runner.os == 'macOS' }}
+      run: |
+        # Clean up Homebrew to prevent caching issues
+        if [ -f "/usr/local/bin/brew" ] || [ -f "/opt/homebrew/bin/brew" ]; then
+          brew cleanup
+        fi
+
+    - name: Cleanup test directory
+      if: always()
+      run: |
+        # Clean up test directory
+        rm -rf "${{ env.TEST_HOME }}"
