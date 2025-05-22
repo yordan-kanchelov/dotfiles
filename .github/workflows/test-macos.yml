@@ -1,0 +1,97 @@
+name: Test macOS Setup
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-macos:
+    name: Test macOS Setup
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up test environment
+      shell: bash
+      run: |
+        # Create test directories
+        export TEST_HOME="${{ github.workspace }}/test_home"
+        mkdir -p "$TEST_HOME"
+        echo "TEST_HOME=$TEST_HOME" >> $GITHUB_ENV
+
+        # Create dummy files for testing
+        mkdir -p "$TEST_HOME/.config"
+        touch "$TEST_HOME/.zshrc"
+        touch "$TEST_HOME/.tmux.conf"
+        mkdir -p "$TEST_HOME/.config/ghostty"
+        touch "$TEST_HOME/.config/ghostty/config"
+        echo "# Existing starship config" > "$TEST_HOME/.config/starship.toml"
+
+    - name: Run fresh install test
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+      run: |
+        echo "=== Testing fresh install ==="
+        rm -rf "$TEST_HOME/"*
+        ./setup.sh --non-interactive --force-overwrite
+
+        # Verify symlinks were created
+        [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc symlink not created"; exit 1; }
+        [ -L "$TEST_HOME/.tmux.conf" ] || { echo "❌ .tmux.conf symlink not created"; exit 1; }
+        echo "✅ Fresh install test passed"
+
+    - name: Run force overwrite test
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+      run: |
+        echo "=== Testing force overwrite ==="
+        # Create dummy files
+        touch "$TEST_HOME/.zshrc"
+        touch "$TEST_HOME/.tmux.conf"
+
+        ./setup.sh --non-interactive --force-overwrite
+
+        # Verify files were replaced with symlinks
+        [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was not replaced with symlink"; exit 1; }
+        [ -L "$TEST_HOME/.tmux.conf" ] || { echo "❌ .tmux.conf was not replaced with symlink"; exit 1; }
+        echo "✅ Force overwrite test passed"
+
+    - name: Run append mode test
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+      run: |
+        echo "=== Testing append mode ==="
+        # Create dummy files
+        echo "# Original content" > "$TEST_HOME/.zshrc"
+        echo "# Original content" > "$TEST_HOME/.tmux.conf"
+
+        ./setup.sh --non-interactive --append
+
+        # Verify files were appended to, not overwritten
+        [ -f "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was overwritten"; exit 1; }
+        grep -q "Appended by dotfiles setup" "$TEST_HOME/.zshrc" || { echo "❌ .zshrc was not appended to"; exit 1; }
+        echo "✅ Append mode test passed"
+
+    - name: Cleanup Homebrew
+      if: always()
+      run: |
+        # Clean up Homebrew to prevent caching issues
+        if [ -f "/usr/local/bin/brew" ] || [ -f "/opt/homebrew/bin/brew" ]; then
+          brew cleanup
+        fi
+
+    - name: Cleanup test directory
+      if: always()
+      run: |
+        # Clean up test directory
+        if [ -d "${{ github.workspace }}/test_home" ]; then
+          rm -rf "${{ github.workspace }}/test_home"
+        fi
