@@ -237,12 +237,19 @@ install_tpm() {
 install_tmux_plugins() {
     echo -e "${GREEN}Installing tmux plugins automatically...${NC}"
     
+    # Check if running in CI environment
+    if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+        echo -e "${YELLOW}Detected CI environment. Skipping plugin installation.${NC}"
+        echo -e "${YELLOW}In production, run 'tmux' and press 'prefix + I' to install plugins.${NC}"
+        return 0
+    fi
+    
     # Check if TPM is installed
     if [ -f "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
         # First check if tmux command exists
         if command -v tmux &> /dev/null; then
-            # Run the TPM install script
-            "$HOME/.tmux/plugins/tpm/bin/install_plugins" || \
+            # Run the TPM install script but don't fail if it doesn't work
+            ("$HOME/.tmux/plugins/tpm/bin/install_plugins" > /dev/null 2>&1) || \
             echo -e "${YELLOW}Run 'tmux' and then press 'prefix + I' to install tmux plugins manually${NC}"
         else
             echo -e "${YELLOW}tmux command not found, skipping plugin installation${NC}"
