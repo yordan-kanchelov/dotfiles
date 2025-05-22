@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d%H%M%S)"
 
@@ -7,42 +9,168 @@ BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d%H%M%S)"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Default settings
+INTERACTIVE=true
+FORCE_OVERWRITE=false
+APPEND_CONFIGS=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --non-interactive)
+            INTERACTIVE=false
+            shift
+            ;;
+        --force-overwrite)
+            FORCE_OVERWRITE=true
+            shift
+            ;;
+        --append)
+            APPEND_CONFIGS=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
 
 # Create backup directory if needed
 mkdir -p "$BACKUP_DIR"
+
+# Function to handle user interaction for file operations
+prompt_user() {
+    local message="$1"
+    local default_choice="$2"
+    
+    if [ "$INTERACTIVE" = false ]; then
+        # In non-interactive mode, return the default choice
+        echo "$default_choice"
+        return 0
+    fi
+    
+    while true; do
+        read -p "$message " -n 1 -r
+        echo
+        case $REPLY in
+            [Yy]* ) echo "y"; return 0;;
+            [Nn]* ) echo "n"; return 0;;
+            * ) echo -e "${YELLOW}Please answer y or n.${NC}";;
+        esac
+    done
+}
+
+# Function to backup a file
+backup_file() {
+    local file_path="$1"
+    local backup_path="$BACKUP_DIR/$(echo "$file_path" | sed 's|^/||;s|/|_|g').bak"
+    
+    if [ -e "$file_path" ]; then
+        mkdir -p "$(dirname "$backup_path")"
+        cp -r "$file_path" "$backup_path"
+        echo -e "${BLUE}Backed up $file_path to $backup_path${NC}"
+    fi
+}
+
+# Function to create or append to config files
+handle_config_file() {
+    local source_file="$1"
+    local target_file="$2"
+    local append=false
+    
+    # If target doesn't exist, just create the symlink
+    if [ ! -e "$target_file" ] && [ ! -L "$target_file" ]; then
+        ln -sf "$source_file" "$target_file"
+        echo -e "${GREEN}Created symlink: $target_file -> $source_file${NC}"
+        return 0
+    fi
+    
+    # If target is already our symlink, skip
+    if [ -L "$target_file" ] && [ "$(readlink "$target_file" 2>/dev/null)" = "$source_file" ]; then
+        echo -e "${GREEN}Symlink already exists: $target_file -> $source_file${NC}"
+        return 0
+    fi
+    
+    # Handle existing file
+    echo -e "${YELLOW}File already exists: $target_file${NC}"
+    
+    if [ "$FORCE_OVERWRITE" = true ]; then
+        # Force overwrite mode
+        backup_file "$target_file"
+        ln -sf "$source_file" "$target_file"
+        echo -e "${GREEN}Overwrote: $target_file -> $source_file${NC}"
+        return 0
+    elif [ "$APPEND_CONFIGS" = true ]; then
+        # Append mode
+        backup_file "$target_file"
+        echo -e "\n# Appended by dotfiles setup on $(date)" >> "$target_file"
+        cat "$source_file" >> "$target_file"
+        echo -e "${GREEN}Appended config to: $target_file${NC}"
+        return 0
+    elif [ "$INTERACTIVE" = true ]; then
+        # Interactive mode
+        echo -e "${BLUE}What would you like to do with $target_file?${NC}"
+        echo "1) Overwrite (backup will be created)"
+        echo "2) Append to existing file"
+        echo "3) Skip this file"
+        echo -n "[1-3] (default: 1) "
+        
+        read -r choice
+        case $choice in
+            2)
+                backup_file "$target_file"
+                echo -e "\n# Appended by dotfiles setup on $(date)" >> "$target_file"
+                cat "$source_file" >> "$target_file"
+                echo -e "${GREEN}Appended config to: $target_file${NC}"
+                ;;
+            3)
+                echo -e "${YELLOW}Skipped: $target_file${NC}"
+                ;;
+            *)
+                backup_file "$target_file"
+                ln -sf "$source_file" "$target_file"
+                echo -e "${GREEN}Overwrote: $target_file -> $source_file${NC}"
+                ;;
+        esac
+    else
+        # Non-interactive, non-force mode - skip
+        echo -e "${YELLOW}Skipped: $target_file (use --force-overwrite or --append to modify)${NC}"
+    fi
+}
 
 # Function to create symlinks
 create_symlink() {
     local source_file="$1"
     local target_file="$2"
-
-    # Create parent directories if they don't exist
-    mkdir -p "$(dirname "$target_file")"
-
-    # Skip if source file doesn't exist
+    
+    # Skip if source doesn't exist
     if [ ! -e "$source_file" ]; then
         echo -e "${YELLOW}Source file not found: $source_file - skipping${NC}"
         return 0
     fi
-
-    # Skip if target is already a symlink pointing to the correct location
-    if [ -L "$target_file" ] && [ "$(readlink "$target_file" 2>/dev/null)" = "$source_file" ]; then
-        echo -e "${GREEN}Symlink already exists: $target_file -> $source_file${NC}"
-        return 0
+    
+    # Handle config files that might need special treatment
+    if [[ "$target_file" == *".zshrc" || "$target_file" == *".bashrc" || "$target_file" == *".bash_profile" ]]; then
+        handle_config_file "$source_file" "$target_file"
+    else
+        # For other files, use standard symlink behavior
+        if [ -e "$target_file" ] || [ -L "$target_file" ]; then
+            if [ "$FORCE_OVERWRITE" = true ] || [ "$(prompt_user "Overwrite $target_file? [y/N]" "n")" = "y" ]; then
+                backup_file "$target_file"
+                ln -sf "$source_file" "$target_file"
+                echo -e "${GREEN}Created symlink: $target_file -> $source_file${NC}"
+            else
+                echo -e "${YELLOW}Skipped: $target_file${NC}"
+            fi
+        else
+            ln -sf "$source_file" "$target_file"
+            echo -e "${GREEN}Created symlink: $target_file -> $source_file${NC}"
+        fi
     fi
-
-    # Backup existing file if it exists and is not a symlink to our source
-    if [ -e "$target_file" ]; then
-        echo -e "${YELLOW}Backing up existing $target_file to $BACKUP_DIR${NC}"
-        mkdir -p "$BACKUP_DIR/$(dirname "$target_file")"
-        mv "$target_file" "$BACKUP_DIR/$(basename "$target_file")" 2>/dev/null || true
-    fi
-
-    # Create the symlink
-    ln -sf "$source_file" "$target_file"
-    echo -e "${GREEN}Created symlink: $target_file -> $source_file${NC}"
-    return 0
 }
 
 # Function to install required packages using Homebrew (macOS only)
