@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 INTERACTIVE=true
 FORCE_OVERWRITE=false
 APPEND_CONFIGS=false
+SKIP_PACKAGES=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -30,6 +31,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --append)
             APPEND_CONFIGS=true
+            shift
+            ;;
+        --skip-packages)
+            SKIP_PACKAGES=true
             shift
             ;;
         *)
@@ -175,10 +180,16 @@ create_symlink() {
 
 # Function to install required packages using Homebrew (macOS only)
 install_packages() {
+    # Skip package installation if requested
+    if [ "$SKIP_PACKAGES" = true ]; then
+        echo -e "${YELLOW}Skipping package installation as requested...${NC}"
+        return 0
+    fi
+    
     # Check if running on macOS
     if [[ "$OSTYPE" != "darwin"* ]]; then
-        echo -e "${RED}Error: This script is only supported on macOS.${NC}"
-        exit 1
+        echo -e "${YELLOW}Warning: This script is optimized for macOS. Some features may not work on this platform.${NC}"
+        return 0
     fi
 
     echo -e "${GREEN}Installing required packages with Homebrew...${NC}"

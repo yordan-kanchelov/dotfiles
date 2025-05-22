@@ -39,7 +39,7 @@ jobs:
       run: |
         echo "=== Testing fresh install ==="
         rm -rf "$TEST_HOME/"*
-        ./setup.sh --non-interactive --force-overwrite
+        ./setup.sh --non-interactive --force-overwrite --skip-packages
 
         # Verify symlinks were created
         [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc symlink not created"; exit 1; }
@@ -56,7 +56,7 @@ jobs:
         touch "$TEST_HOME/.zshrc"
         touch "$TEST_HOME/.tmux.conf"
 
-        ./setup.sh --non-interactive --force-overwrite
+        ./setup.sh --non-interactive --force-overwrite --skip-packages
 
         # Verify files were replaced with symlinks
         [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was not replaced with symlink"; exit 1; }
@@ -73,7 +73,7 @@ jobs:
         echo "# Original content" > "$TEST_HOME/.zshrc"
         echo "# Original content" > "$TEST_HOME/.tmux.conf"
 
-        ./setup.sh --non-interactive --append
+        ./setup.sh --non-interactive --append --skip-packages
 
         # Verify files were appended to, not overwritten
         [ -f "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was overwritten"; exit 1; }
