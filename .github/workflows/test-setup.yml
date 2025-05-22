@@ -19,17 +19,17 @@ env:
 
 jobs:
   test-setup:
-    name: Test ${{ matrix.scenario.name }} (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Test ${{ matrix.scenario.name }} (${{ matrix.scenario.os }})
+    runs-on: ${{ matrix.scenario.os }}
     strategy:
       matrix:
         include:
-          - scenario: { name: fresh-install, os: ubuntu-latest }
-          - scenario: { name: fresh-install, os: macos-latest }
-          - scenario: { name: force-overwrite, os: ubuntu-latest }
-          - scenario: { name: append-mode, os: ubuntu-latest }
-          - scenario: { name: append-mode, os: macos-latest }
-          - scenario: { name: interactive-mode, os: ubuntu-latest }
+          - scenario: { name: 'fresh-install', os: ubuntu-latest }
+          - scenario: { name: 'fresh-install', os: macos-latest }
+          - scenario: { name: 'force-overwrite', os: ubuntu-latest }
+          - scenario: { name: 'append-mode', os: ubuntu-latest }
+          - scenario: { name: 'append-mode', os: macos-latest }
+          - scenario: { name: 'interactive-mode', os: ubuntu-latest }
       fail-fast: false
       max-parallel: 4
 
@@ -66,7 +66,7 @@ jobs:
     - name: Run test scenario - ${{ matrix.scenario.name }}
       shell: bash
       env:
-        HOME: ${{ env.TEST_HOME }}
+        HOME: ${{ github.workspace }}/test_home_${{ matrix.scenario.name }}
       run: |
         set -e
         cd "$GITHUB_WORKSPACE"
@@ -199,4 +199,6 @@ jobs:
       if: always()
       run: |
         # Clean up test directory
-        rm -rf "${{ env.TEST_HOME }}"
+        if [ -d "${{ github.workspace }}/test_home_${{ matrix.scenario.name }}" ]; then
+          rm -rf "${{ github.workspace }}/test_home_${{ matrix.scenario.name }}"
+        fi
