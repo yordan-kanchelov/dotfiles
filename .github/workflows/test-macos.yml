@@ -8,9 +8,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run ShellCheck
+      uses: ludeeus/action-shellcheck@master
+      with:
+        check_together: 'yes'
+        severity: error
+
   test-macos:
-    name: Test macOS Setup
-    runs-on: macos-latest
+    name: Test macOS Setup (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
 
     steps:
     - name: Checkout repository
@@ -31,64 +49,172 @@ jobs:
         mkdir -p "$TEST_HOME/.config/ghostty"
         touch "$TEST_HOME/.config/ghostty/config"
         echo "# Existing starship config" > "$TEST_HOME/.config/starship.toml"
-        
+
         # Set TERM variable to prevent tput errors
         echo "TERM=xterm-256color" >> $GITHUB_ENV
+
+    - name: Test script syntax
+      shell: bash
+      run: |
+        echo "=== Testing script syntax ==="
+        bash -n setup.sh
+        echo "✅ Script syntax is valid"
 
     - name: Run fresh install test
       shell: bash
       env:
         HOME: ${{ env.TEST_HOME }}
+        CI: true
       run: |
         echo "=== Testing fresh install ==="
         rm -rf "$TEST_HOME/"*
         ./setup.sh --non-interactive --force-overwrite
 
         # Verify symlinks were created
+        echo "Checking symlinks..."
         [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc symlink not created"; exit 1; }
         [ -L "$TEST_HOME/.tmux.conf" ] || { echo "❌ .tmux.conf symlink not created"; exit 1; }
+        [ -L "$TEST_HOME/.config/ghostty" ] || { echo "❌ .config/ghostty symlink not created"; exit 1; }
+        [ -L "$TEST_HOME/.config/starship.toml" ] || { echo "❌ .config/starship.toml symlink not created"; exit 1; }
+
+        # Verify symlinks point to correct files
+        echo "Verifying symlink targets..."
+        [ "$(readlink "$TEST_HOME/.zshrc")" = "${{ github.workspace }}/zsh/.zshrc" ] || { echo "❌ .zshrc points to wrong target"; exit 1; }
+        [ "$(readlink "$TEST_HOME/.tmux.conf")" = "${{ github.workspace }}/tmux/.tmux.conf" ] || { echo "❌ .tmux.conf points to wrong target"; exit 1; }
+
         echo "✅ Fresh install test passed"
 
     - name: Run force overwrite test
       shell: bash
       env:
         HOME: ${{ env.TEST_HOME }}
+        CI: true
       run: |
         echo "=== Testing force overwrite ==="
-        # Create dummy files
-        touch "$TEST_HOME/.zshrc"
-        touch "$TEST_HOME/.tmux.conf"
+        # Create dummy files with content
+        echo "original zshrc" > "$TEST_HOME/.zshrc"
+        echo "original tmux" > "$TEST_HOME/.tmux.conf"
+
+        # Store original content for verification
+        ORIGINAL_ZSHRC=$(cat "$TEST_HOME/.zshrc")
 
         ./setup.sh --non-interactive --force-overwrite
 
         # Verify files were replaced with symlinks
+        echo "Checking if files were replaced..."
         [ -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was not replaced with symlink"; exit 1; }
         [ -L "$TEST_HOME/.tmux.conf" ] || { echo "❌ .tmux.conf was not replaced with symlink"; exit 1; }
+
+        # Verify backups were created
+        echo "Checking for backups..."
+        BACKUP_DIR="$TEST_HOME/.dotfiles_backup"
+        [ -d "$BACKUP_DIR" ] || { echo "❌ Backup directory not created"; exit 1; }
+
         echo "✅ Force overwrite test passed"
 
     - name: Run append mode test
       shell: bash
       env:
         HOME: ${{ env.TEST_HOME }}
+        CI: true
       run: |
         echo "=== Testing append mode ==="
-        # Create dummy files
-        echo "# Original content" > "$TEST_HOME/.zshrc"
-        echo "# Original content" > "$TEST_HOME/.tmux.conf"
+        # Create dummy files with original content
+        echo "# Original zshrc content" > "$TEST_HOME/.zshrc"
+        echo "# Original tmux content" > "$TEST_HOME/.tmux.conf"
 
         ./setup.sh --non-interactive --append
 
         # Verify files were appended to, not overwritten
+        echo "Checking append functionality..."
         [ -f "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was overwritten"; exit 1; }
+        [ ! -L "$TEST_HOME/.zshrc" ] || { echo "❌ .zshrc was replaced with symlink instead of appending"; exit 1; }
+
+        grep -q "# Original zshrc content" "$TEST_HOME/.zshrc" || { echo "❌ Original .zshrc content was lost"; exit 1; }
         grep -q "Appended by dotfiles setup" "$TEST_HOME/.zshrc" || { echo "❌ .zshrc was not appended to"; exit 1; }
+
         echo "✅ Append mode test passed"
+
+    - name: Test package installation
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+        CI: true
+      run: |
+        echo "=== Testing package installation ==="
+
+        # Check if brew_packages.txt exists
+        [ -f "brew_packages.txt" ] || { echo "❌ brew_packages.txt not found"; exit 1; }
+
+        # Verify some critical packages would be installed
+        echo "Checking critical packages in brew_packages.txt..."
+        grep -q "^tmux$" brew_packages.txt || { echo "⚠️  tmux not in package list"; }
+        grep -q "^bat$" brew_packages.txt || { echo "⚠️  bat not in package list"; }
+
+        # Count total packages
+        PACKAGE_COUNT=$(grep -v '^#' brew_packages.txt | grep -v '^[[:space:]]*$' | wc -l | tr -d ' ')
+        echo "📦 Found $PACKAGE_COUNT packages in brew_packages.txt"
+
+        echo "✅ Package list verification passed"
+
+    - name: Test TPM installation
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+        CI: true
+      run: |
+        echo "=== Testing TPM installation ==="
+
+        # Remove any existing TPM installation
+        rm -rf "$TEST_HOME/.tmux/plugins/tpm"
+
+        # Run setup to install TPM
+        ./setup.sh --non-interactive --force-overwrite
+
+        # Verify TPM was installed
+        [ -d "$TEST_HOME/.tmux/plugins/tpm" ] || { echo "❌ TPM directory not created"; exit 1; }
+        [ -f "$TEST_HOME/.tmux/plugins/tpm/tpm" ] || { echo "❌ TPM main script not found"; exit 1; }
+
+        echo "✅ TPM installation test passed"
+
+    - name: Test skip behavior
+      shell: bash
+      env:
+        HOME: ${{ env.TEST_HOME }}
+        CI: true
+      run: |
+        echo "=== Testing skip behavior (non-interactive, no flags) ==="
+
+        # Create existing files
+        echo "existing content" > "$TEST_HOME/.zshrc"
+        echo "existing content" > "$TEST_HOME/.tmux.conf"
+
+        # Run setup without force or append flags
+        OUTPUT=$(./setup.sh --non-interactive 2>&1)
+
+        # Verify files were not modified
+        [ "$(cat "$TEST_HOME/.zshrc")" = "existing content" ] || { echo "❌ .zshrc was modified when it should have been skipped"; exit 1; }
+
+        # Check for skip messages in output
+        echo "$OUTPUT" | grep -q "Skipped" || { echo "⚠️  No skip messages found in output"; }
+
+        echo "✅ Skip behavior test passed"
+
+    - name: Upload test artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-failure-logs-${{ matrix.os }}
+        path: |
+          ${{ env.TEST_HOME }}
+          setup.sh
 
     - name: Cleanup Homebrew
       if: always()
       run: |
         # Clean up Homebrew to prevent caching issues
-        if [ -f "/usr/local/bin/brew" ] || [ -f "/opt/homebrew/bin/brew" ]; then
-          brew cleanup
+        if command -v brew &> /dev/null; then
+          brew cleanup || true
         fi
 
     - name: Cleanup test directory
@@ -97,4 +223,20 @@ jobs:
         # Clean up test directory
         if [ -d "${{ github.workspace }}/test_home" ]; then
           rm -rf "${{ github.workspace }}/test_home"
+        fi
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: test-macos
+    if: always()
+    steps:
+    - name: Summary
+      run: |
+        echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-macos.result }}" = "success" ]; then
+          echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Some tests failed. Check the logs for details." >> $GITHUB_STEP_SUMMARY
         fi
