@@ -67,7 +67,8 @@ prompt_user() {
 # Function to backup a file
 backup_file() {
     local file_path="$1"
-    local backup_path="$BACKUP_DIR/$(echo "$file_path" | sed 's|^/||;s|/|_|g').bak"
+    local backup_path
+    backup_path="$BACKUP_DIR/$(echo "$file_path" | sed 's|^/||;s|/|_|g').bak"
     
     if [ -e "$file_path" ]; then
         mkdir -p "$(dirname "$backup_path")"
@@ -80,9 +81,26 @@ backup_file() {
 handle_config_file() {
     local source_file="$1"
     local target_file="$2"
-    local append=false
+    # No local variables needed here
     
-    # If target doesn't exist, just create the symlink
+    # Check if we're in append mode first, as it handles both existing and new files
+    if [ "$APPEND_CONFIGS" = true ]; then
+        # Append mode - always append to the target file, whether it exists or not
+        if [ ! -e "$target_file" ] && [ ! -L "$target_file" ]; then
+            # If file doesn't exist, create it with the source content
+            cp "$source_file" "$target_file"
+            echo -e "${GREEN}Created new file: $target_file${NC}"
+        else
+            # If file exists or is a symlink, back it up and append
+            backup_file "$target_file"
+            echo -e "\n# Appended by dotfiles setup on $(date)" >> "$target_file"
+            cat "$source_file" >> "$target_file"
+            echo -e "${GREEN}Appended config to: $target_file${NC}"
+        fi
+        return 0
+    fi
+    
+    # If target doesn't exist, create the symlink
     if [ ! -e "$target_file" ] && [ ! -L "$target_file" ]; then
         ln -sf "$source_file" "$target_file"
         echo -e "${GREEN}Created symlink: $target_file -> $source_file${NC}"
@@ -103,13 +121,6 @@ handle_config_file() {
         backup_file "$target_file"
         ln -sf "$source_file" "$target_file"
         echo -e "${GREEN}Overwrote: $target_file -> $source_file${NC}"
-        return 0
-    elif [ "$APPEND_CONFIGS" = true ]; then
-        # Append mode
-        backup_file "$target_file"
-        echo -e "\n# Appended by dotfiles setup on $(date)" >> "$target_file"
-        cat "$source_file" >> "$target_file"
-        echo -e "${GREEN}Appended config to: $target_file${NC}"
         return 0
     elif [ "$INTERACTIVE" = true ]; then
         # Interactive mode
@@ -192,11 +203,11 @@ install_packages() {
         if [[ -f /opt/homebrew/bin/brew ]]; then
             # Apple Silicon Mac
             eval "$(/opt/homebrew/bin/brew shellenv)"
-            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zprofile"
+            echo "eval \"$(/opt/homebrew/bin/brew shellenv)\"" >> "$HOME/.zprofile"
         else
             # Intel Mac
             eval "$(/usr/local/bin/brew shellenv)"
-            echo 'eval "$(/usr/local/bin/brew shellenv)"' >> "$HOME/.zprofile"
+            echo "eval \"$(/usr/local/bin/brew shellenv)\"" >> "$HOME/.zprofile"
         fi
         
         echo -e "${GREEN}Homebrew installed and added to PATH${NC}"
@@ -238,7 +249,7 @@ install_tmux_plugins() {
     echo -e "${GREEN}Installing tmux plugins automatically...${NC}"
     
     # Check if running in CI environment
-    if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
         echo -e "${YELLOW}Detected CI environment. Skipping plugin installation.${NC}"
         echo -e "${YELLOW}In production, run 'tmux' and press 'prefix + I' to install plugins.${NC}"
         return 0
@@ -290,6 +301,7 @@ mkdir -p "$HOME/.config"
 # Create symlinks for config files
 create_symlink "$DOTFILES_DIR/.config/ghostty" "$HOME/.config/ghostty"
 create_symlink "$DOTFILES_DIR/.config/starship.toml" "$HOME/.config/starship.toml"
+create_symlink "$DOTFILES_DIR/.config/atuin" "$HOME/.config/atuin"
 
 # Create symlinks for dotfiles in home directory
 create_symlink "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
