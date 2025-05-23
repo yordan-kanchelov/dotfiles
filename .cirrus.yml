@@ -1,0 +1,98 @@
+task:
+    name: test-dotfiles-setup
+    macos_instance:
+        image: ghcr.io/cirruslabs/macos-sequoia-xcode:latest
+    environment:
+        HOMEBREW_NO_ANALYTICS: "1"
+        HOMEBREW_NO_AUTO_UPDATE: "1"
+    working_directory: ~/dotfiles
+    prepare_script:
+        - echo "Setting up test environment..."
+        - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        - echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+        - eval "$(/opt/homebrew/bin/brew shellenv)"
+        - chmod +x setup.sh
+        - ./setup.sh --non-interactive --force-overwrite
+    test_setup_script:
+        - echo "Testing dotfiles setup in non-interactive mode..."
+        - echo "Contents of setup.sh:"
+        - head -n 20 setup.sh
+        - echo "Checking for atuin config directory:"
+        - ls -la .config/
+        - chmod +x setup.sh
+        - echo "Setup completed, checking if atuin symlink was created:"
+        - ls -la $HOME/.config/
+    verify_symlinks_script:
+        - echo "Verifying symlinks were created correctly..."
+        - echo "Current working directory: $(pwd)"
+        - echo "Content of .config directory:"
+        - ls -la .config/
+        - echo "Content of user's .config directory:"
+        - ls -la $HOME/.config/
+        - |
+            for config_dir in .config/*; do
+              if [ -d "$config_dir" ]; then
+                config_name=$(basename "$config_dir")
+                echo "Checking symlink for $config_name"
+                if [ -L "$HOME/.config/$config_name" ]; then
+                  echo "✅ $config_name symlink exists"
+                  ls -la "$HOME/.config/$config_name"
+                else
+                  echo "❌ $config_name symlink missing"
+                  exit 1
+                fi
+              fi
+            done
+        - |
+            # Check specific dotfiles
+            dotfiles=(
+              ".zshrc"
+              ".tmux.conf"
+            )
+            for dotfile in "${dotfiles[@]}"; do
+              if [ -L "$HOME/$dotfile" ]; then
+                echo "✅ $dotfile symlink exists"
+              elif [ -f "$HOME/$dotfile" ]; then
+                echo "⚠️  $dotfile exists but is not a symlink"
+              else
+                echo "❌ $dotfile does not exist"
+                exit 1
+              fi
+            done
+    test_packages_script:
+        - set -x
+        - echo "Verifying essential packages are installed..."
+        # Ensure the shell's command cache is updated
+        - hash -r
+        - echo "DEBUG: About to source .zshrc"
+        # Source the shell profile to ensure PATH is set correctly
+        - source ~/.zshrc 2>/dev/null || true
+        - >
+          echo "DEBUG: Sourced .zshrc. PATH is: $PATH. USER is: $USER. HOME is: $HOME. SHELL is: $SHELL"
+        - |
+            echo "DEBUG: Entering package check loop"
+            packages=("git" "tmux" "fzf" "ripgrep" "fd" "bat" "eza")
+            for package in "${packages[@]}"; do
+              if command -v "$package" &> /dev/null; then
+                echo "✅ $package is installed"
+                echo "   $(which $package)"
+              else
+                echo "❌ $package is not installed"
+                echo "Current PATH: $PATH"
+                echo "Homebrew prefix: $(brew --prefix)"
+                echo "Homebrew bin: $(brew --prefix)/bin"
+                exit 1
+              fi
+            done
+    logs_artifacts:
+        path: "/tmp/dotfiles-test-*.log"
+    backup_artifacts:
+        path: "$HOME/.dotfiles_backup/**/*"
+
+lint_task:
+    name: lint-shell-scripts
+    container:
+        image: koalaman/shellcheck-alpine:latest
+    lint_script:
+        - shellcheck setup.sh
+        - shellcheck test-in-vm.sh || true # Allow existing script to have warnings
