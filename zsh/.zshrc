@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # increase function nesting limit
 FUNCNEST=1000
 
