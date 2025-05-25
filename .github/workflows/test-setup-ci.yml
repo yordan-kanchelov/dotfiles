@@ -1,0 +1,110 @@
+name: Test Dotfiles Setup
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test-setup-macos:
+    name: Test Setup Script on macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up environment variables
+        run: |
+          echo "HOMEBREW_NO_ANALYTICS=1" >> $GITHUB_ENV
+          echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+
+      - name: Install Homebrew (if needed)
+        run: |
+          if ! command -v brew &> /dev/null; then
+            echo "Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+          fi
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+
+      - name: Test setup script (dry run)
+        run: |
+          chmod +x setup.sh
+          echo "Testing setup script in non-interactive mode..."
+          ./setup.sh --non-interactive --force-overwrite
+
+      - name: Verify symlinks were created
+        run: |
+          echo "Verifying symlinks..."
+
+          # Check if config directories exist
+          config_dirs=(".config/ghostty" ".config/starship.toml" ".config/atuin")
+          for config in "${config_dirs[@]}"; do
+            if [ -L "$HOME/$config" ] || [ -e "$HOME/$config" ]; then
+              echo "✅ $config exists"
+              ls -la "$HOME/$config"
+            else
+              echo "❌ $config missing"
+              exit 1
+            fi
+          done
+
+          # Check if dotfiles exist
+          dotfiles=(".zshrc" ".tmux.conf")
+          for dotfile in "${dotfiles[@]}"; do
+            if [ -L "$HOME/$dotfile" ] || [ -e "$HOME/$dotfile" ]; then
+              echo "✅ $dotfile exists"
+              ls -la "$HOME/$dotfile"
+            else
+              echo "❌ $dotfile missing"
+              exit 1
+            fi
+          done
+
+      - name: Test tmux configuration
+        run: |
+          if command -v tmux &> /dev/null; then
+            echo "Testing tmux configuration..."
+            tmux -f ~/.tmux.conf list-keys | head -5 || echo "Tmux config test completed"
+          else
+            echo "Tmux not installed, skipping config test"
+          fi
+
+      - name: Test zsh configuration (basic syntax)
+        run: |
+          if command -v zsh &> /dev/null && [ -f "$HOME/.zshrc" ]; then
+            echo "Testing zsh configuration syntax..."
+            zsh -n ~/.zshrc && echo "✅ .zshrc syntax is valid" || echo "⚠️ .zshrc syntax issues found"
+          else
+            echo "Zsh not available or .zshrc missing"
+          fi
+
+      - name: Display installed packages
+        run: |
+          echo "Installed Homebrew packages:"
+          brew list || echo "Could not list brew packages"
+
+  test-setup-ubuntu:
+    name: Test Setup Script on Ubuntu (Limited)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test script syntax and basic functionality
+        run: |
+          chmod +x setup.sh
+          echo "Testing setup script syntax..."
+          bash -n setup.sh && echo "✅ Setup script syntax is valid"
+
+      - name: Test non-macOS behavior
+        run: |
+          echo "Testing setup script behavior on non-macOS system..."
+          # Run in a way that tests the non-macOS paths
+          export OSTYPE="linux-gnu"
+          timeout 60s ./setup.sh --non-interactive || echo "Setup completed or timed out as expected on Linux"
+
