@@ -48,14 +48,19 @@ if ! command -v fnm &> /dev/null; then
   fi
 
   # Add fnm to current shell session
-  export PATH="$HOME/.fnm:$PATH"
+  # Try common fnm installation paths
+  if [ -d "$HOME/.local/share/fnm" ]; then
+    export PATH="$HOME/.local/share/fnm:$PATH"
+  elif [ -d "$HOME/.fnm" ]; then
+    export PATH="$HOME/.fnm:$PATH"
+  fi
   
   # Wait for fnm to be available
   if ! command -v fnm &> /dev/null; then
     echo -e "${YELLOW}Waiting for fnm to be available...${NC}"
     sleep 2
     # Try different possible fnm locations
-    for fnm_path in "$HOME/.fnm/fnm" "/opt/homebrew/bin/fnm" "/usr/local/bin/fnm"; do
+    for fnm_path in "$HOME/.local/share/fnm/fnm" "$HOME/.fnm/fnm" "/opt/homebrew/bin/fnm" "/usr/local/bin/fnm"; do
       if [ -x "$fnm_path" ]; then
         fnm_dir=$(dirname "$fnm_path")
         export PATH="$fnm_dir:$PATH"

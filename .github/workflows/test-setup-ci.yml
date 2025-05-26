@@ -105,8 +105,8 @@ jobs:
       - name: Install fnm
         run: |
           curl -fsSL https://fnm.vercel.app/install | bash
-          echo 'export PATH="$HOME/.fnm:$PATH"' >> ~/.bashrc
-          echo 'eval "$(fnm env --use-on-cd)"' >> ~/.bashrc
+          # The install script adds fnm to ~/.bashrc, just source it
+          source ~/.bashrc
 
       - name: Run bootstrap script
         run: |
