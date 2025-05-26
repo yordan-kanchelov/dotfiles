@@ -342,6 +342,70 @@ async function installTmuxPlugins(): Promise<void> {
   }
 }
 
+async function setupLazyVim(): Promise<void> {
+  const nvimConfigPath = join(HOME, '.config/nvim');
+  const dotfilesNvimPath = join(DOTFILES_DIR, '.config/nvim');
+  
+  // Check if we're setting up fresh or updating existing
+  if (existsSync(nvimConfigPath)) {
+    // Check if it's already a symlink to our dotfiles
+    try {
+      const stats = lstatSync(nvimConfigPath);
+      if (stats.isSymbolicLink() && readlinkSync(nvimConfigPath) === dotfilesNvimPath) {
+        log('Neovim config already linked to dotfiles', 'success');
+        return;
+      }
+    } catch {
+      // Not a symlink, continue
+    }
+    
+    // Handle existing config
+    log(`Existing Neovim config found at ${nvimConfigPath}`, 'warning');
+    
+    let shouldReplace = options.forceOverwrite;
+    if (!options.nonInteractive && !options.forceOverwrite) {
+      shouldReplace = await promptUser(`Replace existing Neovim config? (backup will be created)`, true);
+    }
+    
+    if (shouldReplace) {
+      const backupPath = `${nvimConfigPath}.bak.${Date.now()}`;
+      log(`Backing up existing Neovim config to ${backupPath}`, 'info');
+      await fsExtra.move(nvimConfigPath, backupPath);
+    } else {
+      log('Skipped Neovim config setup', 'warning');
+      return;
+    }
+  }
+  
+  // Check if LazyVim starter needs to be cloned into dotfiles
+  if (!existsSync(join(dotfilesNvimPath, 'init.lua'))) {
+    const spinner = ora('Cloning LazyVim starter...').start();
+    try {
+      // Clone LazyVim starter to temp location
+      const tempDir = join(HOME, '.config', 'nvim-temp-' + Date.now());
+      await execa('git', ['clone', 'https://github.com/LazyVim/starter', tempDir]);
+      
+      // Remove .git directory
+      await fsExtra.remove(join(tempDir, '.git'));
+      
+      // Copy to dotfiles
+      await fsExtra.copy(tempDir, dotfilesNvimPath);
+      
+      // Clean up temp directory
+      await fsExtra.remove(tempDir);
+      
+      spinner.succeed('LazyVim starter cloned to dotfiles');
+    } catch (error) {
+      spinner.fail('Failed to clone LazyVim starter');
+      throw error;
+    }
+  }
+  
+  // Create symlink
+  symlinkSync(dotfilesNvimPath, nvimConfigPath);
+  log(`Created symlink: ${nvimConfigPath} -> ${dotfilesNvimPath}`, 'success');
+}
+
 async function createSymlinks(): Promise<void> {
   log('Creating symlinks...', 'info');
 
@@ -358,6 +422,9 @@ async function createSymlinks(): Promise<void> {
     [join(DOTFILES_DIR, 'zsh/.zshrc'), join(HOME, '.zshrc')],
     [join(DOTFILES_DIR, 'tmux/.tmux.conf'), join(HOME, '.tmux.conf')]
   ];
+  
+  // Handle nvim separately with LazyVim setup
+  await setupLazyVim();
 
   for (const [source, target] of symlinks) {
     await createSymlink(source, target);

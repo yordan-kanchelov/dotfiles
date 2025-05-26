@@ -49,7 +49,7 @@ jobs:
           echo "Verifying symlinks..."
 
           # Check if config directories exist
-          config_dirs=(".config/ghostty" ".config/starship.toml" ".config/atuin")
+          config_dirs=(".config/ghostty" ".config/starship.toml" ".config/atuin" ".config/nvim")
           for config in "${config_dirs[@]}"; do
             if [ -L "$HOME/$config" ] || [ -e "$HOME/$config" ]; then
               echo "✅ $config exists"
@@ -88,6 +88,28 @@ jobs:
             zsh -n ~/.zshrc && echo "✅ .zshrc syntax is valid" || echo "⚠️ .zshrc syntax issues found"
           else
             echo "Zsh not available or .zshrc missing"
+          fi
+
+      - name: Test Neovim configuration
+        run: |
+          if command -v nvim &> /dev/null && [ -L "$HOME/.config/nvim" ]; then
+            echo "Testing Neovim configuration..."
+            # Check if symlink points to dotfiles
+            link_target=$(readlink "$HOME/.config/nvim")
+            echo "Symlink target: $link_target"
+            
+            # Verify init.lua exists
+            if [ -f "$HOME/.config/nvim/init.lua" ]; then
+              echo "✅ init.lua found"
+            else
+              echo "❌ init.lua missing"
+              exit 1
+            fi
+            
+            # Test basic nvim syntax check
+            nvim --headless -c "quit" && echo "✅ Neovim can start with config" || echo "⚠️ Neovim config issues"
+          else
+            echo "Neovim not installed or config not linked"
           fi
 
       - name: Display installed packages
@@ -160,7 +182,7 @@ jobs:
           echo "Checking for potential issues..."
 
           # Check if required files exist
-          required_files=("setup.ts" "bootstrap.sh" "brew_packages.txt" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc")
+          required_files=("setup.ts" "bootstrap.sh" "brew_packages.txt" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc" ".config/nvim/init.lua")
           for file in "${required_files[@]}"; do
             if [ -e "$file" ]; then
               echo "✅ $file exists"
