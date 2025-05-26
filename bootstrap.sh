@@ -65,7 +65,8 @@ if ! command -v fnm &> /dev/null; then
   fi
   
   if command -v fnm &> /dev/null; then
-    eval "$(fnm env --use-on-cd)"
+    # Don't use --use-on-cd yet as no Node versions are installed
+    eval "$(fnm env)"
   else
     echo -e "${RED}Error: fnm not found in PATH after installation${NC}"
     echo -e "${RED}PATH: $PATH${NC}"
@@ -75,7 +76,8 @@ else
   echo -e "${GREEN}fnm is already installed${NC}"
   # Ensure fnm is available in current session
   if command -v fnm &> /dev/null; then
-    eval "$(fnm env --use-on-cd 2>/dev/null || true)"
+    # Use fnm env without --use-on-cd to avoid errors if no Node version is installed
+    eval "$(fnm env 2>/dev/null || true)"
   else
     echo -e "${RED}Error: fnm command not found after installation${NC}"
     exit 1
