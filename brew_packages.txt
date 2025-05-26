@@ -26,3 +26,4 @@ zoxide
 bruno
 drawio
 ghostty
+spellcheck
