@@ -22,6 +22,7 @@ cd ~/dotfiles
 ./bootstrap.sh
 
 # Run the interactive setup
+npm install
 npm run setup
 ```
 
@@ -128,20 +129,13 @@ Existing files are backed up to `~/.dotfiles_backup/` with timestamps.
 # Run all tests
 npm test
 
-# Watch mode
-npm run test:watch
-
 # Type checking
 npm run typecheck
 ```
-
 ### Testing Setup Locally
 ```bash
 # Test CI mode without actually installing
 CI=true npm run ci:setup
-
-# Debug mode
-DEBUG=* npm run setup
 ```
 
 ## Customization
@@ -155,17 +149,7 @@ DEBUG=* npm run setup
 
 ### Setup Issues
 - Check `~/.dotfiles_backup/` for backed up files
-- Run with debug output: `DEBUG=* npm run setup`
 - Ensure Xcode Command Line Tools are installed: `xcode-select --install`
-
-### Shell Not Loading Config
-- Ensure your default shell is ZSH: `chsh -s /bin/zsh`
-- Restart your terminal or run: `source ~/.zshrc`
-
-### Font Issues
-- Fonts are copied to `~/Library/Fonts/` on macOS
-- Restart applications after font installation
-- Select a Nerd Font in your terminal preferences
 
 ## License
 
