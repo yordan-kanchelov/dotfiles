@@ -102,32 +102,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install fnm
-        run: |
-          curl -fsSL https://fnm.vercel.app/install | bash
-          # The install script adds fnm to ~/.bashrc, just source it
-          source ~/.bashrc
-
       - name: Run bootstrap script
         run: |
           chmod +x bootstrap.sh
-          # Source bashrc to get fnm in PATH
-          source ~/.bashrc
           ./bootstrap.sh
     
       - name: Install dependencies
         run: |
-          source ~/.bashrc
+          # Set up fnm environment
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
           npm install
     
       - name: Run tests
         run: |
-          source ~/.bashrc
+          # Set up fnm environment
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
           npm test
 
       - name: Test non-macOS behavior
         run: |
-          source ~/.bashrc
+          # Set up fnm environment
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
           echo "Testing setup script behavior on non-macOS system..."
           npm run setup:no-packages || echo "Setup completed as expected on Linux"
 

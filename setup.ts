@@ -76,7 +76,8 @@ async function commandExists(command: string): Promise<boolean> {
 async function backupFile(filePath: string): Promise<void> {
   if (!existsSync(filePath)) return;
 
-  const backupPath = join(BACKUP_DIR, filePath.replace(/^\//, '').replace(/\//g, '_') + '.bak');
+  const relativePath = filePath.startsWith(HOME) ? filePath.slice(HOME.length + 1) : filePath;
+  const backupPath = join(BACKUP_DIR, relativePath.replace(/[\/\\]/g, '_') + '.bak');
   const backupDir = dirname(backupPath);
 
   mkdirSync(backupDir, { recursive: true });
@@ -184,17 +185,19 @@ async function createSymlink(sourceFile: string, targetFile: string): Promise<vo
     return;
   }
 
-  // Special handling for shell config files
-  const configFiles = ['.zshrc', '.bashrc', '.bash_profile'];
+  // Special handling for shell config files (macOS uses zsh)
+  const configFiles = ['.zshrc'];
   if (configFiles.some(file => targetFile.endsWith(file))) {
     await handleConfigFile(sourceFile, targetFile);
   } else {
     // Standard symlink behavior
     let targetExists = false;
     try {
-      targetExists = existsSync(targetFile) || lstatSync(targetFile).isSymbolicLink();
+      lstatSync(targetFile);
+      targetExists = true;
     } catch {
-      // Ignore error - broken symlink
+      // File doesn't exist or broken symlink
+      targetExists = false;
     }
 
     if (targetExists) {
@@ -226,7 +229,7 @@ async function installHomebrew(): Promise<string> {
     const brewPath = existsSync('/opt/homebrew/bin/brew') ? '/opt/homebrew/bin/brew' : '/usr/local/bin/brew';
     const { stdout } = await execa(brewPath, ['shellenv']);
 
-    // Add to shell profile
+    // Add to zsh profile (macOS uses zsh by default)
     const profilePath = join(HOME, '.zprofile');
     const profileContent = existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : '';
     if (!profileContent.includes('brew shellenv')) {
@@ -276,7 +279,7 @@ async function installPackages(): Promise<void> {
   for (const pkg of packages) {
     const spinner = ora(`Installing ${pkg}...`).start();
     try {
-      await execa(brewPath, ['install', pkg], {
+      await execa(brewPath!, ['install', pkg], {
         timeout: IS_CI ? 300000 : undefined // 5 minute timeout in CI
       });
       spinner.succeed(`Successfully installed ${pkg}`);
@@ -305,9 +308,9 @@ async function installTPM(): Promise<void> {
     await fsExtra.ensureDir(dirname(tpmPath));
     await execa('git', ['clone', 'https://github.com/tmux-plugins/tpm', tpmPath]);
     spinner.succeed('TPM installed successfully');
-  } catch (error: any) {
+  } catch (error) {
     spinner.fail('Failed to install TPM');
-    log(error.message || 'Unknown error', 'error');
+    log(error instanceof Error ? error.message : 'Unknown error', 'error');
   }
 }
 

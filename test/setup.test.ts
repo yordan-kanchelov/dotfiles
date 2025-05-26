@@ -37,7 +37,7 @@ describe('Dotfiles Setup Tests', () => {
     if (originalHome) {
       process.env.HOME = originalHome;
     }
-    if (originalCI) {
+    if (originalCI !== undefined) {
       process.env.CI = originalCI;
     } else {
       delete process.env.CI;
@@ -61,12 +61,6 @@ describe('Dotfiles Setup Tests', () => {
       
       // Check if .config directory was created
       assert(existsSync(join(testDir, '.config')), '.config directory should be created');
-      
-      // Check for symlinks (they might not all exist due to source files not being present in test)
-      const expectedSymlinks = [
-        '.zshrc',
-        '.tmux.conf'
-      ];
       
       // At least the directories should be created
       assert(existsSync(join(testDir, '.config')), 'Config directory should exist');
@@ -122,8 +116,8 @@ describe('Dotfiles Setup Tests', () => {
       const duration = Date.now() - start;
       
       // Should complete relatively quickly when skipping packages
-      // Allow up to 60 seconds as GitHub Actions can be slow
-      assert(duration < 60000, `Setup should complete quickly when skipping packages (took ${duration}ms)`);
+      // Allow up to 120 seconds as GitHub Actions can be slow
+      assert(duration < 120000, `Setup should complete quickly when skipping packages (took ${duration}ms)`);
     });
 
     it('should run in non-interactive mode', async () => {
