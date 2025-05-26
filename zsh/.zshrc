@@ -73,17 +73,9 @@ alias or="ollama run gemma3:4b"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
-export OPENAI_API_KEY="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"
+export OPENAI_API_KEY=""
 export EDITOR=nvim
 
-
-# Added by Windsurf
-export PATH="/Users/yordan.kanchelov/.codeium/windsurf/bin:$PATH"
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/yordan.kanchelov/.docker/completions $fpath)
-autoload -Uz compinit
-compinit
-# End of Docker CLI completions
 
 # function to run ollama with a prompt and a file
 ollama_prompt_file() {
