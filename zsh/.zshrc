@@ -76,7 +76,6 @@ alias or="ollama run gemma3:4b"
 export OPENAI_API_KEY=""
 export EDITOR=nvim
 
-
 # function to run ollama with a prompt and a file
 ollama_prompt_file() {
   local initial_text="$1"
