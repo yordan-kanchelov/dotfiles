@@ -144,7 +144,7 @@ jobs:
           check_together: "yes"
           severity: error
           scandir: "."
-          ignore_paths: "zsh/.zshrc setup.sh node_modules" # Skip non-shell scripts
+          ignore_paths: "zsh node_modules" # Skip zsh scripts and node_modules
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
