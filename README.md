@@ -10,6 +10,7 @@ Modern macOS terminal setup with automated installation and configuration for pr
 - 🎨 **Beautiful terminal** - Pre-configured with Nerd Fonts and modern themes
 - ⚡ **Performance focused** - Fast shell startup with lazy-loaded plugins
 - 🔧 **TypeScript-powered** - Type-safe setup script with comprehensive error handling
+- 📝 **LazyVim IDE** - Full-featured Neovim setup with LSP, debugging, and more
 
 ## Quick Start
 
@@ -39,7 +40,11 @@ npm run setup
 - **Tmux** with sensible defaults and plugin manager
 
 ### Development Tools
-- **Neovim** - Modern vim fork
+- **Neovim** with **LazyVim** - Modern vim with pre-configured IDE features
+  - LSP support for intelligent code completion
+  - Treesitter for advanced syntax highlighting
+  - Telescope for fuzzy finding
+  - Custom keybindings and plugins
 - **Lazygit** - Terminal UI for git
 - **GitHub CLI** (`gh`) - GitHub from the command line
 - **fnm** - Fast Node.js version manager
@@ -103,6 +108,9 @@ Edit `brew_packages.txt` to add new Homebrew packages (one per line).
 ├── setup.ts             # Main installation script
 ├── brew_packages.txt    # Homebrew packages list
 ├── .config/            # Modern tool configs
+│   ├── nvim/           # LazyVim configuration
+│   │   ├── init.lua    # Main config entry
+│   │   └── lua/        # Lua configurations
 │   ├── starship.toml   # Starship prompt
 │   ├── ghostty/        # Ghostty terminal
 │   └── atuin/          # Shell history
@@ -141,9 +149,10 @@ CI=true npm run ci:setup
 ## Customization
 
 1. **Shell Configuration**: Edit `zsh/.zshrc` for ZSH customizations
-2. **Tmux**: Modify `tmux/.tmux.conf` for tmux settings
-3. **Starship Prompt**: Customize `.config/starship.toml`
-4. **Package List**: Update `brew_packages.txt` with your preferred tools
+2. **Neovim/LazyVim**: Customize in `.config/nvim/lua/plugins/` for additional plugins
+3. **Tmux**: Modify `tmux/.tmux.conf` for tmux settings
+4. **Starship Prompt**: Customize `.config/starship.toml`
+5. **Package List**: Update `brew_packages.txt` with your preferred tools
 
 ## Troubleshooting
 
