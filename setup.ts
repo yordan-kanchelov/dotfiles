@@ -47,7 +47,10 @@ const options: SetupOptions = program.opts();
 if (IS_CI) {
   console.log(chalk.blue('CI environment detected. Adjusting settings...'));
   options.nonInteractive = true;
-  options.skipPackages = false;
+  // Don't override skipPackages if explicitly set via command line
+  if (!process.argv.includes('--skip-packages')) {
+    options.skipPackages = false;
+  }
 }
 
 // Helper functions
