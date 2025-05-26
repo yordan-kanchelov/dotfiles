@@ -12,21 +12,20 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}Bootstrapping Node.js environment...${NC}"
 
 # Function to detect shell configuration file
-detect_shell_config() {
-  if [ -n "${BASH_VERSION:-}" ]; then
-    if [ -f "$HOME/.bash_profile" ]; then
-      echo "$HOME/.bash_profile"
-    else
-      echo "$HOME/.bashrc"
-    fi
-  elif [ -n "${ZSH_VERSION:-}" ]; then
-    echo "$HOME/.zshrc"
-  else
-    echo "$HOME/.profile"
-  fi
-}
-
-SHELL_CONFIG=$(detect_shell_config)
+# Currently unused but kept for potential future use
+# detect_shell_config() {
+#   if [ -n "${BASH_VERSION:-}" ]; then
+#     if [ -f "$HOME/.bash_profile" ]; then
+#       echo "$HOME/.bash_profile"
+#     else
+#       echo "$HOME/.bashrc"
+#     fi
+#   elif [ -n "${ZSH_VERSION:-}" ]; then
+#     echo "$HOME/.zshrc"
+#   else
+#     echo "$HOME/.profile"
+#   fi
+# }
 
 # Check if fnm is installed
 if ! command -v fnm &> /dev/null; then
@@ -50,11 +49,37 @@ if ! command -v fnm &> /dev/null; then
 
   # Add fnm to current shell session
   export PATH="$HOME/.fnm:$PATH"
-  eval "$(fnm env --use-on-cd)"
+  
+  # Wait for fnm to be available
+  if ! command -v fnm &> /dev/null; then
+    echo -e "${YELLOW}Waiting for fnm to be available...${NC}"
+    sleep 2
+    # Try different possible fnm locations
+    for fnm_path in "$HOME/.fnm/fnm" "/opt/homebrew/bin/fnm" "/usr/local/bin/fnm"; do
+      if [ -x "$fnm_path" ]; then
+        fnm_dir=$(dirname "$fnm_path")
+        export PATH="$fnm_dir:$PATH"
+        break
+      fi
+    done
+  fi
+  
+  if command -v fnm &> /dev/null; then
+    eval "$(fnm env --use-on-cd)"
+  else
+    echo -e "${RED}Error: fnm not found in PATH after installation${NC}"
+    echo -e "${RED}PATH: $PATH${NC}"
+    exit 1
+  fi
 else
   echo -e "${GREEN}fnm is already installed${NC}"
   # Ensure fnm is available in current session
-  eval "$(fnm env --use-on-cd 2>/dev/null || true)"
+  if command -v fnm &> /dev/null; then
+    eval "$(fnm env --use-on-cd 2>/dev/null || true)"
+  else
+    echo -e "${RED}Error: fnm command not found after installation${NC}"
+    exit 1
+  fi
 fi
 
 # Install Node.js 22+ if not already installed
