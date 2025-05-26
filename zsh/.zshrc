@@ -8,6 +8,7 @@ if [[ ! -d ~/.zplug ]]; then
   echo "Installing zplug..."
   curl -sL https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
 fi
+
 source ~/.zplug/init.zsh
 source <(fzf --zsh)
 
@@ -66,20 +67,20 @@ alias ':q'='exit'
 alias l='eza -l -b --all --header --git --icons --group-directories-first'
 alias ls='eza -l -b --all --header --git --icons --group-directories-first'
 alias find="fd"
-alias or="ollama run gemma3"
+alias or="ollama run gemma3:4b"
 
 # Additional sources
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
-export EDITOR=nvim
 export OPENAI_API_KEY=""
+export EDITOR=nvim
 
 # function to run ollama with a prompt and a file
 ollama_prompt_file() {
   local initial_text="$1"
   local file_to_cat="$2"
-  local ollama_model="gemma3" # ollama model selection
+  local ollama_model="gemma3:4b" # ollama model selection
 
   if [ -z "$initial_text" ] || [ -z "$file_to_cat" ]; then
     echo "Usage: ollama_prompt_file <initial_text> <file_to_cat> [ollama_model]"

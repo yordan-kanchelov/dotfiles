@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "erasableSyntaxOnly": true,
+    "noEmit": true
+  },
+  "include": ["*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
+}

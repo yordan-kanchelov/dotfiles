@@ -21,21 +21,28 @@ jobs:
           echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
           echo "CI=true" >> $GITHUB_ENV
 
-      - name: Install Homebrew (if needed)
+      - name: Run bootstrap script
         run: |
-          if ! command -v brew &> /dev/null; then
-            echo "Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-          fi
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+          chmod +x bootstrap.sh
+          ./bootstrap.sh
+    
+      - name: Install dependencies
+        run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm install
+    
+      - name: Run tests
+        run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm test
 
-      - name: Test setup script (dry run)
+      - name: Run setup script
         run: |
-          chmod +x setup.sh
-          echo "Testing setup script in non-interactive mode..."
-          ./setup.sh --non-interactive --force-overwrite
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm run ci:setup
 
       - name: Verify symlinks were created
         run: |
@@ -95,16 +102,80 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Test script syntax and basic functionality
+      - name: Run bootstrap script
         run: |
-          chmod +x setup.sh
-          echo "Testing setup script syntax..."
-          bash -n setup.sh && echo "✅ Setup script syntax is valid"
+          chmod +x bootstrap.sh
+          ./bootstrap.sh
+    
+      - name: Install dependencies
+        run: |
+          # Set up fnm environment
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
+          npm install
+    
+      - name: Run tests
+        run: |
+          # Set up fnm environment
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
+          npm test
 
       - name: Test non-macOS behavior
         run: |
+          # Set up fnm environment
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
           echo "Testing setup script behavior on non-macOS system..."
-          # Run in a way that tests the non-macOS paths
-          export OSTYPE="linux-gnu"
-          timeout 60s ./setup.sh --non-interactive || echo "Setup completed or timed out as expected on Linux"
+          npm run setup:no-packages || echo "Setup completed as expected on Linux"
 
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck on bootstrap script
+        uses: ludeeus/action-shellcheck@master
+        with:
+          check_together: "yes"
+          severity: error
+          scandir: "."
+          ignore_paths: "zsh node_modules" # Skip zsh scripts and node_modules
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+    
+      - name: Install dependencies
+        run: npm install
+    
+      - name: Run TypeScript check
+        run: npm run typecheck
+
+      - name: Check for common issues
+        run: |
+          echo "Checking for potential issues..."
+
+          # Check if required files exist
+          required_files=("setup.ts" "bootstrap.sh" "brew_packages.txt" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc")
+          for file in "${required_files[@]}"; do
+            if [ -e "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ $file missing"
+              exit 1
+            fi
+          done
+
+          # Check brew_packages.txt format
+          echo "Checking brew_packages.txt format..."
+          if [ -f "brew_packages.txt" ]; then
+            while IFS= read -r package; do
+              if [[ -n "$package" && ! "$package" =~ ^[[:space:]]*# && ! "$package" =~ ^[a-zA-Z0-9@/_-]+$ ]]; then
+                echo "⚠️ Potentially invalid package name: $package"
+              fi
+            done < "brew_packages.txt"
+          fi
