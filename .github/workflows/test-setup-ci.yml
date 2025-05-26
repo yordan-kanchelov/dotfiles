@@ -27,13 +27,21 @@ jobs:
           ./bootstrap.sh
     
       - name: Install dependencies
-        run: npm install
+        run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm install
     
       - name: Run tests
-        run: npm test
+        run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm test
 
       - name: Run setup script
         run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
           npm run ci:setup
 
       - name: Verify symlinks were created
