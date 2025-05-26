@@ -27,3 +27,4 @@ bruno
 drawio
 ghostty
 spellcheck
+starship
