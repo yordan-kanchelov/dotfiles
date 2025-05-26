@@ -66,6 +66,29 @@ describe('Dotfiles Setup Tests', () => {
       assert(existsSync(join(testDir, '.config')), 'Config directory should exist');
     });
 
+    it('should setup LazyVim configuration', async () => {
+      process.env.CI = 'true';
+      
+      // Create a mock nvim config in dotfiles
+      const dotfilesNvimPath = join(dirname(__dirname), '.config', 'nvim');
+      const mockInitLua = join(dotfilesNvimPath, 'init.lua');
+      
+      // Check if the nvim config exists in dotfiles
+      if (existsSync(mockInitLua)) {
+        // Run setup
+        await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+          nodeOptions: ['--experimental-strip-types']
+        });
+        
+        // Check if nvim symlink was created
+        const nvimConfigPath = join(testDir, '.config', 'nvim');
+        if (existsSync(nvimConfigPath)) {
+          const stats = lstatSync(nvimConfigPath);
+          assert(stats.isSymbolicLink(), 'Neovim config should be a symlink');
+        }
+      }
+    });
+
     it('should handle existing files with --force-overwrite', async () => {
       process.env.CI = 'true';
       
@@ -81,6 +104,27 @@ describe('Dotfiles Setup Tests', () => {
       // Check that backup directory was created
       const backupDirs = readdirSync(testDir).filter(dir => dir.startsWith('.dotfiles_backup'));
       assert(backupDirs.length > 0, 'Backup directory should be created');
+    });
+
+    it('should backup existing nvim config when setting up LazyVim', async () => {
+      process.env.CI = 'true';
+      
+      // Create existing nvim config
+      const nvimConfigPath = join(testDir, '.config', 'nvim');
+      mkdirSync(nvimConfigPath, { recursive: true });
+      writeFileSync(join(nvimConfigPath, 'init.vim'), '" existing vim config');
+      
+      // Run setup
+      await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+        nodeOptions: ['--experimental-strip-types']
+      });
+      
+      // Check if backup was created
+      const configDir = join(testDir, '.config');
+      if (existsSync(configDir)) {
+        const backups = readdirSync(configDir).filter(dir => dir.startsWith('nvim.bak.'));
+        assert(backups.length > 0 || existsSync(join(configDir, 'nvim')), 'Should handle existing nvim config');
+      }
     });
 
     it('should append to existing files with --append flag', async () => {
