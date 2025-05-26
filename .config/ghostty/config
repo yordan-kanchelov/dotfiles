@@ -1,2 +1,3 @@
 font-family = "0xProto Nerd Font"
 theme = dark:dracula,light:Terminal Basic
+keybind = shift+enter=text:\n

@@ -35,13 +35,6 @@ eval "$(fnm env --use-on-cd --shell zsh)"
 eval "$(ssh-agent -s)"
 eval "$(zoxide init zsh)"
 
-# pnpm setup
-export PNPM_HOME="/Users/yordan.kanchelov/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-
 if grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   alias explorer="explorer.exe"
   alias open="explorer.exe"
