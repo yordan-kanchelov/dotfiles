@@ -21,21 +21,20 @@ jobs:
           echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
           echo "CI=true" >> $GITHUB_ENV
 
-      - name: Install Homebrew (if needed)
+      - name: Run bootstrap script
         run: |
-          if ! command -v brew &> /dev/null; then
-            echo "Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-          fi
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+          chmod +x bootstrap.sh
+          ./bootstrap.sh
+    
+      - name: Install dependencies
+        run: npm install
+    
+      - name: Run tests
+        run: npm test
 
-      - name: Test setup script (dry run)
+      - name: Run setup script
         run: |
-          chmod +x setup.sh
-          echo "Testing setup script in non-interactive mode..."
-          ./setup.sh --non-interactive --force-overwrite
+          npm run ci:setup
 
       - name: Verify symlinks were created
         run: |
@@ -95,39 +94,67 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Test script syntax and basic functionality
+      - name: Install fnm
         run: |
-          chmod +x setup.sh
-          echo "Testing setup script syntax..."
-          bash -n setup.sh && echo "✅ Setup script syntax is valid"
+          curl -fsSL https://fnm.vercel.app/install | bash
+          echo 'export PATH="$HOME/.fnm:$PATH"' >> ~/.bashrc
+          echo 'eval "$(fnm env --use-on-cd)"' >> ~/.bashrc
+
+      - name: Run bootstrap script
+        run: |
+          chmod +x bootstrap.sh
+          # Source bashrc to get fnm in PATH
+          source ~/.bashrc
+          ./bootstrap.sh
+    
+      - name: Install dependencies
+        run: |
+          source ~/.bashrc
+          npm install
+    
+      - name: Run tests
+        run: |
+          source ~/.bashrc
+          npm test
 
       - name: Test non-macOS behavior
         run: |
+          source ~/.bashrc
           echo "Testing setup script behavior on non-macOS system..."
-          # Run in a way that tests the non-macOS paths
-          export OSTYPE="linux-gnu"
-          timeout 60s ./setup.sh --non-interactive || echo "Setup completed or timed out as expected on Linux"
+          npm run setup:no-packages || echo "Setup completed as expected on Linux"
 
-  lint:
-    name: Lint Shell Scripts
+  typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run ShellCheck
+      - name: Run ShellCheck on bootstrap script
         uses: ludeeus/action-shellcheck@master
         with:
           check_together: "yes"
           severity: error
-          ignore_paths: "zsh/.zshrc" # Skip .zshrc as it's not a regular shell script
+          scandir: "."
+          ignore_paths: "zsh/.zshrc setup.sh node_modules" # Skip non-shell scripts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+    
+      - name: Install dependencies
+        run: npm install
+    
+      - name: Run TypeScript check
+        run: npm run typecheck
 
       - name: Check for common issues
         run: |
           echo "Checking for potential issues..."
 
           # Check if required files exist
-          required_files=("setup.sh" "brew_packages.txt" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc")
+          required_files=("setup.ts" "bootstrap.sh" "brew_packages.txt" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc")
           for file in "${required_files[@]}"; do
             if [ -e "$file" ]; then
               echo "✅ $file exists"

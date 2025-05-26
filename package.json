@@ -1,0 +1,47 @@
+{
+  "name": "dotfiles",
+  "version": "1.0.0",
+  "description": "Personal dotfiles for macOS terminal productivity",
+  "type": "module",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "scripts": {
+    "setup": "node --experimental-strip-types setup.ts",
+    "setup:interactive": "node --experimental-strip-types setup.ts --interactive",
+    "setup:force": "node --experimental-strip-types setup.ts --force-overwrite",
+    "setup:append": "node --experimental-strip-types setup.ts --append",
+    "setup:no-packages": "node --experimental-strip-types setup.ts --skip-packages",
+    "test": "node --experimental-strip-types --test",
+    "test:watch": "node --experimental-strip-types --test --watch",
+    "typecheck": "tsc --noEmit",
+    "ci:setup": "node --experimental-strip-types setup.ts --non-interactive --force-overwrite"
+  },
+  "keywords": [
+    "dotfiles",
+    "macos",
+    "terminal",
+    "productivity",
+    "tmux",
+    "zsh"
+  ],
+  "author": "yordan.kanchelov",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "execa": "^8.0.1",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^9.2.12",
+    "ora": "^8.0.1",
+    "which": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.8",
+    "@types/node": "^22.14.0",
+    "@types/which": "^3.0.4",
+    "prettier": "^3.1.1",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # increase function nesting limit
 FUNCNEST=1000
 
@@ -6,6 +8,7 @@ if [[ ! -d ~/.zplug ]]; then
   echo "Installing zplug..."
   curl -sL https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
 fi
+
 source ~/.zplug/init.zsh
 source <(fzf --zsh)
 
@@ -64,20 +67,29 @@ alias ':q'='exit'
 alias l='eza -l -b --all --header --git --icons --group-directories-first'
 alias ls='eza -l -b --all --header --git --icons --group-directories-first'
 alias find="fd"
-alias or="ollama run gemma3"
+alias or="ollama run gemma3:4b"
 
 # Additional sources
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
+export OPENAI_API_KEY="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"
 export EDITOR=nvim
-export OPENAI_API_KEY=""
+
+
+# Added by Windsurf
+export PATH="/Users/yordan.kanchelov/.codeium/windsurf/bin:$PATH"
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/yordan.kanchelov/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions
 
 # function to run ollama with a prompt and a file
 ollama_prompt_file() {
   local initial_text="$1"
   local file_to_cat="$2"
-  local ollama_model="gemma3" # ollama model selection
+  local ollama_model="gemma3:4b" # ollama model selection
 
   if [ -z "$initial_text" ] || [ -z "$file_to_cat" ]; then
     echo "Usage: ollama_prompt_file <initial_text> <file_to_cat> [ollama_model]"
