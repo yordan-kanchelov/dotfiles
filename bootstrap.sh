@@ -54,7 +54,7 @@ if ! command -v fnm &> /dev/null; then
   elif [ -d "$HOME/.fnm" ]; then
     export PATH="$HOME/.fnm:$PATH"
   fi
-  
+
   # Wait for fnm to be available
   if ! command -v fnm &> /dev/null; then
     echo -e "${YELLOW}Waiting for fnm to be available...${NC}"
@@ -68,7 +68,7 @@ if ! command -v fnm &> /dev/null; then
       fi
     done
   fi
-  
+
   if command -v fnm &> /dev/null; then
     # Don't use --use-on-cd yet as no Node versions are installed
     eval "$(fnm env)"
@@ -113,6 +113,36 @@ fi
 # Create .nvmrc file for consistency
 echo "22" > .nvmrc
 echo -e "${GREEN}Created .nvmrc file with Node.js 22${NC}"
+
+# Add fnm --use-on-cd to shell config if not present
+add_fnm_env_to_shell_config() {
+  local shell_name config_file fnm_env_line
+  shell_name="$(basename "$SHELL")"
+  if [ "$shell_name" = "bash" ]; then
+    config_file="$HOME/.bashrc"
+    fnm_env_line='eval "$(fnm env --use-on-cd --shell bash)"'
+  elif [ "$shell_name" = "zsh" ]; then
+    config_file="$HOME/.zshrc"
+    fnm_env_line='eval "$(fnm env --use-on-cd --shell zsh)"'
+  else
+    return 0
+  fi
+
+  if ! grep -Fq "$fnm_env_line" "$config_file" 2>/dev/null; then
+    echo -e "${BLUE}Adding fnm --use-on-cd to $config_file...${NC}"
+    echo -e "\n# Enable fnm automatic Node version switching\n$fnm_env_line" >> "$config_file"
+  fi
+}
+
+add_fnm_env_to_shell_config
+
+# Immediately enable fnm use-on-cd for current session
+shell_name="$(basename "$SHELL")"
+if [ "$shell_name" = "bash" ]; then
+  eval "$(fnm env --use-on-cd --shell bash)"
+elif [ "$shell_name" = "zsh" ]; then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
 
 # Check if running in CI
 if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
