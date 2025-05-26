@@ -23,7 +23,6 @@ tlrc
 tmux
 yazi
 zoxide
-bruno
 drawio
 ghostty
 spellcheck
