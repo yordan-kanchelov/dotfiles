@@ -59,8 +59,89 @@ alias cat="bat"
 alias ':q'='exit'
 alias l='eza -l -b --all --header --git --icons --group-directories-first'
 alias ls='eza -l -b --all --header --git --icons --group-directories-first'
-alias find="fd"
 alias or="ollama run gemma3:4b"
+
+clean_dev_caches() {
+  echo "🧹 Cleaning npm cache..."
+  npm cache clean --force
+  echo "🧹 Pruning pnpm store..."
+  pnpm store prune
+  echo "✅ Caches cleaned and pruned!"
+  echo "🧹 Clean Docker cache..."
+  docker system prune -f --volumes
+  echo "✅ Docker cache cleaned!"
+}
+
+# Alias for the function
+alias cleanc='clean_dev_caches'
+
+clean_project() {
+    # Enable extended globbing for ** pattern
+    setopt local_options extended_glob null_glob
+
+    # Array of patterns to remove
+    local patterns=(
+        dist
+        .nx/cache
+        **/node_modules(N)
+        **/pnpm-lock.yaml(N)
+        **/package-lock.json(N)
+    )
+
+    # Counter for removed items
+    local removed_count=0
+
+    echo "🧹 Cleaning project files..."
+
+    # Process each pattern
+    for pattern in $patterns; do
+        # Find matching files/directories
+        local matches=($~pattern)
+
+        # If matches found, remove them
+        if [[ ${#matches[@]} -gt 0 ]]; then
+            for item in $matches; do
+                if [[ -e "$item" ]]; then
+                    echo "  ✓ Removing: $item"
+                    rm -rf "$item" 2>/dev/null
+                    ((removed_count++))
+                fi
+            done
+        fi
+    done
+
+    # Summary
+    if [[ $removed_count -eq 0 ]]; then
+        echo "  ℹ️  No files found to remove"
+    else
+        echo "  ✅ Removed $removed_count items"
+    fi
+
+    # clean_dev_caches
+}
+
+# Optional: Create an alias for easier access
+alias cleanp='clean_project'
+
+fvim() {
+  local selected_file
+
+  # Run fzf.
+  # If you press Escape (or fzf is otherwise aborted),
+  # the command substitution $(...) will result in an empty string.
+  # The --bind "esc:abort" makes the Escape behavior explicit,
+  # though fzf usually aborts on Escape by default.
+  selected_file=$(fzf --preview="bat --color=always {}" --bind "esc:abort")
+
+  # Check if fzf returned a non-empty string (meaning a file was selected)
+  if [ -n "$selected_file" ]; then
+    # Only open nvim if a file was actually selected
+    nvim "$selected_file"
+  fi
+  # If 'selected_file' is empty (because you pressed Esc in fzf),
+  # the 'if' condition is false, and this function will simply end
+  # without calling nvim.
+}
 
 # Additional sources
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -96,3 +177,4 @@ ollama_prompt_file() {
 }
 
 alias orf="ollama_prompt_file"
+
