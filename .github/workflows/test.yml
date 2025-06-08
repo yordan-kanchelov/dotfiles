@@ -18,27 +18,33 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install fnm
+    - name: Install fnm and Setup Node.js
+      shell: bash
       run: |
+        # Install fnm
         if [[ "${{ runner.os }}" == "macOS" ]]; then
           brew install fnm
-        else
-          curl -fsSL https://fnm.vercel.app/install | bash
-          echo "$HOME/.local/share/fnm" >> $GITHUB_PATH
-        fi
-    
-    - name: Setup Node.js
-      run: |
-        if [[ "${{ runner.os }}" == "macOS" ]]; then
           eval "$(fnm env)"
         else
+          curl -fsSL https://fnm.vercel.app/install | bash
           export PATH="$HOME/.local/share/fnm:$PATH"
           eval "$(fnm env)"
         fi
+        
+        # Install and use Node.js
         fnm install ${{ matrix.node-version }}
         fnm use ${{ matrix.node-version }}
+        fnm default ${{ matrix.node-version }}
+        
+        # Verify installation
         node --version
         npm --version
+        
+        # Add to GitHub PATH for subsequent steps
+        echo "$HOME/.local/share/fnm" >> $GITHUB_PATH
+        if [[ "${{ runner.os }}" == "Linux" ]]; then
+          echo "FNM_DIR=$HOME/.local/share/fnm" >> $GITHUB_ENV
+        fi
     
     - name: Install dependencies
       run: npm install
@@ -47,7 +53,16 @@ jobs:
       run: npm test
     
     - name: Test bootstrap script
+      shell: bash
       run: |
+        # Ensure fnm is available in the environment
+        if [[ "${{ runner.os }}" == "Linux" ]]; then
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          if command -v fnm &> /dev/null; then
+            eval "$(fnm env)"
+          fi
+        fi
+        
         # Test that bootstrap script runs without errors
         ./bootstrap.sh
       env:
