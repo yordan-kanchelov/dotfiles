@@ -12,7 +12,7 @@
     "setup:force": "node --experimental-strip-types setup.ts --force-overwrite",
     "setup:append": "node --experimental-strip-types setup.ts --append",
     "setup:no-packages": "node --experimental-strip-types setup.ts --skip-packages",
-    "test": "node --experimental-strip-types --test",
+    "test": "node --experimental-strip-types --test test/setup.test.ts",
     "test:watch": "node --experimental-strip-types --test --watch",
     "typecheck": "tsc --noEmit",
     "ci:setup": "node --experimental-strip-types setup.ts --non-interactive --force-overwrite"
