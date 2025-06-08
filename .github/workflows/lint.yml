@@ -1,0 +1,57 @@
+name: Lint and Type Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Check TypeScript types
+      run: npx tsc --noEmit
+    
+    - name: Verify file permissions
+      run: |
+        # Ensure scripts are executable
+        test -x bootstrap.sh || (echo "bootstrap.sh is not executable" && exit 1)
+        test -x setup.ts || (echo "setup.ts is not executable" && exit 1)
+    
+    - name: Validate package lists
+      run: |
+        # Check brew_packages.txt format
+        echo "Validating brew_packages.txt..."
+        while IFS= read -r line; do
+          if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# && ! "$line" =~ ^[[:space:]]*$ ]]; then
+            if [[ ! "$line" =~ ^[a-z0-9@]([a-z0-9._@-]*[a-z0-9@])?$ ]]; then
+              echo "Invalid package name in brew_packages.txt: $line"
+              exit 1
+            fi
+          fi
+        done < brew_packages.txt
+        
+        # Check apt_packages.txt format
+        echo "Validating apt_packages.txt..."
+        while IFS= read -r line; do
+          if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# && ! "$line" =~ ^[[:space:]]*$ ]]; then
+            if [[ ! "$line" =~ ^[a-z0-9][a-z0-9+.-]*$ ]]; then
+              echo "Invalid package name in apt_packages.txt: $line"
+              exit 1
+            fi
+          fi
+        done < apt_packages.txt
+        
+        echo "Package lists validated successfully!"

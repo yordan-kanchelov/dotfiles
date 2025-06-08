@@ -41,8 +41,17 @@ if ! command -v fnm &> /dev/null; then
       echo -e "${GREEN}Installing fnm via install script...${NC}"
       curl -fsSL https://fnm.vercel.app/install | bash
     fi
+  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux - install dependencies first
+    if command -v apt &> /dev/null; then
+      echo -e "${GREEN}Installing build dependencies for Linux...${NC}"
+      sudo apt update
+      sudo apt install -y curl build-essential
+    fi
+    echo -e "${GREEN}Installing fnm via install script...${NC}"
+    curl -fsSL https://fnm.vercel.app/install | bash
   else
-    # Linux and others
+    # Other OS
     echo -e "${GREEN}Installing fnm via install script...${NC}"
     curl -fsSL https://fnm.vercel.app/install | bash
   fi

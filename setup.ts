@@ -20,6 +20,7 @@ const HOME = homedir();
 const BACKUP_DIR = join(HOME, '.dotfiles_backup', new Date().toISOString().replace(/:/g, '-'));
 const IS_CI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 const IS_MACOS = platform() === 'darwin';
+const IS_LINUX = platform() === 'linux';
 
 // Type definitions
 interface SetupOptions {
@@ -250,11 +251,16 @@ async function installPackages(): Promise<void> {
     return;
   }
 
-  if (!IS_MACOS) {
-    log('Warning: This script is optimized for macOS. Skipping package installation.', 'warning');
-    return;
+  if (IS_MACOS) {
+    await installBrewPackages();
+  } else if (IS_LINUX) {
+    await installAptPackages();
+  } else {
+    log('Warning: Unsupported platform. Skipping package installation.', 'warning');
   }
+}
 
+async function installBrewPackages(): Promise<void> {
   log('Installing required packages with Homebrew...', 'info');
 
   // Check if Homebrew is installed
@@ -291,6 +297,125 @@ async function installPackages(): Promise<void> {
 
   if (failedPackages.length > 0) {
     log(`Failed to install packages: ${failedPackages.join(', ')}`, 'warning');
+  }
+}
+
+async function installAptPackages(): Promise<void> {
+  log('Installing required packages with apt...', 'info');
+
+  // Check if apt is available
+  if (!await commandExists('apt')) {
+    log('apt command not found. Please install packages manually.', 'error');
+    return;
+  }
+
+  // Update package list
+  const spinner = ora('Updating package list...').start();
+  try {
+    await execa('sudo', ['apt', 'update'], { stdio: 'inherit' });
+    spinner.succeed('Package list updated');
+  } catch (error) {
+    spinner.fail('Failed to update package list');
+    log('Continue anyway...', 'warning');
+  }
+
+  // Install packages from apt_packages.txt
+  const packagesFile = join(DOTFILES_DIR, 'apt_packages.txt');
+  if (!existsSync(packagesFile)) {
+    log('Error: apt_packages.txt not found', 'error');
+    return;
+  }
+
+  const packages = readFileSync(packagesFile, 'utf8')
+    .split('\n')
+    .filter(line => line.trim() && !line.trim().startsWith('#'));
+
+  const failedPackages: string[] = [];
+
+  // Install packages in batches to improve speed
+  const batchSize = 5;
+  for (let i = 0; i < packages.length; i += batchSize) {
+    const batch = packages.slice(i, i + batchSize);
+    const spinner = ora(`Installing ${batch.join(', ')}...`).start();
+    try {
+      await execa('sudo', ['apt', 'install', '-y', ...batch], {
+        timeout: IS_CI ? 300000 : undefined // 5 minute timeout in CI
+      });
+      spinner.succeed(`Successfully installed ${batch.join(', ')}`);
+    } catch (error) {
+      spinner.fail(`Failed to install some packages in batch`);
+      // Try installing individually to identify which ones failed
+      for (const pkg of batch) {
+        try {
+          await execa('sudo', ['apt', 'install', '-y', pkg]);
+        } catch {
+          failedPackages.push(pkg);
+        }
+      }
+    }
+  }
+
+  // Install special packages that require different methods
+  await installSpecialPackagesLinux();
+
+  if (failedPackages.length > 0) {
+    log(`Failed to install packages: ${failedPackages.join(', ')}`, 'warning');
+  }
+}
+
+async function installSpecialPackagesLinux(): Promise<void> {
+  // fnm (Fast Node Manager)
+  if (!await commandExists('fnm')) {
+    const spinner = ora('Installing fnm...').start();
+    try {
+      const { stdout } = await execa('curl', ['-fsSL', 'https://fnm.vercel.app/install']);
+      await execa('bash', ['-c', stdout], { stdio: 'inherit' });
+      spinner.succeed('fnm installed');
+    } catch {
+      spinner.fail('Failed to install fnm');
+    }
+  }
+
+  // starship
+  if (!await commandExists('starship')) {
+    const spinner = ora('Installing starship...').start();
+    try {
+      const { stdout } = await execa('curl', ['-sS', 'https://starship.rs/install.sh']);
+      await execa('sh', ['-c', stdout], { stdio: 'inherit' });
+      spinner.succeed('starship installed');
+    } catch {
+      spinner.fail('Failed to install starship');
+    }
+  }
+
+  // lazygit
+  if (!await commandExists('lazygit')) {
+    const spinner = ora('Installing lazygit...').start();
+    try {
+      const { stdout: latestRelease } = await execa('curl', ['-s', 'https://api.github.com/repos/jesseduffield/lazygit/releases/latest']);
+      const version = JSON.parse(latestRelease).tag_name.replace('v', '');
+      await execa('bash', ['-c', `
+        curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_x86_64.tar.gz"
+        tar xf lazygit.tar.gz lazygit
+        sudo install lazygit /usr/local/bin
+        rm lazygit.tar.gz lazygit
+      `], { stdio: 'inherit' });
+      spinner.succeed('lazygit installed');
+    } catch {
+      spinner.fail('Failed to install lazygit');
+    }
+  }
+
+  // atuin
+  if (!await commandExists('atuin')) {
+    const spinner = ora('Installing atuin...').start();
+    try {
+      const installScript = await execa('curl', ['--proto', '=https', '--tlsv1.2', '-LsSf', 'https://setup.atuin.sh']);
+      await execa('sh', ['-c', installScript.stdout], { stdio: 'inherit' });
+      spinner.succeed('atuin installed');
+    } catch {
+      spinner.fail('Failed to install atuin');
+    }
   }
 }
 
@@ -345,7 +470,7 @@ async function installTmuxPlugins(): Promise<void> {
 async function setupLazyVim(): Promise<void> {
   const nvimConfigPath = join(HOME, '.config/nvim');
   const dotfilesNvimPath = join(DOTFILES_DIR, '.config/nvim');
-  
+
   // Check if we're setting up fresh or updating existing
   if (existsSync(nvimConfigPath)) {
     // Check if it's already a symlink to our dotfiles
@@ -358,15 +483,15 @@ async function setupLazyVim(): Promise<void> {
     } catch {
       // Not a symlink, continue
     }
-    
+
     // Handle existing config
     log(`Existing Neovim config found at ${nvimConfigPath}`, 'warning');
-    
+
     let shouldReplace = options.forceOverwrite;
     if (!options.nonInteractive && !options.forceOverwrite) {
       shouldReplace = await promptUser(`Replace existing Neovim config? (backup will be created)`, true);
     }
-    
+
     if (shouldReplace) {
       const backupPath = `${nvimConfigPath}.bak.${Date.now()}`;
       log(`Backing up existing Neovim config to ${backupPath}`, 'info');
@@ -376,7 +501,7 @@ async function setupLazyVim(): Promise<void> {
       return;
     }
   }
-  
+
   // Check if LazyVim starter needs to be cloned into dotfiles
   if (!existsSync(join(dotfilesNvimPath, 'init.lua'))) {
     const spinner = ora('Cloning LazyVim starter...').start();
@@ -384,23 +509,23 @@ async function setupLazyVim(): Promise<void> {
       // Clone LazyVim starter to temp location
       const tempDir = join(HOME, '.config', 'nvim-temp-' + Date.now());
       await execa('git', ['clone', 'https://github.com/LazyVim/starter', tempDir]);
-      
+
       // Remove .git directory
       await fsExtra.remove(join(tempDir, '.git'));
-      
+
       // Copy to dotfiles
       await fsExtra.copy(tempDir, dotfilesNvimPath);
-      
+
       // Clean up temp directory
       await fsExtra.remove(tempDir);
-      
+
       spinner.succeed('LazyVim starter cloned to dotfiles');
     } catch (error) {
       spinner.fail('Failed to clone LazyVim starter');
       throw error;
     }
   }
-  
+
   // Create symlink
   symlinkSync(dotfilesNvimPath, nvimConfigPath);
   log(`Created symlink: ${nvimConfigPath} -> ${dotfilesNvimPath}`, 'success');
@@ -422,7 +547,7 @@ async function createSymlinks(): Promise<void> {
     [join(DOTFILES_DIR, 'zsh/.zshrc'), join(HOME, '.zshrc')],
     [join(DOTFILES_DIR, 'tmux/.tmux.conf'), join(HOME, '.tmux.conf')]
   ];
-  
+
   // Handle nvim separately with LazyVim setup
   await setupLazyVim();
 

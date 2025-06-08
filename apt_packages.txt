@@ -1,0 +1,36 @@
+# Core utilities
+bat
+eza
+fd-find
+fzf
+ripgrep
+htop
+tmux
+
+# Development tools
+neovim
+git-lfs
+golang-go
+python3
+python3-pip
+pipx
+
+# Shell enhancements
+zoxide
+
+# Essential build tools
+curl
+wget
+build-essential
+software-properties-common
+apt-transport-https
+ca-certificates
+gnupg
+lsb-release
+
+# Note: Some tools require special installation methods on Ubuntu:
+# - fnm: Install via curl script
+# - lazygit: Install via PPA or binary
+# - atuin: Install via cargo or binary
+# - starship: Install via curl script
+# - gh: Install via apt after adding GitHub's GPG key
