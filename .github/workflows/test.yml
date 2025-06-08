@@ -72,7 +72,10 @@ jobs:
         CI: true
 
     - name: Test setup script (skip packages)
-      run: npm run setup -- --skip-packages
+      run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm run setup -- --skip-packages
       env:
         CI: true
 
