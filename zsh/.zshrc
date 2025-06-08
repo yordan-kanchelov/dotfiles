@@ -177,4 +177,3 @@ ollama_prompt_file() {
 }
 
 alias orf="ollama_prompt_file"
-

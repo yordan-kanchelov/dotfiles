@@ -98,11 +98,23 @@ else
   fi
 fi
 
-# Install Node.js 22+ if not already installed
-NODE_VERSION="22"
+# Install Node.js 22.11.0+ if not already installed (required for --experimental-strip-types)
+NODE_VERSION="22.11.0"
 CURRENT_VERSION=$(fnm current 2>/dev/null || echo "none")
 
-if [[ "$CURRENT_VERSION" == "none" ]] || [[ ! "$CURRENT_VERSION" =~ ^v2[2-9]\. ]] && [[ ! "$CURRENT_VERSION" =~ ^v[3-9][0-9]\. ]]; then
+# Check if current version is 22.11.0 or higher
+VERSION_OK=false
+if [[ "$CURRENT_VERSION" != "none" ]]; then
+  CURRENT_MAJOR=$(echo "$CURRENT_VERSION" | sed 's/v\([0-9]*\).*/\1/')
+  CURRENT_MINOR=$(echo "$CURRENT_VERSION" | sed 's/v[0-9]*\.\([0-9]*\).*/\1/')
+  CURRENT_PATCH=$(echo "$CURRENT_VERSION" | sed 's/v[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/')
+  
+  if [[ $CURRENT_MAJOR -gt 22 ]] || [[ $CURRENT_MAJOR -eq 22 && $CURRENT_MINOR -ge 11 ]]; then
+    VERSION_OK=true
+  fi
+fi
+
+if [[ "$VERSION_OK" == false ]]; then
   echo -e "${YELLOW}Installing Node.js v${NODE_VERSION}...${NC}"
   fnm install ${NODE_VERSION}
   fnm use ${NODE_VERSION}
@@ -120,8 +132,8 @@ else
 fi
 
 # Create .nvmrc file for consistency
-echo "22" > .nvmrc
-echo -e "${GREEN}Created .nvmrc file with Node.js 22${NC}"
+echo "22.11.0" > .nvmrc
+echo -e "${GREEN}Created .nvmrc file with Node.js 22.11.0${NC}"
 
 # Add fnm --use-on-cd to shell config if not present
 add_fnm_env_to_shell_config() {
