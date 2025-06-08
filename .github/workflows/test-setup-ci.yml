@@ -131,23 +131,62 @@ jobs:
     
       - name: Install dependencies
         run: |
-          # Set up fnm environment
-          export PATH="$HOME/.local/share/fnm:$PATH"
+          # Set up fnm environment - try multiple paths
+          if [ -d "$HOME/.local/share/fnm" ]; then
+            export PATH="$HOME/.local/share/fnm:$PATH"
+          elif [ -d "$HOME/.fnm" ]; then
+            export PATH="$HOME/.fnm:$PATH"
+          fi
+          
+          # Find fnm executable
+          FNM_PATH=$(which fnm || find $HOME -name fnm -type f -executable 2>/dev/null | head -1 || echo "")
+          if [ -n "$FNM_PATH" ]; then
+            export PATH="$(dirname $FNM_PATH):$PATH"
+          fi
+          
           eval "$(fnm env)"
+          fnm use 22.11.0
+          node --version
+          npm --version
           npm install
     
       - name: Run tests
         run: |
-          # Set up fnm environment
-          export PATH="$HOME/.local/share/fnm:$PATH"
+          # Set up fnm environment - try multiple paths
+          if [ -d "$HOME/.local/share/fnm" ]; then
+            export PATH="$HOME/.local/share/fnm:$PATH"
+          elif [ -d "$HOME/.fnm" ]; then
+            export PATH="$HOME/.fnm:$PATH"
+          fi
+          
+          # Find fnm executable
+          FNM_PATH=$(which fnm || find $HOME -name fnm -type f -executable 2>/dev/null | head -1 || echo "")
+          if [ -n "$FNM_PATH" ]; then
+            export PATH="$(dirname $FNM_PATH):$PATH"
+          fi
+          
           eval "$(fnm env)"
+          fnm use 22.11.0
+          node --version
           npm test
 
       - name: Test non-macOS behavior
         run: |
-          # Set up fnm environment
-          export PATH="$HOME/.local/share/fnm:$PATH"
+          # Set up fnm environment - try multiple paths
+          if [ -d "$HOME/.local/share/fnm" ]; then
+            export PATH="$HOME/.local/share/fnm:$PATH"
+          elif [ -d "$HOME/.fnm" ]; then
+            export PATH="$HOME/.fnm:$PATH"
+          fi
+          
+          # Find fnm executable
+          FNM_PATH=$(which fnm || find $HOME -name fnm -type f -executable 2>/dev/null | head -1 || echo "")
+          if [ -n "$FNM_PATH" ]; then
+            export PATH="$(dirname $FNM_PATH):$PATH"
+          fi
+          
           eval "$(fnm env)"
+          fnm use 22.11.0
           echo "Testing setup script behavior on non-macOS system..."
           npm run setup:no-packages || echo "Setup completed as expected on Linux"
 
