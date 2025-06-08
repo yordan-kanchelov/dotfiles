@@ -11,6 +11,37 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}Bootstrapping Node.js environment...${NC}"
 
+# Ensure zsh is installed and set as default shell (Linux only)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  if ! command -v zsh &> /dev/null; then
+    echo -e "${YELLOW}zsh not found. Installing zsh...${NC}"
+    if command -v apt &> /dev/null; then
+      sudo apt update
+      sudo apt install -y zsh
+    elif command -v yum &> /dev/null; then
+      sudo yum install -y zsh
+    elif command -v dnf &> /dev/null; then
+      sudo dnf install -y zsh
+    elif command -v pacman &> /dev/null; then
+      sudo pacman -S --noconfirm zsh
+    fi
+  fi
+
+  # Check if zsh is the default shell
+  if [ "$SHELL" != "$(which zsh)" ] && command -v zsh &> /dev/null; then
+    echo -e "${YELLOW}Setting zsh as default shell...${NC}"
+    # Add zsh to valid shells if not already there
+    if ! grep -q "$(which zsh)" /etc/shells; then
+      echo "$(which zsh)" | sudo tee -a /etc/shells
+    fi
+    # Change default shell to zsh
+    chsh -s "$(which zsh)"
+    echo -e "${GREEN}zsh is now the default shell. Please restart your terminal or run 'exec zsh' after the setup completes.${NC}"
+  else
+    echo -e "${GREEN}zsh is already the default shell${NC}"
+  fi
+fi
+
 # Function to detect shell configuration file
 # Currently unused but kept for potential future use
 # detect_shell_config() {
@@ -46,7 +77,7 @@ if ! command -v fnm &> /dev/null; then
     if command -v apt &> /dev/null; then
       echo -e "${GREEN}Installing build dependencies for Linux...${NC}"
       sudo apt update
-      sudo apt install -y curl build-essential
+      sudo apt install -y curl unzip build-essential
     fi
     echo -e "${GREEN}Installing fnm via install script...${NC}"
     curl -fsSL https://fnm.vercel.app/install | bash
