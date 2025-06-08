@@ -12,12 +12,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         node-version: ['22.11.0']
-    
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install fnm and Setup Node.js
       shell: bash
       run: |
@@ -30,28 +30,31 @@ jobs:
           export PATH="$HOME/.local/share/fnm:$PATH"
           eval "$(fnm env)"
         fi
-        
+
         # Install and use Node.js
         fnm install ${{ matrix.node-version }}
         fnm use ${{ matrix.node-version }}
         fnm default ${{ matrix.node-version }}
-        
+
         # Verify installation
         node --version
         npm --version
-        
+
         # Add to GitHub PATH for subsequent steps
         echo "$HOME/.local/share/fnm" >> $GITHUB_PATH
         if [[ "${{ runner.os }}" == "Linux" ]]; then
           echo "FNM_DIR=$HOME/.local/share/fnm" >> $GITHUB_ENV
         fi
-    
+
     - name: Install dependencies
       run: npm install
-    
+
     - name: Run tests
-      run: npm test
-    
+      run: |
+          export PATH="$HOME/.fnm:$PATH"
+          eval "$(fnm env)"
+          npm test
+
     - name: Test bootstrap script
       shell: bash
       run: |
@@ -62,24 +65,24 @@ jobs:
             eval "$(fnm env)"
           fi
         fi
-        
+
         # Test that bootstrap script runs without errors
         ./bootstrap.sh
       env:
         CI: true
-    
+
     - name: Test setup script (skip packages)
       run: npm run setup -- --skip-packages
       env:
         CI: true
-    
+
     - name: Verify symlinks created
       run: |
         # Check that expected symlinks/files were created
         ls -la ~/.config/ || true
         ls -la ~/.zshrc || true
         ls -la ~/.tmux.conf || true
-    
+
     - name: Test package installation (Ubuntu only)
       if: runner.os == 'Linux'
       run: |
@@ -87,7 +90,7 @@ jobs:
         cat apt_packages.txt | grep -v '^#' | grep -v '^$' | head -5
         # Don't actually install packages in CI to save time
         echo "Package list verified"
-    
+
     - name: Test package installation (macOS only)
       if: runner.os == 'macOS'
       run: |
