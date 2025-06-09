@@ -34,9 +34,22 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if ! grep -q "$(which zsh)" /etc/shells; then
       echo "$(which zsh)" | sudo tee -a /etc/shells
     fi
-    # Change default shell to zsh
-    chsh -s "$(which zsh)"
-    echo -e "${GREEN}zsh is now the default shell. Please restart your terminal or run 'exec zsh' after the setup completes.${NC}"
+    
+    # In CI environments, skip interactive shell change
+    if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+      echo -e "${YELLOW}Running in CI - skipping interactive shell change${NC}"
+      echo -e "${YELLOW}Note: zsh is installed but not set as default shell in CI${NC}"
+    else
+      # Change default shell to zsh (requires password in interactive mode)
+      echo -e "${YELLOW}Changing default shell to zsh (you'll be prompted for your password)...${NC}"
+      chsh -s "$(which zsh)" || {
+        echo -e "${YELLOW}Could not change default shell automatically.${NC}"
+        echo -e "${YELLOW}To change it manually, run: chsh -s $(which zsh)${NC}"
+      }
+      if [ "$SHELL" = "$(which zsh)" ]; then
+        echo -e "${GREEN}zsh is now the default shell. Please restart your terminal after setup completes.${NC}"
+      fi
+    fi
   else
     echo -e "${GREEN}zsh is already the default shell${NC}"
   fi
@@ -111,7 +124,8 @@ if ! command -v fnm &> /dev/null; then
 
   if command -v fnm &> /dev/null; then
     # Don't use --use-on-cd yet as no Node versions are installed
-    eval "$(fnm env)"
+    # Use bash shell since this script runs with #!/bin/bash
+    eval "$(fnm env --shell bash)"
   else
     echo -e "${RED}Error: fnm not found in PATH after installation${NC}"
     echo -e "${RED}PATH: $PATH${NC}"
@@ -122,7 +136,8 @@ else
   # Ensure fnm is available in current session
   if command -v fnm &> /dev/null; then
     # Use fnm env without --use-on-cd to avoid errors if no Node version is installed
-    eval "$(fnm env 2>/dev/null || true)"
+    # Use bash shell since this script runs with #!/bin/bash
+    eval "$(fnm env --shell bash 2>/dev/null || true)"
   else
     echo -e "${RED}Error: fnm command not found after installation${NC}"
     exit 1
@@ -189,12 +204,9 @@ add_fnm_env_to_shell_config() {
 add_fnm_env_to_shell_config
 
 # Immediately enable fnm use-on-cd for current session
-shell_name="$(basename "$SHELL")"
-if [ "$shell_name" = "bash" ]; then
-  eval "$(fnm env --use-on-cd --shell bash)"
-elif [ "$shell_name" = "zsh" ]; then
-  eval "$(fnm env --use-on-cd --shell zsh)"
-fi
+# Since this bootstrap script runs with #!/bin/bash, we need to use bash syntax here
+# The actual shell config (bash/zsh) is already handled by add_fnm_env_to_shell_config above
+eval "$(fnm env --shell bash)"
 
 # Check if running in CI
 if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
