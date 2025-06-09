@@ -11,6 +11,50 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}Bootstrapping Node.js environment...${NC}"
 
+# Ensure zsh is installed and set as default shell (Linux only)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  if ! command -v zsh &> /dev/null; then
+    echo -e "${YELLOW}zsh not found. Installing zsh...${NC}"
+    if command -v apt &> /dev/null; then
+      sudo apt update
+      sudo apt install -y zsh
+    elif command -v yum &> /dev/null; then
+      sudo yum install -y zsh
+    elif command -v dnf &> /dev/null; then
+      sudo dnf install -y zsh
+    elif command -v pacman &> /dev/null; then
+      sudo pacman -S --noconfirm zsh
+    fi
+  fi
+
+  # Check if zsh is the default shell
+  if [ "$SHELL" != "$(which zsh)" ] && command -v zsh &> /dev/null; then
+    echo -e "${YELLOW}Setting zsh as default shell...${NC}"
+    # Add zsh to valid shells if not already there
+    if ! grep -q "$(which zsh)" /etc/shells; then
+      echo "$(which zsh)" | sudo tee -a /etc/shells
+    fi
+    
+    # In CI environments, skip interactive shell change
+    if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+      echo -e "${YELLOW}Running in CI - skipping interactive shell change${NC}"
+      echo -e "${YELLOW}Note: zsh is installed but not set as default shell in CI${NC}"
+    else
+      # Change default shell to zsh (requires password in interactive mode)
+      echo -e "${YELLOW}Changing default shell to zsh (you'll be prompted for your password)...${NC}"
+      chsh -s "$(which zsh)" || {
+        echo -e "${YELLOW}Could not change default shell automatically.${NC}"
+        echo -e "${YELLOW}To change it manually, run: chsh -s $(which zsh)${NC}"
+      }
+      if [ "$SHELL" = "$(which zsh)" ]; then
+        echo -e "${GREEN}zsh is now the default shell. Please restart your terminal after setup completes.${NC}"
+      fi
+    fi
+  else
+    echo -e "${GREEN}zsh is already the default shell${NC}"
+  fi
+fi
+
 # Function to detect shell configuration file
 # Currently unused but kept for potential future use
 # detect_shell_config() {
@@ -41,8 +85,17 @@ if ! command -v fnm &> /dev/null; then
       echo -e "${GREEN}Installing fnm via install script...${NC}"
       curl -fsSL https://fnm.vercel.app/install | bash
     fi
+  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux - install dependencies first
+    if command -v apt &> /dev/null; then
+      echo -e "${GREEN}Installing build dependencies for Linux...${NC}"
+      sudo apt update
+      sudo apt install -y curl unzip build-essential
+    fi
+    echo -e "${GREEN}Installing fnm via install script...${NC}"
+    curl -fsSL https://fnm.vercel.app/install | bash
   else
-    # Linux and others
+    # Other OS
     echo -e "${GREEN}Installing fnm via install script...${NC}"
     curl -fsSL https://fnm.vercel.app/install | bash
   fi
@@ -71,7 +124,8 @@ if ! command -v fnm &> /dev/null; then
 
   if command -v fnm &> /dev/null; then
     # Don't use --use-on-cd yet as no Node versions are installed
-    eval "$(fnm env)"
+    # Use bash shell since this script runs with #!/bin/bash
+    eval "$(fnm env --shell bash)"
   else
     echo -e "${RED}Error: fnm not found in PATH after installation${NC}"
     echo -e "${RED}PATH: $PATH${NC}"
@@ -82,18 +136,31 @@ else
   # Ensure fnm is available in current session
   if command -v fnm &> /dev/null; then
     # Use fnm env without --use-on-cd to avoid errors if no Node version is installed
-    eval "$(fnm env 2>/dev/null || true)"
+    # Use bash shell since this script runs with #!/bin/bash
+    eval "$(fnm env --shell bash 2>/dev/null || true)"
   else
     echo -e "${RED}Error: fnm command not found after installation${NC}"
     exit 1
   fi
 fi
 
-# Install Node.js 22+ if not already installed
-NODE_VERSION="22"
+# Install Node.js 22.11.0+ if not already installed (required for --experimental-strip-types)
+NODE_VERSION="22.11.0"
 CURRENT_VERSION=$(fnm current 2>/dev/null || echo "none")
 
-if [[ "$CURRENT_VERSION" == "none" ]] || [[ ! "$CURRENT_VERSION" =~ ^v2[2-9]\. ]] && [[ ! "$CURRENT_VERSION" =~ ^v[3-9][0-9]\. ]]; then
+# Check if current version is 22.11.0 or higher
+VERSION_OK=false
+if [[ "$CURRENT_VERSION" != "none" ]]; then
+  CURRENT_MAJOR=$(echo "$CURRENT_VERSION" | sed 's/v\([0-9]*\).*/\1/')
+  CURRENT_MINOR=$(echo "$CURRENT_VERSION" | sed 's/v[0-9]*\.\([0-9]*\).*/\1/')
+  CURRENT_PATCH=$(echo "$CURRENT_VERSION" | sed 's/v[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/')
+  
+  if [[ $CURRENT_MAJOR -gt 22 ]] || [[ $CURRENT_MAJOR -eq 22 && $CURRENT_MINOR -ge 11 ]]; then
+    VERSION_OK=true
+  fi
+fi
+
+if [[ "$VERSION_OK" == false ]]; then
   echo -e "${YELLOW}Installing Node.js v${NODE_VERSION}...${NC}"
   fnm install ${NODE_VERSION}
   fnm use ${NODE_VERSION}
@@ -111,8 +178,8 @@ else
 fi
 
 # Create .nvmrc file for consistency
-echo "22" > .nvmrc
-echo -e "${GREEN}Created .nvmrc file with Node.js 22${NC}"
+echo "22.11.0" > .nvmrc
+echo -e "${GREEN}Created .nvmrc file with Node.js 22.11.0${NC}"
 
 # Add fnm --use-on-cd to shell config if not present
 add_fnm_env_to_shell_config() {
@@ -137,12 +204,9 @@ add_fnm_env_to_shell_config() {
 add_fnm_env_to_shell_config
 
 # Immediately enable fnm use-on-cd for current session
-shell_name="$(basename "$SHELL")"
-if [ "$shell_name" = "bash" ]; then
-  eval "$(fnm env --use-on-cd --shell bash)"
-elif [ "$shell_name" = "zsh" ]; then
-  eval "$(fnm env --use-on-cd --shell zsh)"
-fi
+# Since this bootstrap script runs with #!/bin/bash, we need to use bash syntax here
+# The actual shell config (bash/zsh) is already handled by add_fnm_env_to_shell_config above
+eval "$(fnm env --shell bash)"
 
 # Check if running in CI
 if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
