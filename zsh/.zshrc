@@ -55,11 +55,11 @@ alias th="tmux split-window -h"
 alias tv="tmux split-window -v"
 alias tkp="tmux kill-pane"
 alias vim="nvim"
-alias cat="bat"
+# alias cat="bat"
 alias ':q'='exit'
 alias l='eza -l -b --all --header --git --icons --group-directories-first'
 alias ls='eza -l -b --all --header --git --icons --group-directories-first'
-alias or="ollama run gemma3:4b"
+alias or="gemma3n"
 
 clean_dev_caches() {
   echo "🧹 Cleaning npm cache..."
@@ -174,6 +174,78 @@ ollama_prompt_file() {
 
   # The core command: combines echo and cat, then pipes to ollama
   { echo "$initial_text"; cat "$file_to_cat"; } | ollama run "$ollama_model"
+}
+
+cat() {
+  if [ $# -eq 0 ]; then
+        command bat
+        return
+    fi
+
+    local file="$1"
+
+    if [ ! -f "$file" ]; then
+        command bat "$@"
+        return
+    fi
+
+    # Get MIME type for better detection
+    local mime=$(file --mime-type -b "$file" 2>/dev/null)
+
+    case "$mime" in
+        # Images
+        image/*)
+            # Get terminal width
+            local term_width=$(tput cols)
+            # Use terminal width, leaving some margin
+            viu -w $((term_width - 2)) "$@"
+            ;;
+
+        # PDFs
+        application/pdf)
+            # Try different PDF tools in order of preference
+            if command -v termpdf &> /dev/null; then
+                termpdf "$file"
+            elif command -v pdftotext &> /dev/null; then
+                pdftotext -layout "$file" - | command bat -l txt
+            else
+                echo "Install pdftotext or termpdf for better PDF viewing"
+                command bat "$@"
+            fi
+            ;;
+
+        # Videos
+        video/*)
+            if command -v ffmpeg &> /dev/null; then
+                ffmpeg -i "$file" -ss 00:00:01.000 -vframes 1 -f image2pipe -vcodec png - 2>/dev/null | viu -
+            else
+                echo "Install ffmpeg to preview videos"
+            fi
+            ;;
+
+        # Use extension-based fallback
+        *)
+            case "${file:l}" in  # <- Fixed: changed from ${file,,} to ${file:l}
+                *.md|*.markdown)
+                    if command -v glow &> /dev/null; then
+                        glow "$file"
+                    else
+                        command bat "$@"
+                    fi
+                    ;;
+                *.json)
+                    if command -v jq &> /dev/null; then
+                        jq . "$file" 2>/dev/null || command bat "$@"
+                    else
+                        command bat "$@"
+                    fi
+                    ;;
+                *)
+                    command bat "$@"
+                    ;;
+            esac
+            ;;
+    esac
 }
 
 alias orf="ollama_prompt_file"
