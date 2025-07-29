@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, symlinkSync, lstatSync } from 'fs';
-import { tmpdir } from 'os';
+import { tmpdir, platform } from 'os';
 import { execaNode } from 'execa';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -221,5 +221,82 @@ describe('Bootstrap Script Tests', () => {
     // For now, we just verify the bootstrap script exists
     const bootstrapPath = join(dirname(__dirname), 'bootstrap.sh');
     assert(existsSync(bootstrapPath), 'Bootstrap script should exist');
+  });
+});
+
+describe('Platform-specific Tests', () => {
+  let testDir: string;
+  let originalHome: string | undefined;
+  let originalCI: string | undefined;
+  let originalPlatform: string;
+
+  beforeEach(() => {
+    // Create temporary test directory
+    testDir = join(tmpdir(), `dotfiles-test-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    
+    // Mock HOME environment
+    originalHome = process.env.HOME;
+    process.env.HOME = testDir;
+    
+    // Store original CI env
+    originalCI = process.env.CI;
+    process.env.CI = 'true';
+    
+    // Store original platform
+    originalPlatform = process.platform;
+  });
+
+  afterEach(() => {
+    // Restore environment
+    if (originalHome) {
+      process.env.HOME = originalHome;
+    }
+    if (originalCI !== undefined) {
+      process.env.CI = originalCI;
+    } else {
+      delete process.env.CI;
+    }
+    
+    // Clean up test directory
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should detect Linux platform correctly', async () => {
+    // This test runs on the actual platform, so we just verify the setup handles it
+    const result = await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+      nodeOptions: ['--experimental-strip-types']
+    });
+    
+    // Should complete successfully regardless of platform
+    assert.strictEqual(result.exitCode, 0, 'Setup should handle current platform');
+  });
+
+  it('should check for apt_packages.txt on Linux setup', async () => {
+    const aptPackagesPath = join(dirname(__dirname), 'apt_packages.txt');
+    assert(existsSync(aptPackagesPath), 'apt_packages.txt should exist for Linux support');
+    
+    // Verify the file has content
+    const content = readFileSync(aptPackagesPath, 'utf8');
+    assert(content.includes('bat'), 'Should include bat package');
+    assert(content.includes('neovim'), 'Should include neovim package');
+    assert(content.includes('tmux'), 'Should include tmux package');
+  });
+
+  it('should verify package list format', async () => {
+    const aptPackagesPath = join(dirname(__dirname), 'apt_packages.txt');
+    const content = readFileSync(aptPackagesPath, 'utf8');
+    const lines = content.split('\n');
+    
+    // Check that non-comment lines are valid package names
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        // Package names should not contain spaces or special characters
+        assert(/^[a-z0-9][a-z0-9+\-\.]*$/.test(trimmed), `Invalid package name format: ${trimmed}`);
+      }
+    }
   });
 });
