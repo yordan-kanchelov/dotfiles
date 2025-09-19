@@ -250,3 +250,4 @@ cat() {
 
 alias orf="ollama_prompt_file"
 
+eval $(thefuck --alias)
