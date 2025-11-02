@@ -225,17 +225,10 @@ cat() {
 
         # Use extension-based fallback
         *)
-            case "${file:l}" in  # <- Fixed: changed from ${file,,} to ${file:l}
+            case "${file:l}" in
                 *.md|*.markdown)
                     if command -v glow &> /dev/null; then
                         glow "$file"
-                    else
-                        command bat "$@"
-                    fi
-                    ;;
-                *.json)
-                    if command -v jq &> /dev/null; then
-                        jq . "$file" 2>/dev/null || command bat "$@"
                     else
                         command bat "$@"
                     fi
