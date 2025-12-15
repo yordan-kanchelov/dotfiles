@@ -49,6 +49,5 @@ zoxide
 cap
 drawio
 ghostty
-mactex
 oracle-jdk
 postman
