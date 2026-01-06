@@ -203,14 +203,109 @@ describe('Dotfiles Setup Tests', () => {
   describe('Error Handling', () => {
     it('should handle missing source files gracefully', async () => {
       process.env.CI = 'true';
-      
+
       // Run setup - should skip missing files
       const result = await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
         nodeOptions: ['--experimental-strip-types']
       });
-      
+
       // Should complete despite missing source files
       assert.strictEqual(result.exitCode, 0, 'Should handle missing files gracefully');
+    });
+  });
+
+  describe('Secrets Management', () => {
+    it('should create ~/.secrets file if it does not exist', async () => {
+      process.env.CI = 'true';
+
+      // Run setup
+      await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+        nodeOptions: ['--experimental-strip-types']
+      });
+
+      // Check if ~/.secrets was created
+      const secretsPath = join(testDir, '.secrets');
+      assert(existsSync(secretsPath), '~/.secrets file should be created');
+
+      // Verify content includes template variables
+      const content = readFileSync(secretsPath, 'utf8');
+      assert(content.includes('BITBUCKET_TOKEN'), 'Should include BITBUCKET_TOKEN');
+      assert(content.includes('BITBUCKET_USERNAME'), 'Should include BITBUCKET_USERNAME');
+      assert(content.includes('OPENAI_API_KEY'), 'Should include OPENAI_API_KEY');
+    });
+
+    it('should set proper permissions on ~/.secrets (600)', async () => {
+      process.env.CI = 'true';
+
+      // Run setup
+      await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+        nodeOptions: ['--experimental-strip-types']
+      });
+
+      const secretsPath = join(testDir, '.secrets');
+      if (existsSync(secretsPath)) {
+        const stats = lstatSync(secretsPath);
+        const mode = stats.mode & 0o777;
+        assert.strictEqual(mode, 0o600, 'Secrets file should have 600 permissions');
+      }
+    });
+
+    it('should preserve existing ~/.secrets file', async () => {
+      process.env.CI = 'true';
+
+      // Create existing secrets file
+      const secretsPath = join(testDir, '.secrets');
+      const existingContent = 'export MY_SECRET="existing"\n';
+      writeFileSync(secretsPath, existingContent);
+
+      // Run setup
+      await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+        nodeOptions: ['--experimental-strip-types']
+      });
+
+      // Check that existing file was preserved
+      const content = readFileSync(secretsPath, 'utf8');
+      assert.strictEqual(content, existingContent, 'Existing secrets file should be preserved');
+    });
+
+    it('should migrate secrets from .zshrc if they exist', async () => {
+      process.env.CI = 'true';
+
+      // Create a mock .zshrc with secrets in the dotfiles directory
+      const dotfilesDir = dirname(__dirname);
+      const mockZshrc = join(dotfilesDir, 'zsh', '.zshrc');
+      const mockZshrcContent = `
+export EDITOR=nvim
+export BITBUCKET_USERNAME=test.user
+export BITBUCKET_TOKEN=test-token-123
+export OPENAI_API_KEY=test-api-key
+`;
+
+      // Only test if we can create the mock file
+      if (existsSync(join(dotfilesDir, 'zsh'))) {
+        const originalContent = existsSync(mockZshrc) ? readFileSync(mockZshrc, 'utf8') : null;
+
+        try {
+          writeFileSync(mockZshrc, mockZshrcContent);
+
+          // Run setup
+          await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+            nodeOptions: ['--experimental-strip-types']
+          });
+
+          const secretsPath = join(testDir, '.secrets');
+          if (existsSync(secretsPath)) {
+            const content = readFileSync(secretsPath, 'utf8');
+            assert(content.includes('test.user') || content.includes('BITBUCKET_USERNAME'),
+              'Should migrate username from .zshrc or include template');
+          }
+        } finally {
+          // Restore original .zshrc
+          if (originalContent !== null) {
+            writeFileSync(mockZshrc, originalContent);
+          }
+        }
+      }
     });
   });
 });

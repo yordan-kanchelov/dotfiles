@@ -1,2 +1,9 @@
 **/.DS_Store*
 node_modules
+
+# Secrets and environment files
+.secrets
+.secrets.*
+.env
+.env.*
+*_local.sh
