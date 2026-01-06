@@ -39,7 +39,6 @@ sshpass
 starship
 tart
 telnet
-thefuck
 tlrc
 tmux
 tree
@@ -49,6 +48,5 @@ zoxide
 cap
 drawio
 ghostty
-mactex
 oracle-jdk
 postman
