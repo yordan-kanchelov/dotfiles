@@ -9,6 +9,29 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Install Homebrew if not present (macOS only)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if ! command -v brew &> /dev/null; then
+    echo -e "${YELLOW}Homebrew not found. Installing Homebrew...${NC}"
+    if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+      NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    else
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+
+    # Add brew to PATH for current session
+    # Note: Permanent PATH setup is handled by dotfiles .zprofile
+    if [ -f "/opt/homebrew/bin/brew" ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -f "/usr/local/bin/brew" ]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+    echo -e "${GREEN}Homebrew installed successfully${NC}"
+  else
+    echo -e "${GREEN}Homebrew is already installed${NC}"
+  fi
+fi
+
 echo -e "${BLUE}Bootstrapping Node.js environment...${NC}"
 
 # Function to detect shell configuration file

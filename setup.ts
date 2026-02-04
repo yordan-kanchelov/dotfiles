@@ -217,33 +217,6 @@ async function createSymlink(sourceFile: string, targetFile: string): Promise<vo
   }
 }
 
-async function installHomebrew(): Promise<string> {
-  const spinner = ora('Installing Homebrew...').start();
-
-  try {
-    const installScript = await execa('curl', ['-fsSL', 'https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh']);
-    const env = IS_CI ? { NONINTERACTIVE: '1' } : {};
-    await execa('bash', ['-c', installScript.stdout], { env, stdio: 'inherit' });
-
-    // Set up Homebrew in PATH
-    const brewPath = existsSync('/opt/homebrew/bin/brew') ? '/opt/homebrew/bin/brew' : '/usr/local/bin/brew';
-    const { stdout } = await execa(brewPath, ['shellenv']);
-
-    // Add to zsh profile (macOS uses zsh by default)
-    const profilePath = join(HOME, '.zprofile');
-    const profileContent = existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : '';
-    if (!profileContent.includes('brew shellenv')) {
-      await fsExtra.appendFile(profilePath, `\neval "$(${brewPath} shellenv)"\n`);
-    }
-
-    spinner.succeed('Homebrew installed successfully');
-    return brewPath;
-  } catch (error) {
-    spinner.fail('Failed to install Homebrew');
-    throw error;
-  }
-}
-
 async function installPackages(): Promise<void> {
   if (options.skipPackages) {
     log('Skipping package installation (--skip-packages flag)', 'warning');
@@ -255,13 +228,12 @@ async function installPackages(): Promise<void> {
     return;
   }
 
-  log('Installing required packages with Homebrew...', 'info');
-
-  // Check if Homebrew is installed
-  let brewPath = await commandExists('brew') ? 'brew' : null;
-  if (!brewPath) {
-    brewPath = await installHomebrew();
+  if (!await commandExists('brew')) {
+    log('Error: Homebrew not found. Please run bootstrap.sh first.', 'error');
+    process.exit(1);
   }
+
+  log('Installing required packages with Homebrew...', 'info');
 
   // Install packages from brew_packages.txt
   const packagesFile = join(DOTFILES_DIR, 'brew_packages.txt');
@@ -279,7 +251,7 @@ async function installPackages(): Promise<void> {
   for (const pkg of packages) {
     const spinner = ora(`Installing ${pkg}...`).start();
     try {
-      await execa(brewPath!, ['install', pkg], {
+      await execa('brew', ['install', pkg], {
         timeout: IS_CI ? 300000 : undefined // 5 minute timeout in CI
       });
       spinner.succeed(`Successfully installed ${pkg}`);
@@ -408,7 +380,8 @@ async function setupLazyVim(): Promise<void> {
 
 async function setupSecretsFile(): Promise<void> {
   const secretsPath = join(HOME, '.secrets');
-  const zshrcPath = join(DOTFILES_DIR, 'zsh/.zshrc');
+  const zshrcCorePath = join(DOTFILES_DIR, 'zsh/.zshrc.core');
+  const zshrcPath = join(DOTFILES_DIR, 'zsh/.zshrc'); // fallback for backward compatibility
 
   if (existsSync(secretsPath)) {
     log('~/.secrets already exists, preserving existing file', 'success');
@@ -419,8 +392,11 @@ async function setupSecretsFile(): Promise<void> {
 
   const secrets: Record<string, string> = {};
 
-  if (existsSync(zshrcPath)) {
-    const zshrcContent = readFileSync(zshrcPath, 'utf8');
+  // Check .zshrc.core first, then fallback to .zshrc for backward compatibility
+  const configPath = existsSync(zshrcCorePath) ? zshrcCorePath : zshrcPath;
+
+  if (existsSync(configPath)) {
+    const zshrcContent = readFileSync(configPath, 'utf8');
 
     const tokenMatch = zshrcContent.match(/export BITBUCKET_TOKEN="?([^"\n]+)"?/);
     if (tokenMatch && tokenMatch[1] && tokenMatch[1] !== '') {
@@ -466,7 +442,8 @@ async function setupSecretsFile(): Promise<void> {
   log(`Created ~/.secrets with proper permissions (600)`, 'success');
 
   if (Object.keys(secrets).length > 0) {
-    log(`Migrated ${Object.keys(secrets).length} secret(s) from .zshrc to ~/.secrets`, 'info');
+    const sourceFile = configPath.includes('.zshrc.core') ? '.zshrc.core' : '.zshrc';
+    log(`Migrated ${Object.keys(secrets).length} secret(s) from ${sourceFile} to ~/.secrets`, 'info');
   }
 }
 
@@ -483,7 +460,9 @@ async function createSymlinks(): Promise<void> {
     [join(DOTFILES_DIR, '.config/starship.toml'), join(HOME, '.config/starship.toml')],
     [join(DOTFILES_DIR, '.config/atuin'), join(HOME, '.config/atuin')],
     // Home directory dotfiles
+    [join(DOTFILES_DIR, 'zsh/.zprofile'), join(HOME, '.zprofile')],
     [join(DOTFILES_DIR, 'zsh/.zshrc'), join(HOME, '.zshrc')],
+    [join(DOTFILES_DIR, 'zsh/.zshrc.core'), join(HOME, '.zshrc.core')],
     [join(DOTFILES_DIR, 'tmux/.tmux.conf'), join(HOME, '.tmux.conf')]
   ];
   
