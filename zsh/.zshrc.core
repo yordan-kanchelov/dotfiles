@@ -10,26 +10,9 @@
 FUNCNEST=1000
 
 # ============================================
-# ZPLUG INITIALIZATION
+# PLUGIN MANAGER (sheldon)
 # ============================================
-if [[ ! -d ~/.zplug ]]; then
-  echo "Installing zplug..."
-  curl -sL https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
-fi
-
-source ~/.zplug/init.zsh
-
-# Load plugins using zplug with defer
-zplug "zsh-users/zsh-autosuggestions", defer:2
-zplug "zsh-users/zsh-syntax-highlighting", defer:3
-zplug "jeffreytse/zsh-vi-mode"
-
-# Silent install check (only checks when needed)
-if ! zplug check; then
-  echo "Installing missing plugins..."
-  zplug install
-fi
-zplug load
+eval "$(sheldon source)"
 
 # ============================================
 # COMPLETIONS
@@ -49,11 +32,6 @@ source <(fzf --zsh)
 eval "$(starship init zsh)"
 eval "$(atuin init zsh)"
 eval "$(zoxide init zsh)"
-
-# Initialize thefuck if available
-if command -v thefuck &> /dev/null; then
-  eval $(thefuck --alias)
-fi
 
 # ============================================
 # ALIASES
@@ -75,6 +53,7 @@ alias l='eza -l -b --all --header --git --icons --group-directories-first'
 alias ls='eza -l -b --all --header --git --icons --group-directories-first'
 alias cleanc='clean_dev_caches'
 alias cleanp='clean_project'
+alias supd='sheldon lock --update'
 
 # ============================================
 # FUNCTIONS

@@ -459,6 +459,7 @@ async function createSymlinks(): Promise<void> {
     [join(DOTFILES_DIR, '.config/ghostty'), join(HOME, '.config/ghostty')],
     [join(DOTFILES_DIR, '.config/starship.toml'), join(HOME, '.config/starship.toml')],
     [join(DOTFILES_DIR, '.config/atuin'), join(HOME, '.config/atuin')],
+    [join(DOTFILES_DIR, '.config/sheldon'), join(HOME, '.config/sheldon')],
     // Home directory dotfiles
     [join(DOTFILES_DIR, 'zsh/.zprofile'), join(HOME, '.zprofile')],
     [join(DOTFILES_DIR, 'zsh/.zshrc'), join(HOME, '.zshrc')],
