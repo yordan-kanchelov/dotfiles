@@ -70,34 +70,37 @@ clean_dev_caches() {
 }
 
 clean_project() {
-    setopt local_options extended_glob null_glob
-    local patterns=(
-        .nx/cache
-        **/dist(N)
-        **/node_modules(N)
-        **/pnpm-lock.yaml(N)
-        **/package-lock.json(N)
-        **/release(N)
-        **/dist-electron(N)
-    )
-    local removed_count=0
+    setopt local_options no_monitor no_notify
     echo "Cleaning project files..."
-    for pattern in $patterns; do
-        local matches=($~pattern)
-        if [[ ${#matches[@]} -gt 0 ]]; then
-            for item in $matches; do
-                if [[ -e "$item" ]]; then
-                    echo "  Removing: $item"
-                    rm -rf "$item" 2>/dev/null
-                    ((removed_count++))
-                fi
-            done
-        fi
-    done
-    if [[ $removed_count -eq 0 ]]; then
+    local count=0
+
+    while IFS= read -r item; do
+        echo "  Removing: $item"
+        rm -rf "$item" &
+        ((count++))
+        (( count % 4 == 0 )) && wait
+    done < <(
+        find . -type d \( -name node_modules -o -path '*/.nx/cache' \) -prune -print 2>/dev/null
+    )
+    wait
+
+    while IFS= read -r item; do
+        echo "  Removing: $item"
+        rm -rf "$item" &
+        ((count++))
+        (( count % 4 == 0 )) && wait
+    done < <(
+        find . \
+            -type d \( -name dist -o -name release -o -name dist-electron \) -prune -print \
+            -o -type f \( -name pnpm-lock.yaml -o -name package-lock.json \) -print \
+            2>/dev/null
+    )
+    wait
+
+    if [[ $count -eq 0 ]]; then
         echo "  No files found to remove"
     else
-        echo "  Removed $removed_count items"
+        echo "  Removed $count items"
     fi
 }
 
