@@ -99,14 +99,14 @@ Non-interactive installation for CI environments.
 ## Configuration
 
 ### Adding New Packages
-Edit `brew_packages.txt` to add new Homebrew packages (one per line).
+Edit `brew_packages.yml` to add new Homebrew packages under `formulae:` or `casks:` sections.
 
 ### Directory Structure
 ```
 .
 ├── bootstrap.sh          # Node.js setup script
 ├── setup.ts             # Main installation script
-├── brew_packages.txt    # Homebrew packages list
+├── brew_packages.yml    # Homebrew formulae & casks
 ├── .config/            # Modern tool configs
 │   ├── nvim/           # LazyVim configuration
 │   │   ├── init.lua    # Main config entry

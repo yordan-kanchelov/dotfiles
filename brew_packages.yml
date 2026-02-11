@@ -1,0 +1,68 @@
+formulae:
+  languages:
+    - fnm            # Fast Node.js version manager
+    - go
+    - gopls          # Go language server
+    - openjdk
+    - pipx           # Install Python CLI tools in isolated envs
+    - python@3.13
+    - rust
+
+  shell:
+    - atuin          # Shell history sync & search
+    - nushell        # Structured data shell
+    - sheldon        # Zsh plugin manager
+    - starship
+    - zoxide         # Smarter cd (tracks frecency)
+
+  terminal:
+    - bat            # cat with syntax highlighting
+    - btop
+    - eza
+    - fd             # Fast find alternative
+    - fzf
+    - glow           # Terminal markdown renderer
+    - htop
+    - ncdu           # Disk usage analyzer with ncurses UI
+    - ripgrep
+    - tlrc           # Rust client for tldr pages
+    - tmux
+    - tree
+    - tree-sitter    # Parser generator (used by neovim)
+    - viu            # Terminal image viewer
+    - yazi           # Terminal file manager
+
+  development:
+    - gh
+    - git-lfs
+    - hadolint       # Dockerfile linter
+    - lazygit
+    - neovim
+    - ollama
+    - opencode       # AI coding assistant in terminal
+    - shellcheck
+
+  api-and-testing:
+    - ghz            # gRPC benchmarking tool
+    - grpcurl        # curl for gRPC services
+    - jqp            # Interactive jq playground
+    - k6             # Load testing tool (Grafana)
+
+  devops:
+    - act            # Run GitHub Actions locally
+    - awscli
+    - tart           # macOS VM runner (Apple Silicon)
+    - telnet
+
+  media:
+    - ffmpeg
+    - pandoc
+
+casks:
+  - bitwarden
+  - cap            # Screen recording
+  - drawio
+  - ghostty
+  - oracle-jdk
+  - postman
+  - xquartz        # X11 server for macOS

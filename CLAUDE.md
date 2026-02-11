@@ -64,7 +64,7 @@ tmux/
 ```
 
 ### Package Management
-- `brew_packages.txt`: Line-separated list of Homebrew formulae/casks
+- `brew_packages.yml`: YAML file with `formulae` and `casks` sections for Homebrew packages
 - Automatically installs missing packages during setup
 - Handles both CLI tools and GUI applications (casks)
 

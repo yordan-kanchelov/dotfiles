@@ -25,13 +25,13 @@ jobs:
         run: |
           chmod +x bootstrap.sh
           ./bootstrap.sh
-    
+
       - name: Install dependencies
         run: |
           export PATH="$HOME/.fnm:$PATH"
           eval "$(fnm env)"
           npm install
-    
+
       - name: Run tests
         run: |
           export PATH="$HOME/.fnm:$PATH"
@@ -97,7 +97,7 @@ jobs:
             # Check if symlink points to dotfiles
             link_target=$(readlink "$HOME/.config/nvim")
             echo "Symlink target: $link_target"
-            
+
             # Verify init.lua exists
             if [ -f "$HOME/.config/nvim/init.lua" ]; then
               echo "✅ init.lua found"
@@ -105,7 +105,7 @@ jobs:
               echo "❌ init.lua missing"
               exit 1
             fi
-            
+
             # Test basic nvim syntax check
             nvim --headless -c "quit" && echo "✅ Neovim can start with config" || echo "⚠️ Neovim config issues"
           else
@@ -128,14 +128,14 @@ jobs:
         run: |
           chmod +x bootstrap.sh
           ./bootstrap.sh
-    
+
       - name: Install dependencies
         run: |
           # Set up fnm environment
           export PATH="$HOME/.local/share/fnm:$PATH"
           eval "$(fnm env)"
           npm install
-    
+
       - name: Run tests
         run: |
           # Set up fnm environment
@@ -169,11 +169,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-    
+          node-version: "lts/*"
+
       - name: Install dependencies
         run: npm install
-    
+
       - name: Run TypeScript check
         run: npm run typecheck
 
@@ -182,7 +182,7 @@ jobs:
           echo "Checking for potential issues..."
 
           # Check if required files exist
-          required_files=("setup.ts" "bootstrap.sh" "brew_packages.txt" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc" ".config/nvim/init.lua")
+          required_files=("setup.ts" "bootstrap.sh" "brew_packages.yml" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc" ".config/nvim/init.lua")
           for file in "${required_files[@]}"; do
             if [ -e "$file" ]; then
               echo "✅ $file exists"
@@ -191,13 +191,3 @@ jobs:
               exit 1
             fi
           done
-
-          # Check brew_packages.txt format
-          echo "Checking brew_packages.txt format..."
-          if [ -f "brew_packages.txt" ]; then
-            while IFS= read -r package; do
-              if [[ -n "$package" && ! "$package" =~ ^[[:space:]]*# && ! "$package" =~ ^[a-zA-Z0-9@/_-]+$ ]]; then
-                echo "⚠️ Potentially invalid package name: $package"
-              fi
-            done < "brew_packages.txt"
-          fi

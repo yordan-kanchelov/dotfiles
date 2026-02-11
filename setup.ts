@@ -10,6 +10,7 @@ import ora from 'ora';
 import { execa } from 'execa';
 import which from 'which';
 import fsExtra from 'fs-extra';
+import YAML from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -217,6 +218,13 @@ async function createSymlink(sourceFile: string, targetFile: string): Promise<vo
   }
 }
 
+function parseBrewPackages(filePath: string): { formulae: string[]; casks: string[] } {
+  if (!existsSync(filePath)) return { formulae: [], casks: [] };
+  const data = YAML.parse(readFileSync(filePath, 'utf8'));
+  const formulae = Object.values(data?.formulae ?? {}).flat() as string[];
+  return { formulae, casks: data?.casks ?? [] };
+}
+
 async function installPackages(): Promise<void> {
   if (options.skipPackages) {
     log('Skipping package installation (--skip-packages flag)', 'warning');
@@ -235,28 +243,31 @@ async function installPackages(): Promise<void> {
 
   log('Installing required packages with Homebrew...', 'info');
 
-  // Install packages from brew_packages.txt
-  const packagesFile = join(DOTFILES_DIR, 'brew_packages.txt');
-  if (!existsSync(packagesFile)) {
-    log('Error: brew_packages.txt not found', 'error');
-    return;
-  }
-
-  const packages = readFileSync(packagesFile, 'utf8')
-    .split('\n')
-    .filter(line => line.trim() && !line.trim().startsWith('#'));
-
+  const { formulae, casks } = parseBrewPackages(join(DOTFILES_DIR, 'brew_packages.yml'));
   const failedPackages: string[] = [];
 
-  for (const pkg of packages) {
+  for (const pkg of formulae) {
     const spinner = ora(`Installing ${pkg}...`).start();
     try {
       await execa('brew', ['install', pkg], {
-        timeout: IS_CI ? 300000 : undefined // 5 minute timeout in CI
+        timeout: IS_CI ? 300000 : undefined
       });
       spinner.succeed(`Successfully installed ${pkg}`);
     } catch (error) {
       spinner.fail(`Failed to install ${pkg}`);
+      failedPackages.push(pkg);
+    }
+  }
+
+  for (const pkg of casks) {
+    const spinner = ora(`Installing cask ${pkg}...`).start();
+    try {
+      await execa('brew', ['install', '--cask', pkg], {
+        timeout: IS_CI ? 300000 : undefined
+      });
+      spinner.succeed(`Successfully installed cask ${pkg}`);
+    } catch (error) {
+      spinner.fail(`Failed to install cask ${pkg}`);
       failedPackages.push(pkg);
     }
   }
