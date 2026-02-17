@@ -19,6 +19,7 @@ fi
 # PATH MODIFICATIONS
 # ============================================
 export PATH="$HOME/.local/bin:$PATH"
+[[ -d "$HOME/.atuin/bin" ]] && export PATH="$HOME/.atuin/bin:$PATH"
 
 # ============================================
 # ENVIRONMENT VARIABLES

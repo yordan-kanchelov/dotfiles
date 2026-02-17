@@ -741,7 +741,7 @@ async function main(): Promise<void> {
     if (IS_CI) {
       console.log(chalk.blue('CI setup complete. Symlinks created and packages installed.'));
     } else {
-      console.log(chalk.yellow('\nNOTE: If you\'d like to try your new settings, you can run "zsh" to start a new shell'));
+      console.log(chalk.yellow('\nNOTE: If you\'d like to try your new settings, you can run "exec zsh -l" to start a new login shell'));
     }
   } catch (error) {
     console.error(chalk.red('Setup failed:'), error);
