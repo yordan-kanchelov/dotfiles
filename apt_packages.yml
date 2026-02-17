@@ -1,0 +1,44 @@
+# APT packages for Debian/Ubuntu Linux
+# Organized by category, matching brew_packages.yml where possible
+
+core:
+  - bat
+  - btop
+  - eza
+  - fd-find
+  - fzf
+  - htop
+  - ncdu
+  - ripgrep
+  - tmux
+  - tree
+
+development:
+  - golang-go
+  - git-lfs
+  - neovim
+  - python3
+  - python3-pip
+  - pipx
+  - shellcheck
+
+shell:
+  - zoxide
+
+build_essentials:
+  - build-essential
+  - curl
+  - wget
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+# These tools need special installation methods (handled by setup.ts):
+# - fnm: curl install script
+# - starship: curl install script
+# - atuin: curl install script
+# - lazygit: GitHub release binary
+# - gh: official apt repo with GPG key
+# - sheldon: binary install script

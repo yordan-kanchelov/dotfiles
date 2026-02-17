@@ -21,6 +21,7 @@ const HOME = homedir();
 const BACKUP_DIR = join(HOME, '.dotfiles_backup', new Date().toISOString().replace(/:/g, '-'));
 const IS_CI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 const IS_MACOS = platform() === 'darwin';
+const IS_LINUX = platform() === 'linux';
 
 // Type definitions
 interface SetupOptions {
@@ -225,17 +226,15 @@ function parseBrewPackages(filePath: string): { formulae: string[]; casks: strin
   return { formulae, casks: data?.casks ?? [] };
 }
 
-async function installPackages(): Promise<void> {
-  if (options.skipPackages) {
-    log('Skipping package installation (--skip-packages flag)', 'warning');
-    return;
-  }
+function parseAptPackages(filePath: string): string[] {
+  if (!existsSync(filePath)) return [];
+  const data = YAML.parse(readFileSync(filePath, 'utf8'));
+  return Object.values(data ?? {})
+    .filter(val => Array.isArray(val))
+    .flat() as string[];
+}
 
-  if (!IS_MACOS) {
-    log('Warning: This script is optimized for macOS. Skipping package installation.', 'warning');
-    return;
-  }
-
+async function installBrewPackages(): Promise<void> {
   if (!await commandExists('brew')) {
     log('Error: Homebrew not found. Please run bootstrap.sh first.', 'error');
     process.exit(1);
@@ -274,6 +273,168 @@ async function installPackages(): Promise<void> {
 
   if (failedPackages.length > 0) {
     log(`Failed to install packages: ${failedPackages.join(', ')}`, 'warning');
+  }
+}
+
+async function installAptPackages(): Promise<void> {
+  log('Installing required packages with APT...', 'info');
+
+  const spinner = ora('Updating package lists...').start();
+  try {
+    await execa('sudo', ['apt-get', 'update', '-y'], {
+      timeout: IS_CI ? 300000 : undefined
+    });
+    spinner.succeed('Package lists updated');
+  } catch (error) {
+    spinner.fail('Failed to update package lists');
+    log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    return;
+  }
+
+  const packages = parseAptPackages(join(DOTFILES_DIR, 'apt_packages.yml'));
+  const failedPackages: string[] = [];
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < packages.length; i += BATCH_SIZE) {
+    const batch = packages.slice(i, i + BATCH_SIZE);
+    const batchSpinner = ora(`Installing batch: ${batch.join(', ')}...`).start();
+    try {
+      await execa('sudo', ['apt-get', 'install', '-y', ...batch], {
+        timeout: IS_CI ? 300000 : undefined
+      });
+      batchSpinner.succeed(`Installed: ${batch.join(', ')}`);
+    } catch {
+      batchSpinner.warn(`Batch failed, trying individually: ${batch.join(', ')}`);
+      for (const pkg of batch) {
+        const pkgSpinner = ora(`Installing ${pkg}...`).start();
+        try {
+          await execa('sudo', ['apt-get', 'install', '-y', pkg], {
+            timeout: IS_CI ? 300000 : undefined
+          });
+          pkgSpinner.succeed(`Successfully installed ${pkg}`);
+        } catch {
+          pkgSpinner.fail(`Failed to install ${pkg}`);
+          failedPackages.push(pkg);
+        }
+      }
+    }
+  }
+
+  if (failedPackages.length > 0) {
+    log(`Failed to install packages: ${failedPackages.join(', ')}`, 'warning');
+  }
+}
+
+async function installSpecialPackagesLinux(): Promise<void> {
+  log('Installing tools that require special installation methods...', 'info');
+
+  // sheldon (zsh plugin manager)
+  if (!await commandExists('sheldon')) {
+    const spinner = ora('Installing sheldon...').start();
+    try {
+      await execa('bash', ['-c', 'curl --proto "=https" -fLsS https://rossmacarthur.github.io/install/crate.sh | bash -s -- --repo rossmacarthur/sheldon --to ~/.local/bin'], {
+        timeout: IS_CI ? 120000 : undefined
+      });
+      spinner.succeed('sheldon installed');
+    } catch (error) {
+      spinner.fail('Failed to install sheldon');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  } else {
+    log('sheldon is already installed', 'success');
+  }
+
+  // fnm (Node version manager) - usually handled by bootstrap.sh, but check just in case
+  if (!await commandExists('fnm')) {
+    const spinner = ora('Installing fnm...').start();
+    try {
+      await execa('bash', ['-c', 'curl -fsSL https://fnm.vercel.app/install | bash']);
+      spinner.succeed('fnm installed');
+    } catch (error) {
+      spinner.fail('Failed to install fnm');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  } else {
+    log('fnm is already installed', 'success');
+  }
+
+  // starship prompt
+  if (!await commandExists('starship')) {
+    const spinner = ora('Installing starship...').start();
+    try {
+      await execa('bash', ['-c', 'curl -sS https://starship.rs/install.sh | sh -s -- -y']);
+      spinner.succeed('starship installed');
+    } catch (error) {
+      spinner.fail('Failed to install starship');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  } else {
+    log('starship is already installed', 'success');
+  }
+
+  // atuin (shell history)
+  if (!await commandExists('atuin')) {
+    const spinner = ora('Installing atuin...').start();
+    try {
+      await execa('bash', ['-c', 'curl --proto "=https" --tlsv1.2 -LsSf https://setup.atuin.sh | sh']);
+      spinner.succeed('atuin installed');
+    } catch (error) {
+      spinner.fail('Failed to install atuin');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  } else {
+    log('atuin is already installed', 'success');
+  }
+
+  // lazygit
+  if (!await commandExists('lazygit')) {
+    const spinner = ora('Installing lazygit...').start();
+    try {
+      const { stdout: version } = await execa('bash', ['-c', 'curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep \'"tag_name":\' | sed -E \'s/.*"v([^"]+)".*/\\1/\'']);
+      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_x86_64.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && sudo install /tmp/lazygit /usr/local/bin && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
+      spinner.succeed('lazygit installed');
+    } catch (error) {
+      spinner.fail('Failed to install lazygit');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  } else {
+    log('lazygit is already installed', 'success');
+  }
+
+  // gh (GitHub CLI)
+  if (!await commandExists('gh')) {
+    const spinner = ora('Installing GitHub CLI...').start();
+    try {
+      await execa('bash', ['-c', [
+        'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
+        'sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
+        'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
+        'sudo apt-get update -y',
+        'sudo apt-get install -y gh'
+      ].join(' && ')]);
+      spinner.succeed('GitHub CLI installed');
+    } catch (error) {
+      spinner.fail('Failed to install GitHub CLI');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  } else {
+    log('gh is already installed', 'success');
+  }
+}
+
+async function installPackages(): Promise<void> {
+  if (options.skipPackages) {
+    log('Skipping package installation (--skip-packages flag)', 'warning');
+    return;
+  }
+
+  if (IS_MACOS) {
+    await installBrewPackages();
+  } else if (IS_LINUX) {
+    await installAptPackages();
+    await installSpecialPackagesLinux();
+  } else {
+    log('Unsupported platform. Skipping package installation.', 'warning');
   }
 }
 

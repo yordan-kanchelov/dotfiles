@@ -32,6 +32,30 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   fi
 fi
 
+# Install zsh and build dependencies on Linux
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  if ! command -v zsh &> /dev/null; then
+    echo -e "${YELLOW}zsh not found. Installing zsh...${NC}"
+    sudo apt-get update -y
+    sudo apt-get install -y zsh
+    echo -e "${GREEN}zsh installed successfully${NC}"
+  else
+    echo -e "${GREEN}zsh is already installed${NC}"
+  fi
+
+  # Set zsh as default shell if it isn't already
+  if [ "$(basename "$SHELL")" != "zsh" ]; then
+    zsh_path="$(command -v zsh)"
+    if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+      echo -e "${BLUE}CI detected — skipping chsh (would set default shell to $zsh_path)${NC}"
+    else
+      echo -e "${YELLOW}Setting zsh as default shell...${NC}"
+      chsh -s "$zsh_path"
+      echo -e "${GREEN}Default shell set to zsh. Log out and back in for it to take effect.${NC}"
+    fi
+  fi
+fi
+
 echo -e "${BLUE}Bootstrapping Node.js environment...${NC}"
 
 # Function to detect shell configuration file
@@ -64,8 +88,12 @@ if ! command -v fnm &> /dev/null; then
       echo -e "${GREEN}Installing fnm via install script...${NC}"
       curl -fsSL https://fnm.vercel.app/install | bash
     fi
+  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo -e "${GREEN}Installing build dependencies for Linux...${NC}"
+    sudo apt-get install -y curl unzip build-essential
+    echo -e "${GREEN}Installing fnm via install script...${NC}"
+    curl -fsSL https://fnm.vercel.app/install | bash
   else
-    # Linux and others
     echo -e "${GREEN}Installing fnm via install script...${NC}"
     curl -fsSL https://fnm.vercel.app/install | bash
   fi
@@ -94,7 +122,7 @@ if ! command -v fnm &> /dev/null; then
 
   if command -v fnm &> /dev/null; then
     # Don't use --use-on-cd yet as no Node versions are installed
-    eval "$(fnm env)"
+    eval "$(fnm env --shell bash)"
   else
     echo -e "${RED}Error: fnm not found in PATH after installation${NC}"
     echo -e "${RED}PATH: $PATH${NC}"
@@ -105,7 +133,7 @@ else
   # Ensure fnm is available in current session
   if command -v fnm &> /dev/null; then
     # Use fnm env without --use-on-cd to avoid errors if no Node version is installed
-    eval "$(fnm env 2>/dev/null || true)"
+    eval "$(fnm env --shell bash 2>/dev/null || true)"
   else
     echo -e "${RED}Error: fnm command not found after installation${NC}"
     exit 1
