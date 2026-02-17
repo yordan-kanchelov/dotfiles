@@ -167,7 +167,7 @@ jobs:
         run: |
           export PATH="$HOME/.local/share/fnm:$PATH"
           eval "$(fnm env)"
-          node --experimental-strip-types -e "
+          node --experimental-strip-types --input-type=module -e "
             import YAML from 'yaml';
             import { readFileSync } from 'fs';
             const data = YAML.parse(readFileSync('apt_packages.yml', 'utf8'));

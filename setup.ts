@@ -277,6 +277,11 @@ async function installBrewPackages(): Promise<void> {
 }
 
 async function installAptPackages(): Promise<void> {
+  if (!await commandExists('apt-get')) {
+    log('Error: apt-get not found. Skipping APT package installation.', 'error');
+    return;
+  }
+
   log('Installing required packages with APT...', 'info');
 
   const spinner = ora('Updating package lists...').start();
@@ -322,6 +327,34 @@ async function installAptPackages(): Promise<void> {
 
   if (failedPackages.length > 0) {
     log(`Failed to install packages: ${failedPackages.join(', ')}`, 'warning');
+  }
+}
+
+async function createLinuxCompatSymlinks(): Promise<void> {
+  // On Debian/Ubuntu, bat installs as "batcat" and fd installs as "fdfind".
+  // Our zsh config references "bat" and "fd" directly, so create compatibility symlinks.
+  const localBin = join(HOME, '.local/bin');
+  mkdirSync(localBin, { recursive: true });
+
+  const aliases: [string, string][] = [
+    ['batcat', 'bat'],
+    ['fdfind', 'fd'],
+  ];
+
+  for (const [installed, alias] of aliases) {
+    if (await commandExists(installed) && !await commandExists(alias)) {
+      const installedPath = await which(installed);
+      const aliasPath = join(localBin, alias);
+      try {
+        symlinkSync(installedPath, aliasPath);
+        log(`Created compatibility symlink: ${aliasPath} -> ${installedPath}`, 'success');
+      } catch (error) {
+        // Symlink may already exist from a previous run
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+          log(`Failed to create symlink for ${alias}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warning');
+        }
+      }
+    }
   }
 }
 
@@ -391,7 +424,10 @@ async function installSpecialPackagesLinux(): Promise<void> {
     const spinner = ora('Installing lazygit...').start();
     try {
       const { stdout: version } = await execa('bash', ['-c', 'curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep \'"tag_name":\' | sed -E \'s/.*"v([^"]+)".*/\\1/\'']);
-      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_x86_64.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && sudo install /tmp/lazygit /usr/local/bin && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
+      const { stdout: unameMachine } = await execa('uname', ['-m']);
+      const archMap: Record<string, string> = { x86_64: 'x86_64', aarch64: 'arm64', arm64: 'arm64' };
+      const arch = archMap[unameMachine] ?? unameMachine;
+      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_${arch}.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && sudo install /tmp/lazygit /usr/local/bin && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
       spinner.succeed('lazygit installed');
     } catch (error) {
       spinner.fail('Failed to install lazygit');
@@ -403,19 +439,23 @@ async function installSpecialPackagesLinux(): Promise<void> {
 
   // gh (GitHub CLI)
   if (!await commandExists('gh')) {
-    const spinner = ora('Installing GitHub CLI...').start();
-    try {
-      await execa('bash', ['-c', [
-        'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
-        'sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
-        'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
-        'sudo apt-get update -y',
-        'sudo apt-get install -y gh'
-      ].join(' && ')]);
-      spinner.succeed('GitHub CLI installed');
-    } catch (error) {
-      spinner.fail('Failed to install GitHub CLI');
-      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    if (!await commandExists('apt-get')) {
+      log('apt-get not found, skipping GitHub CLI installation', 'warning');
+    } else {
+      const spinner = ora('Installing GitHub CLI...').start();
+      try {
+        await execa('bash', ['-c', [
+          'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
+          'sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
+          'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
+          'sudo apt-get update -y',
+          'sudo apt-get install -y gh'
+        ].join(' && ')]);
+        spinner.succeed('GitHub CLI installed');
+      } catch (error) {
+        spinner.fail('Failed to install GitHub CLI');
+        log(error instanceof Error ? error.message : 'Unknown error', 'error');
+      }
     }
   } else {
     log('gh is already installed', 'success');
@@ -432,6 +472,7 @@ async function installPackages(): Promise<void> {
     await installBrewPackages();
   } else if (IS_LINUX) {
     await installAptPackages();
+    await createLinuxCompatSymlinks();
     await installSpecialPackagesLinux();
   } else {
     log('Unsupported platform. Skipping package installation.', 'warning');

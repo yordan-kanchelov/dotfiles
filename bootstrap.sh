@@ -34,6 +34,11 @@ fi
 
 # Install zsh and build dependencies on Linux
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  if ! command -v apt-get &> /dev/null; then
+    echo -e "${RED}Error: apt-get not found. This setup requires a Debian/Ubuntu-based system.${NC}"
+    exit 1
+  fi
+
   if ! command -v zsh &> /dev/null; then
     echo -e "${YELLOW}zsh not found. Installing zsh...${NC}"
     sudo apt-get update -y
@@ -90,6 +95,7 @@ if ! command -v fnm &> /dev/null; then
     fi
   elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo -e "${GREEN}Installing build dependencies for Linux...${NC}"
+    sudo apt-get update -y
     sudo apt-get install -y curl unzip build-essential
     echo -e "${GREEN}Installing fnm via install script...${NC}"
     curl -fsSL https://fnm.vercel.app/install | bash
