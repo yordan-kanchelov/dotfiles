@@ -229,9 +229,11 @@ function parseBrewPackages(filePath: string): { formulae: string[]; casks: strin
 function parseAptPackages(filePath: string): string[] {
   if (!existsSync(filePath)) return [];
   const data = YAML.parse(readFileSync(filePath, 'utf8'));
-  return Object.values(data ?? {})
-    .filter(val => Array.isArray(val))
-    .flat() as string[];
+  const packages = Object.values(data ?? {})
+    .filter(Array.isArray)
+    .flat()
+    .filter((v): v is string => typeof v === 'string');
+  return [...new Set(packages)];
 }
 
 async function installBrewPackages(): Promise<void> {
