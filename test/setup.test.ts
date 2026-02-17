@@ -3,8 +3,9 @@ import assert from 'node:assert';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, symlinkSync, lstatSync } from 'fs';
-import { tmpdir } from 'os';
+import { tmpdir, platform } from 'os';
 import { execaNode } from 'execa';
+import YAML from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -312,9 +313,66 @@ export OPENAI_API_KEY=test-api-key
 
 describe('Bootstrap Script Tests', () => {
   it('should check for Node.js installation', async () => {
-    // This test would require mocking the fnm installation process
-    // For now, we just verify the bootstrap script exists
     const bootstrapPath = join(dirname(__dirname), 'bootstrap.sh');
     assert(existsSync(bootstrapPath), 'Bootstrap script should exist');
+  });
+});
+
+describe('Platform-specific Tests', () => {
+  const rootDir = dirname(__dirname);
+
+  it('should have valid apt_packages.yml with expected sections', () => {
+    const aptPath = join(rootDir, 'apt_packages.yml');
+    assert(existsSync(aptPath), 'apt_packages.yml should exist');
+
+    const data = YAML.parse(readFileSync(aptPath, 'utf8'));
+    assert(data !== null && typeof data === 'object', 'apt_packages.yml should contain valid YAML');
+
+    const sections = Object.keys(data);
+    assert(sections.length > 0, 'apt_packages.yml should have at least one section');
+
+    for (const section of sections) {
+      assert(Array.isArray(data[section]), `Section "${section}" should be an array`);
+      assert(data[section].length > 0, `Section "${section}" should not be empty`);
+    }
+  });
+
+  it('should have valid brew_packages.yml with formulae and casks', () => {
+    const brewPath = join(rootDir, 'brew_packages.yml');
+    assert(existsSync(brewPath), 'brew_packages.yml should exist');
+
+    const data = YAML.parse(readFileSync(brewPath, 'utf8'));
+    assert(data !== null && typeof data === 'object', 'brew_packages.yml should contain valid YAML');
+    assert(data.formulae !== undefined, 'brew_packages.yml should have a formulae section');
+    assert(data.casks !== undefined, 'brew_packages.yml should have a casks section');
+  });
+
+  it('should complete setup on any platform with --skip-packages', async () => {
+    const testDir = join(tmpdir(), `dotfiles-platform-test-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    const originalHome = process.env.HOME;
+    const originalCI = process.env.CI;
+
+    try {
+      process.env.HOME = testDir;
+      process.env.CI = 'true';
+      mkdirSync(join(testDir, '.config'), { recursive: true });
+
+      const result = await execaNode(SETUP_SCRIPT, ['--skip-packages'], {
+        nodeOptions: ['--experimental-strip-types']
+      });
+
+      assert.strictEqual(result.exitCode, 0, `Setup should succeed on ${platform()}`);
+    } finally {
+      process.env.HOME = originalHome;
+      if (originalCI !== undefined) {
+        process.env.CI = originalCI;
+      } else {
+        delete process.env.CI;
+      }
+      if (existsSync(testDir)) {
+        rmSync(testDir, { recursive: true, force: true });
+      }
+    }
   });
 });
