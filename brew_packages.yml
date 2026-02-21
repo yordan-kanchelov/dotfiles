@@ -39,12 +39,13 @@ formulae:
     - lazygit
     - neovim
     - ollama
-    - opencode       # AI coding assistant in terminal
+    - opencode     
     - shellcheck
 
   api-and-testing:
     - ghz            # gRPC benchmarking tool
     - grpcurl        # curl for gRPC services
+    - jq             # JSON processor
     - jqp            # Interactive jq playground
     - k6             # Load testing tool (Grafana)
 
