@@ -194,11 +194,11 @@ add_fnm_env_to_shell_config() {
 add_fnm_env_to_shell_config
 
 # Immediately enable fnm use-on-cd for current session
-shell_name="$(basename "$SHELL")"
-if [ "$shell_name" = "bash" ]; then
-  eval "$(fnm env --use-on-cd --shell bash)"
-elif [ "$shell_name" = "zsh" ]; then
+# Detect the actual running shell (not $SHELL which is the login shell)
+if [ -n "${ZSH_VERSION:-}" ]; then
   eval "$(fnm env --use-on-cd --shell zsh)"
+elif [ -n "${BASH_VERSION:-}" ]; then
+  eval "$(fnm env --use-on-cd --shell bash)"
 fi
 
 # Check if running in CI
