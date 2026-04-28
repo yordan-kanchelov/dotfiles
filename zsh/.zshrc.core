@@ -104,6 +104,14 @@ clean_project() {
     fi
 }
 
+y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+  command yazi "$@" --cwd-file="$tmp"
+  IFS= read -r -d '' cwd < "$tmp"
+  [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+  rm -f -- "$tmp"
+}
+
 fvim() {
   local selected_file
   selected_file=$(fzf --preview="bat --color=always {}" --bind "esc:abort")

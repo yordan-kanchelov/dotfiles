@@ -16,9 +16,14 @@ elif [ -f "/usr/local/bin/brew" ]; then
 fi
 
 # ============================================
+# PNPM
+# ============================================
+export PNPM_HOME="$HOME/Library/pnpm"
+
+# ============================================
 # PATH MODIFICATIONS
 # ============================================
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$PNPM_HOME:$HOME/.local/bin:$PATH"
 
 # ============================================
 # ENVIRONMENT VARIABLES
