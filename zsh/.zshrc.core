@@ -18,24 +18,32 @@ eval "$(sheldon source)"
 # COMPLETIONS
 # ============================================
 autoload -Uz compinit
-# Regenerate completion dump daily (24-hour cache)
+# -u skips compaudit permission checks (single-user macOS, no need)
 if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
-  compinit
+  compinit -u
 else
-  compinit -C  # Skip security check if dump is recent
+  compinit -C
 fi
 
 # ============================================
 # INTERACTIVE TOOL INITIALIZATIONS
 # ============================================
-source <(fzf --zsh)
+# fzf and atuin must init after zsh-vi-mode finishes recreating keymaps,
+# otherwise their bindings get overwritten. Use array form so multiple
+# hooks can compose; fall back to direct init if plugin not loaded.
+if [[ -n ${zvm_after_init_commands+x} ]]; then
+  zvm_after_init_commands+=('source <(fzf --zsh); eval "$(atuin init zsh)"')
+else
+  source <(fzf --zsh)
+  eval "$(atuin init zsh)"
+fi
 eval "$(starship init zsh)"
-eval "$(atuin init zsh)"
 eval "$(zoxide init zsh)"
 
 # ============================================
 # ALIASES
 # ============================================
+alias lg='lazygit'
 alias ghcs='gh copilot suggest'
 alias ta="tmux attach-session -t"
 alias tn="tmux new -s"
@@ -54,6 +62,8 @@ alias ls='eza -l -b --all --header --git --icons --group-directories-first'
 alias cleanc='clean_dev_caches'
 alias cleanp='clean_project'
 alias supd='sheldon lock --update'
+alias sw='sync-worktrees'
+alias c='claude -c'
 
 # ============================================
 # FUNCTIONS
@@ -64,9 +74,14 @@ clean_dev_caches() {
   echo "Pruning pnpm store..."
   pnpm store prune
   echo "Caches cleaned and pruned!"
-  echo "Clean Docker cache..."
-  docker system prune -f --volumes
-  echo "Docker cache cleaned!"
+  printf "Run 'docker system prune -f --volumes'? This deletes stopped containers AND their volumes [y/N] "
+  read -r reply
+  if [[ "$reply" =~ ^[Yy]$ ]]; then
+    docker system prune -f --volumes
+    echo "Docker cache cleaned!"
+  else
+    echo "Skipped Docker prune."
+  fi
 }
 
 clean_project() {
@@ -105,10 +120,13 @@ clean_project() {
 }
 
 y() {
-  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+  local tmp cwd
+  tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+  trap 'rm -f -- "$tmp"' EXIT INT TERM
   command yazi "$@" --cwd-file="$tmp"
   IFS= read -r -d '' cwd < "$tmp"
   [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+  trap - EXIT INT TERM
   rm -f -- "$tmp"
 }
 
@@ -121,6 +139,11 @@ fvim() {
 }
 
 cat() {
+  # When piped or redirected, behave like plain cat to avoid bat's pager/color escapes
+  if [ ! -t 1 ]; then
+    command cat "$@"
+    return
+  fi
   if [ $# -eq 0 ]; then
         command bat
         return
