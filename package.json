@@ -1,7 +1,7 @@
 {
   "name": "dotfiles",
   "version": "1.0.0",
-  "description": "Personal dotfiles for macOS terminal productivity",
+  "description": "Personal dotfiles for macOS and Linux terminal productivity",
   "type": "module",
   "engines": {
     "node": ">=22.14.0"
@@ -20,6 +20,7 @@
   "keywords": [
     "dotfiles",
     "macos",
+    "linux",
     "terminal",
     "productivity",
     "tmux",

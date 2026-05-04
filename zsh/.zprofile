@@ -24,6 +24,7 @@ export PNPM_HOME="$HOME/Library/pnpm"
 # PATH MODIFICATIONS
 # ============================================
 export PATH="$PNPM_HOME:$HOME/.local/bin:$PATH"
+[[ -d "$HOME/.atuin/bin" ]] && export PATH="$HOME/.atuin/bin:$PATH"
 
 # ============================================
 # ENVIRONMENT VARIABLES

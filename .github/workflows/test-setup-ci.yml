@@ -143,13 +143,41 @@ jobs:
           eval "$(fnm env)"
           npm test
 
-      - name: Test non-macOS behavior
+      - name: Run setup script on Linux
         run: |
-          # Set up fnm environment
           export PATH="$HOME/.local/share/fnm:$PATH"
           eval "$(fnm env)"
-          echo "Testing setup script behavior on non-macOS system..."
-          npm run setup:no-packages || echo "Setup completed as expected on Linux"
+          npm run ci:setup
+
+      - name: Verify symlinks were created
+        run: |
+          echo "Verifying symlinks on Linux..."
+          dotfiles=(".zshrc" ".zprofile" ".zshrc.core" ".tmux.conf")
+          for dotfile in "${dotfiles[@]}"; do
+            if [ -L "$HOME/$dotfile" ] || [ -e "$HOME/$dotfile" ]; then
+              echo "  $dotfile exists"
+              ls -la "$HOME/$dotfile"
+            else
+              echo "  $dotfile missing"
+              exit 1
+            fi
+          done
+
+      - name: Validate apt_packages.yml
+        run: |
+          export PATH="$HOME/.local/share/fnm:$PATH"
+          eval "$(fnm env)"
+          node --experimental-strip-types --input-type=module -e "
+            import YAML from 'yaml';
+            import { readFileSync } from 'fs';
+            const data = YAML.parse(readFileSync('apt_packages.yml', 'utf8'));
+            const sections = Object.keys(data);
+            if (sections.length === 0) { console.error('No sections found'); process.exit(1); }
+            for (const s of sections) {
+              if (!Array.isArray(data[s])) { console.error(s + ' is not an array'); process.exit(1); }
+            }
+            console.log('apt_packages.yml is valid (' + sections.length + ' sections)');
+          "
 
   typecheck:
     name: Type Check
@@ -182,7 +210,7 @@ jobs:
           echo "Checking for potential issues..."
 
           # Check if required files exist
-          required_files=("setup.ts" "bootstrap.sh" "brew_packages.yml" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc" ".config/nvim/init.lua")
+          required_files=("setup.ts" "bootstrap.sh" "brew_packages.yml" "apt_packages.yml" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc" ".config/nvim/init.lua")
           for file in "${required_files[@]}"; do
             if [ -e "$file" ]; then
               echo "✅ $file exists"
