@@ -61,7 +61,7 @@ jobs:
           done
 
           # Check if dotfiles exist
-          dotfiles=(".zshrc" ".tmux.conf")
+          dotfiles=(".zshrc" ".tmux.conf" ".claude/CLAUDE.md" ".claude/commands" ".codex/rules" ".codex/config.toml")
           for dotfile in "${dotfiles[@]}"; do
             if [ -L "$HOME/$dotfile" ] || [ -e "$HOME/$dotfile" ]; then
               echo "✅ $dotfile exists"
@@ -152,7 +152,7 @@ jobs:
       - name: Verify symlinks were created
         run: |
           echo "Verifying symlinks on Linux..."
-          dotfiles=(".zshrc" ".zprofile" ".zshrc.core" ".tmux.conf")
+          dotfiles=(".zshrc" ".zprofile" ".zshrc.core" ".tmux.conf" ".claude/CLAUDE.md" ".claude/commands" ".codex/rules" ".codex/config.toml")
           for dotfile in "${dotfiles[@]}"; do
             if [ -L "$HOME/$dotfile" ] || [ -e "$HOME/$dotfile" ]; then
               echo "  $dotfile exists"

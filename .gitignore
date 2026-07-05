@@ -10,3 +10,17 @@ node_modules
 
 # Local backups and temporary files
 .tmp/
+
+# This repo IS the source of these files, but the user's global gitignore
+# ignores CLAUDE.md everywhere — re-include the one we deliberately track.
+!claude/CLAUDE.md
+
+# AI tool machine state — must never be committed even if copied in by accident
+auth.json
+.credentials*
+settings.local.json
+*.sqlite*
+history*
+sessions/
+shell-snapshots/
+shell_snapshots/

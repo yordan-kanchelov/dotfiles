@@ -30,6 +30,7 @@ interface SetupOptions {
   append?: boolean;
   skipPackages?: boolean;
   interactive?: boolean;
+  verify?: boolean;
 }
 
 type LogType = 'info' | 'success' | 'warning' | 'error';
@@ -40,6 +41,7 @@ program
   .option('--force-overwrite', 'Overwrite existing files without prompting')
   .option('--append', 'Append to existing config files instead of symlinking')
   .option('--skip-packages', 'Skip package installation')
+  .option('--verify', 'Verify managed symlinks and secrets file, then exit')
   .option('-i, --interactive', 'Run in interactive mode (default)')
   .parse();
 
@@ -651,6 +653,9 @@ async function setupSecretsFile(): Promise<void> {
     secretsContent += 'export OPENAI_API_KEY="your-api-key-here"\n';
   }
 
+  // Used by the codex brave-search MCP wrapper (see codex/config.example.toml)
+  secretsContent += 'export BRAVE_API_KEY="your-api-key-here"\n';
+
   secretsContent += '\n# Add other secrets below as needed\n';
 
   writeFileSync(secretsPath, secretsContent, { mode: 0o600 });
@@ -662,32 +667,67 @@ async function setupSecretsFile(): Promise<void> {
   }
 }
 
+// Config files mapping — explicit allowlist; never glob ~/.claude or ~/.codex
+// (those dirs are dominated by machine state, caches, and credentials)
+const SYMLINKS: [string, string][] = [
+  // .config directory items
+  [join(DOTFILES_DIR, '.config/ghostty'), join(HOME, '.config/ghostty')],
+  [join(DOTFILES_DIR, '.config/starship.toml'), join(HOME, '.config/starship.toml')],
+  [join(DOTFILES_DIR, '.config/atuin'), join(HOME, '.config/atuin')],
+  [join(DOTFILES_DIR, '.config/sheldon'), join(HOME, '.config/sheldon')],
+  [join(DOTFILES_DIR, '.config/yazi'), join(HOME, '.config/yazi')],
+  // Home directory dotfiles
+  [join(DOTFILES_DIR, 'zsh/.zprofile'), join(HOME, '.zprofile')],
+  [join(DOTFILES_DIR, 'zsh/.zshrc'), join(HOME, '.zshrc')],
+  [join(DOTFILES_DIR, 'zsh/.zshrc.core'), join(HOME, '.zshrc.core')],
+  [join(DOTFILES_DIR, 'tmux/.tmux.conf'), join(HOME, '.tmux.conf')],
+  // Claude Code custom config
+  [join(DOTFILES_DIR, 'claude/CLAUDE.md'), join(HOME, '.claude/CLAUDE.md')],
+  [join(DOTFILES_DIR, 'claude/AGENTS.md'), join(HOME, '.claude/AGENTS.md')],
+  [join(DOTFILES_DIR, 'claude/settings.json'), join(HOME, '.claude/settings.json')],
+  [join(DOTFILES_DIR, 'claude/commands'), join(HOME, '.claude/commands')],
+  [join(DOTFILES_DIR, 'claude/skills'), join(HOME, '.claude/skills')],
+  // Codex custom config (config.toml is copy-if-absent, see setupCodexConfig —
+  // codex appends project trust entries at runtime, so it must not live in git)
+  [join(DOTFILES_DIR, 'codex/keybindings.json'), join(HOME, '.codex/keybindings.json')],
+  [join(DOTFILES_DIR, 'codex/AGENTS.md'), join(HOME, '.codex/AGENTS.md')],
+  [join(DOTFILES_DIR, 'codex/instructions.md'), join(HOME, '.codex/instructions.md')],
+  [join(DOTFILES_DIR, 'codex/rules'), join(HOME, '.codex/rules')]
+];
+
+async function setupCodexConfig(): Promise<void> {
+  const source = join(DOTFILES_DIR, 'codex/config.example.toml');
+  const target = join(HOME, '.codex/config.toml');
+
+  if (!existsSync(source)) {
+    log(`Source file not found: ${source} - skipping`, 'warning');
+    return;
+  }
+
+  if (existsSync(target)) {
+    log('Codex config.toml already exists, preserving (template is copy-if-absent)', 'success');
+    return;
+  }
+
+  await fsExtra.copy(source, target);
+  log(`Created ${target} from config.example.toml (remember to set BRAVE_API_KEY in ~/.secrets)`, 'success');
+}
+
 async function createSymlinks(): Promise<void> {
   log('Creating symlinks...', 'info');
 
-  // Create config directory
   await fsExtra.ensureDir(join(HOME, '.config'));
+  await fsExtra.ensureDir(join(HOME, '.claude'));
+  await fsExtra.ensureDir(join(HOME, '.codex'));
 
-  // Config files mapping
-  const symlinks: [string, string][] = [
-    // .config directory items
-    [join(DOTFILES_DIR, '.config/ghostty'), join(HOME, '.config/ghostty')],
-    [join(DOTFILES_DIR, '.config/starship.toml'), join(HOME, '.config/starship.toml')],
-    [join(DOTFILES_DIR, '.config/atuin'), join(HOME, '.config/atuin')],
-    [join(DOTFILES_DIR, '.config/sheldon'), join(HOME, '.config/sheldon')],
-    // Home directory dotfiles
-    [join(DOTFILES_DIR, 'zsh/.zprofile'), join(HOME, '.zprofile')],
-    [join(DOTFILES_DIR, 'zsh/.zshrc'), join(HOME, '.zshrc')],
-    [join(DOTFILES_DIR, 'zsh/.zshrc.core'), join(HOME, '.zshrc.core')],
-    [join(DOTFILES_DIR, 'tmux/.tmux.conf'), join(HOME, '.tmux.conf')]
-  ];
-  
   // Handle nvim separately with LazyVim setup
   await setupLazyVim();
 
-  for (const [source, target] of symlinks) {
+  for (const [source, target] of SYMLINKS) {
     await createSymlink(source, target);
   }
+
+  await setupCodexConfig();
 }
 
 async function sourceZshrc(): Promise<void> {
@@ -711,8 +751,65 @@ async function sourceZshrc(): Promise<void> {
   }
 }
 
+function verifySetup(): void {
+  log('Verifying managed files...', 'info');
+  let failures = 0;
+
+  const links: [string, string][] = [
+    ...SYMLINKS,
+    [join(DOTFILES_DIR, '.config/nvim'), join(HOME, '.config/nvim')]
+  ];
+
+  for (const [source, target] of links) {
+    if (!existsSync(source)) {
+      log(`SKIP (no source in repo): ${target}`, 'warning');
+      continue;
+    }
+    try {
+      const stats = lstatSync(target);
+      if (!stats.isSymbolicLink()) {
+        // A tool doing atomic temp+rename writes can silently replace a symlink
+        // with a regular file — this is exactly what this check exists to catch.
+        log(`NOT A SYMLINK (sync broken, file drifted?): ${target}`, 'error');
+        failures++;
+      } else if (readlinkSync(target) !== source) {
+        log(`WRONG TARGET: ${target} -> ${readlinkSync(target)} (expected ${source})`, 'error');
+        failures++;
+      } else {
+        log(`ok: ${target}`, 'success');
+      }
+    } catch {
+      log(`MISSING: ${target}`, 'error');
+      failures++;
+    }
+  }
+
+  const secretsPath = join(HOME, '.secrets');
+  if (existsSync(secretsPath)) {
+    const mode = lstatSync(secretsPath).mode & 0o777;
+    if (mode !== 0o600) {
+      log(`~/.secrets has mode ${mode.toString(8)}, expected 600`, 'error');
+      failures++;
+    } else {
+      log('ok: ~/.secrets permissions (600)', 'success');
+    }
+  } else {
+    log('~/.secrets not found', 'warning');
+  }
+
+  if (failures > 0) {
+    log(`Verification failed: ${failures} issue(s)`, 'error');
+    process.exit(1);
+  }
+  log('All managed files verified', 'success');
+}
+
 // Main setup function
 async function main(): Promise<void> {
+  if (options.verify) {
+    verifySetup();
+    return;
+  }
   console.log(chalk.green.bold('Setting up dotfiles...'));
   console.log(chalk.blue(`Working directory: ${DOTFILES_DIR}`));
 

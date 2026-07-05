@@ -10,6 +10,15 @@
 FUNCNEST=1000
 
 # ============================================
+# HISTORY
+# Atuin has its own DB; this feeds zsh-autosuggestions
+# ============================================
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt inc_append_history hist_ignore_dups hist_ignore_space
+
+# ============================================
 # PLUGIN MANAGER (sheldon)
 # ============================================
 eval "$(sheldon source)"
@@ -54,7 +63,8 @@ alias tren="tmux rename-session -t"
 alias tnw="tmux new-window"
 alias th="tmux split-window -h"
 alias tv="tmux split-window -v"
-alias tkp="tmux kill-pane"
+# alias tkp="tmux kill-pane"
+alias tkp="exit"
 alias vim="nvim"
 alias ':q'='exit'
 alias l='eza -l -b --all --header --git --icons --group-directories-first'
@@ -193,8 +203,20 @@ cat() {
     esac
 }
 
-# Quick reload of zsh configuration
-reload() {
-  source ~/.zshrc
-  echo "ZSH configuration reloaded"
+# Quick reload of zsh configuration (exec avoids double plugin init from re-sourcing)
+alias reload='exec zsh'
+
+# Pin a per-pane session id so tmux-resurrect restores each pane into its own
+# conversation. Bare `claude` -> mint a new id. Resurrect re-types
+# `claude --session-id <uuid>`; if that transcript already exists, resume it
+# (claude itself only resumes via --resume, not --session-id). Anything else passes
+# through (c/-c, -r, -p, subcommands like `claude mcp`).
+claude() {
+  if [[ "$1" == "--session-id" && -n "$2" ]]; then
+    local id="$2"; local existing=(~/.claude/projects/*/"$id".jsonl(N))
+    if (( ${#existing} )); then shift 2; command claude --resume "$id" "$@"; return; fi
+  elif [[ $# -eq 0 ]]; then
+    set -- --session-id "$(uuidgen | tr '[:upper:]' '[:lower:]')"
+  fi
+  command claude "$@"
 }

@@ -63,8 +63,39 @@ describe('Dotfiles Setup Tests', () => {
       // Check if .config directory was created
       assert(existsSync(join(testDir, '.config')), '.config directory should be created');
       
-      // At least the directories should be created
-      assert(existsSync(join(testDir, '.config')), 'Config directory should exist');
+      const yaziConfigPath = join(testDir, '.config', 'yazi');
+      assert(existsSync(yaziConfigPath), 'Yazi config should be created');
+      assert(lstatSync(yaziConfigPath).isSymbolicLink(), 'Yazi config should be a symlink');
+
+      const claudeMdPath = join(testDir, '.claude', 'CLAUDE.md');
+      assert(existsSync(claudeMdPath), 'Claude CLAUDE.md should be created');
+      assert(lstatSync(claudeMdPath).isSymbolicLink(), 'Claude CLAUDE.md should be a symlink');
+
+      const codexRulesPath = join(testDir, '.codex', 'rules');
+      assert(existsSync(codexRulesPath), 'Codex rules should be created');
+      assert(lstatSync(codexRulesPath).isSymbolicLink(), 'Codex rules should be a symlink');
+
+      // config.toml is copy-if-absent (codex mutates it at runtime), never a symlink
+      const codexConfigPath = join(testDir, '.codex', 'config.toml');
+      assert(existsSync(codexConfigPath), 'Codex config.toml should be created from template');
+      assert(!lstatSync(codexConfigPath).isSymbolicLink(), 'Codex config.toml should be a copy, not a symlink');
+    });
+
+    it('should preserve existing codex config.toml (holds runtime trust entries)', async () => {
+      process.env.CI = 'true';
+
+      const codexDir = join(testDir, '.codex');
+      mkdirSync(codexDir, { recursive: true });
+      const codexConfigPath = join(codexDir, 'config.toml');
+      writeFileSync(codexConfigPath, '[projects."/some/local/path"]\ntrust_level = "trusted"\n');
+
+      await execaNode(SETUP_SCRIPT, ['--skip-packages', '--force-overwrite'], {
+        nodeOptions: ['--experimental-strip-types']
+      });
+
+      const content = readFileSync(codexConfigPath, 'utf8');
+      assert(content.includes('/some/local/path'),
+        'Existing config.toml must survive setup re-runs — codex appends project trust entries at runtime and overwriting would lose them');
     });
 
     it('should setup LazyVim configuration', async () => {

@@ -16,3 +16,9 @@ fi
 # TOOL-GENERATED ADDITIONS
 # Tools can safely add their configurations below
 # ============================================
+
+# Added by Antigravity
+export PATH="/Users/yordan.kanchelov/.antigravity/antigravity/bin:$PATH"
+
+# Added by Antigravity IDE
+export PATH="/Users/yordan.kanchelov/.antigravity-ide/antigravity-ide/bin:$PATH"

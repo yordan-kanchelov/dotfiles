@@ -55,7 +55,7 @@ npm run setup
 - **eza** - Modern `ls` replacement
 - **ripgrep** (`rg`) - Fast file search
 - **fzf** - Fuzzy finder for everything
-- **yazi** - Terminal file manager
+- **yazi** - Terminal file manager with shell drop-in, Git-root jump, Quick Look, and tab-safe quit
 - **atuin** - Sync shell history across machines
 - **zoxide** - Smarter `cd` command
 - **bruno** - API client
@@ -113,7 +113,8 @@ Edit `brew_packages.yml` to add new Homebrew packages under `formulae:` or `cask
 │   │   └── lua/        # Lua configurations
 │   ├── starship.toml   # Starship prompt
 │   ├── ghostty/        # Ghostty terminal
-│   └── atuin/          # Shell history
+│   ├── atuin/          # Shell history
+│   └── yazi/           # Terminal file manager
 ├── zsh/                # ZSH configuration
 │   └── .zshrc
 ├── tmux/               # Tmux configuration

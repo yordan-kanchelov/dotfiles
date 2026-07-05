@@ -1,0 +1,148 @@
+approval_policy = "on-request"
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+sandbox_mode = "workspace-write"
+
+notify = ["/Users/yordan.kanchelov/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+personality = "pragmatic"
+approvals_reviewer = "guardian_subagent"
+plan_mode_reasoning_effort = "xhigh"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools.github_create_pull_request]
+approval_mode = "approve"
+
+[features]
+js_repl = false
+memories = true
+prevent_idle_sleep = true
+
+[marketplaces.openai-bundled]
+last_updated = "2026-05-31T13:24:13Z"
+source_type = "local"
+source = "/Users/yordan.kanchelov/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.caveman-repo]
+last_updated = "2026-05-20T12:01:59Z"
+last_revision = "655b7d9c5431f822264b7732e9901c5578ac84cf"
+source_type = "git"
+source = "https://github.com/JuliusBrussee/caveman.git"
+
+[marketplaces.claude-plugins-official]
+last_updated = "2026-06-06T01:01:30Z"
+last_revision = "3d5017bc1d40ef08c5733243516afeb993a6f5e5"
+source_type = "git"
+source = "https://github.com/anthropics/claude-plugins-official.git"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-06-02T07:11:49Z"
+source_type = "local"
+source = "/Users/yordan.kanchelov/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[marketplaces.ponytail]
+last_updated = "2026-07-02T07:06:08Z"
+last_revision = "40e50d9e03242aa5dd53ac771950f9127362b25f"
+source_type = "git"
+source = "https://github.com/DietrichGebert/ponytail.git"
+
+[mcp_servers.brave-search]
+command = "sh"
+args = ["-c", "test -r \"$HOME/.secrets\" || { echo \"missing ~/.secrets\" >&2; exit 1; }; . \"$HOME/.secrets\"; exec docker run -i --rm -e BRAVE_API_KEY mcp/brave-search"]
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["@playwright/mcp@latest"]
+
+[mcp_servers.playwright.tools.browser_tabs]
+approval_mode = "approve"
+
+[mcp_servers.playwright.tools.browser_navigate]
+approval_mode = "approve"
+
+[mcp_servers.playwright.tools.browser_resize]
+approval_mode = "approve"
+
+[mcp_servers.sync-worktrees]
+command = "node"
+args = ["/Users/yordan.kanchelov/projects/github/sync-worktrees/dist/mcp-server.js"]
+
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = ["chrome-devtools-mcp@latest"]
+
+[mcp_servers.node_repl]
+args = []
+command = "/Applications/Codex.app/Contents/Resources/node_repl"
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = ""
+NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/node"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/yordan.kanchelov/.codex"
+CODEX_HOME = "/Users/yordan.kanchelov/.codex"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "0b0d41e7a14a4903d2f95b0b3f427ed796b12c8edca2fa392a03df43997075ae"
+BROWSER_USE_AVAILABLE_BACKENDS = "iab"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."caveman@caveman-repo"]
+enabled = true
+
+[plugins."frontend-design@claude-plugins-official"]
+enabled = true
+
+[plugins."skill-creator@claude-plugins-official"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."ponytail@ponytail"]
+enabled = true
+
+[sandbox_workspace_write]
+exclude_slash_tmp = false
+exclude_tmpdir_env_var = false
+network_access = false
+writable_roots = ["/Users/yordan.kanchelov/tmp/discuss"]
+
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+MCP_TIMEOUT = "600000"
+MCP_TOOL_TIMEOUT = "600000"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
+[desktop]
+preventSleepWhileRunning = true
+keepRemoteControlAwakeWhilePluggedIn = true
+hotkey-window-projectless-default-enabled = true
+notifications-turn-mode = "off"
+
+[desktop.open-in-target-preferences]
+global = "vscode"

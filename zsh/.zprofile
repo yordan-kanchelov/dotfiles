@@ -6,6 +6,9 @@
 # Contains: Environment variables, PATH, SSH agent
 # ============================================
 
+# Deduplicate PATH entries (installers love re-appending)
+typeset -U path PATH
+
 # ============================================
 # HOMEBREW
 # ============================================
@@ -24,12 +27,11 @@ export PNPM_HOME="$HOME/Library/pnpm"
 # PATH MODIFICATIONS
 # ============================================
 export PATH="$PNPM_HOME:$HOME/.local/bin:$PATH"
-[[ -d "$HOME/.atuin/bin" ]] && export PATH="$HOME/.atuin/bin:$PATH"
 
 # ============================================
 # ENVIRONMENT VARIABLES
 # ============================================
-export EDITOR="code -w"
+export EDITOR="nvim"
 
 # Add your custom environment variables below:
 # export JAVA_HOME=/path/to/java
@@ -48,3 +50,7 @@ fi
 if [ -f ~/.secrets ]; then
   source ~/.secrets
 fi
+
+# Added by OrbStack: command-line tools and integration
+# This won't be added again if you remove it.
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :

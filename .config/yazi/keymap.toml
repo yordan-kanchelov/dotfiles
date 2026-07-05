@@ -1,0 +1,31 @@
+[[mgr.prepend_keymap]]
+on   = "!"
+for  = "unix"
+run  = 'shell "$SHELL" --block'
+desc = "Open shell here"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "r" ]
+run  = 'shell -- root="$(git rev-parse --show-toplevel 2>/dev/null)" && ya emit cd "$root"'
+desc = "Go to Git root"
+
+[[mgr.prepend_keymap]]
+on   = "<C-p>"
+for  = "macos"
+run  = "shell -- qlmanage -p %s"
+desc = "Preview with Quick Look"
+
+[[mgr.prepend_keymap]]
+on   = [ "t", "t" ]
+run  = "plugin smart-tab"
+desc = "Create tab at hovered directory"
+
+[[mgr.prepend_keymap]]
+on   = "q"
+run  = "plugin confirm-quit"
+desc = "Quit with tab confirmation"
+
+[[input.prepend_keymap]]
+on   = "<Esc>"
+run  = "close"
+desc = "Cancel input"
