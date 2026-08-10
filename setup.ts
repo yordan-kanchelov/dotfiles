@@ -280,17 +280,64 @@ async function installBrewPackages(): Promise<void> {
   }
 }
 
+// Every sudo/installer call below runs with stdio piped, so a password prompt
+// or an installer question is invisible and the run appears to hang forever.
+// Ask for the sudo password once, up front, with the prompt actually visible.
+let sudoKeepAlive: NodeJS.Timeout | null = null;
+
+async function ensureSudo(): Promise<boolean> {
+  if (!IS_LINUX || IS_CI) return true;
+
+  // Already have a valid timestamp? Nothing to do.
+  try {
+    await execa('sudo', ['-n', 'true']);
+    startSudoKeepAlive();
+    return true;
+  } catch {
+    // Needs a password below.
+  }
+
+  log('Some packages need sudo. Enter your password once and the rest runs unattended:', 'info');
+  try {
+    // stdio: 'inherit' is the whole point — the prompt reaches your terminal.
+    await execa('sudo', ['-v'], { stdio: 'inherit' });
+    startSudoKeepAlive();
+    return true;
+  } catch {
+    log('sudo authentication failed; skipping steps that require root', 'warning');
+    return false;
+  }
+}
+
+// Long installs can outlive sudo's 15-minute timestamp; refresh it while we work.
+function startSudoKeepAlive(): void {
+  if (sudoKeepAlive) return;
+  sudoKeepAlive = setInterval(() => {
+    execa('sudo', ['-n', '-v']).catch(() => {});
+  }, 60000);
+  sudoKeepAlive.unref();
+}
+
+function stopSudoKeepAlive(): void {
+  if (sudoKeepAlive) {
+    clearInterval(sudoKeepAlive);
+    sudoKeepAlive = null;
+  }
+}
+
 async function installAptPackages(): Promise<void> {
   if (!await commandExists('apt-get')) {
     log('Error: apt-get not found. Skipping APT package installation.', 'error');
     return;
   }
 
+  if (!await ensureSudo()) return;
+
   log('Installing required packages with APT...', 'info');
 
   const spinner = ora('Updating package lists...').start();
   try {
-    await execa('sudo', ['apt-get', 'update', '-y'], {
+    await execa('sudo', ['-n', 'apt-get', 'update', '-y'], {
       timeout: IS_CI ? 300000 : undefined
     });
     spinner.succeed('Package lists updated');
@@ -308,7 +355,7 @@ async function installAptPackages(): Promise<void> {
     const batch = packages.slice(i, i + BATCH_SIZE);
     const batchSpinner = ora(`Installing batch: ${batch.join(', ')}...`).start();
     try {
-      await execa('sudo', ['apt-get', 'install', '-y', ...batch], {
+      await execa('sudo', ['-n', 'apt-get', 'install', '-y', ...batch], {
         timeout: IS_CI ? 300000 : undefined
       });
       batchSpinner.succeed(`Installed: ${batch.join(', ')}`);
@@ -317,7 +364,7 @@ async function installAptPackages(): Promise<void> {
       for (const pkg of batch) {
         const pkgSpinner = ora(`Installing ${pkg}...`).start();
         try {
-          await execa('sudo', ['apt-get', 'install', '-y', pkg], {
+          await execa('sudo', ['-n', 'apt-get', 'install', '-y', pkg], {
             timeout: IS_CI ? 300000 : undefined
           });
           pkgSpinner.succeed(`Successfully installed ${pkg}`);
@@ -364,6 +411,8 @@ async function createLinuxCompatSymlinks(): Promise<void> {
 
 async function installSpecialPackagesLinux(): Promise<void> {
   log('Installing tools that require special installation methods...', 'info');
+
+  const hasSudo = await ensureSudo();
 
   // sheldon (zsh plugin manager)
   if (!await commandExists('sheldon')) {
@@ -413,7 +462,7 @@ async function installSpecialPackagesLinux(): Promise<void> {
   if (!await commandExists('atuin')) {
     const spinner = ora('Installing atuin...').start();
     try {
-      await execa('bash', ['-c', 'curl --proto "=https" --tlsv1.2 -LsSf https://setup.atuin.sh | sh']);
+      await execa('bash', ['-c', 'curl --proto "=https" --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive']);
       spinner.succeed('atuin installed');
     } catch (error) {
       spinner.fail('Failed to install atuin');
@@ -431,7 +480,11 @@ async function installSpecialPackagesLinux(): Promise<void> {
       const { stdout: unameMachine } = await execa('uname', ['-m']);
       const archMap: Record<string, string> = { x86_64: 'x86_64', aarch64: 'arm64', arm64: 'arm64' };
       const arch = archMap[unameMachine] ?? unameMachine;
-      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_${arch}.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && sudo install /tmp/lazygit /usr/local/bin && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
+      // Install to ~/.local/bin (same place sheldon/bat/fd land) so this needs no root —
+      // a sudo password prompt here would be invisible behind the spinner.
+      const localBin = join(HOME, '.local/bin');
+      mkdirSync(localBin, { recursive: true });
+      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_${arch}.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && install -m755 /tmp/lazygit ${localBin}/lazygit && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
       spinner.succeed('lazygit installed');
     } catch (error) {
       spinner.fail('Failed to install lazygit');
@@ -445,15 +498,17 @@ async function installSpecialPackagesLinux(): Promise<void> {
   if (!await commandExists('gh')) {
     if (!await commandExists('apt-get')) {
       log('apt-get not found, skipping GitHub CLI installation', 'warning');
+    } else if (!hasSudo) {
+      log('No sudo access, skipping GitHub CLI installation', 'warning');
     } else {
       const spinner = ora('Installing GitHub CLI...').start();
       try {
         await execa('bash', ['-c', [
-          'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
-          'sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
-          'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
-          'sudo apt-get update -y',
-          'sudo apt-get install -y gh'
+          'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo -n dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
+          'sudo -n chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
+          'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo -n tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
+          'sudo -n apt-get update -y',
+          'sudo -n apt-get install -y gh'
         ].join(' && ')]);
         spinner.succeed('GitHub CLI installed');
       } catch (error) {
@@ -843,6 +898,8 @@ async function main(): Promise<void> {
   } catch (error) {
     console.error(chalk.red('Setup failed:'), error);
     process.exit(1);
+  } finally {
+    stopSudoKeepAlive();
   }
 }
 
