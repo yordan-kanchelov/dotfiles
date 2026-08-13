@@ -1,6 +1,6 @@
 #!/usr/bin/env node --experimental-strip-types
 import { fileURLToPath } from 'url';
-import { dirname, join, resolve } from 'path';
+import { basename, dirname, join, resolve } from 'path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, symlinkSync, readlinkSync, lstatSync, readdirSync } from 'fs';
 import { homedir, platform } from 'os';
 import { program } from 'commander';
@@ -22,6 +22,9 @@ const BACKUP_DIR = join(HOME, '.dotfiles_backup', new Date().toISOString().repla
 const IS_CI = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
 const IS_MACOS = platform() === 'darwin';
 const IS_LINUX = platform() === 'linux';
+// A launcher and a global hotkey only mean anything on a graphical session, so
+// desktop setup stays out of the way on servers, in CI, and over plain SSH.
+const HAS_DESKTOP = Boolean(process.env.XDG_CURRENT_DESKTOP);
 
 // Type definitions
 interface SetupOptions {
@@ -31,6 +34,7 @@ interface SetupOptions {
   skipPackages?: boolean;
   interactive?: boolean;
   verify?: boolean;
+  desktop?: boolean;
 }
 
 type LogType = 'info' | 'success' | 'warning' | 'error';
@@ -42,6 +46,7 @@ program
   .option('--append', 'Append to existing config files instead of symlinking')
   .option('--skip-packages', 'Skip package installation')
   .option('--verify', 'Verify managed symlinks and secrets file, then exit')
+  .option('--desktop', 'Run only the Linux desktop/GUI setup, then exit')
   .option('-i, --interactive', 'Run in interactive mode (default)')
   .parse();
 
@@ -280,17 +285,64 @@ async function installBrewPackages(): Promise<void> {
   }
 }
 
+// Every sudo/installer call below runs with stdio piped, so a password prompt
+// or an installer question is invisible and the run appears to hang forever.
+// Ask for the sudo password once, up front, with the prompt actually visible.
+let sudoKeepAlive: NodeJS.Timeout | null = null;
+
+async function ensureSudo(): Promise<boolean> {
+  if (!IS_LINUX || IS_CI) return true;
+
+  // Already have a valid timestamp? Nothing to do.
+  try {
+    await execa('sudo', ['-n', 'true']);
+    startSudoKeepAlive();
+    return true;
+  } catch {
+    // Needs a password below.
+  }
+
+  log('Some packages need sudo. Enter your password once and the rest runs unattended:', 'info');
+  try {
+    // stdio: 'inherit' is the whole point — the prompt reaches your terminal.
+    await execa('sudo', ['-v'], { stdio: 'inherit' });
+    startSudoKeepAlive();
+    return true;
+  } catch {
+    log('sudo authentication failed; skipping steps that require root', 'warning');
+    return false;
+  }
+}
+
+// Long installs can outlive sudo's 15-minute timestamp; refresh it while we work.
+function startSudoKeepAlive(): void {
+  if (sudoKeepAlive) return;
+  sudoKeepAlive = setInterval(() => {
+    execa('sudo', ['-n', '-v']).catch(() => {});
+  }, 60000);
+  sudoKeepAlive.unref();
+}
+
+function stopSudoKeepAlive(): void {
+  if (sudoKeepAlive) {
+    clearInterval(sudoKeepAlive);
+    sudoKeepAlive = null;
+  }
+}
+
 async function installAptPackages(): Promise<void> {
   if (!await commandExists('apt-get')) {
     log('Error: apt-get not found. Skipping APT package installation.', 'error');
     return;
   }
 
+  if (!await ensureSudo()) return;
+
   log('Installing required packages with APT...', 'info');
 
   const spinner = ora('Updating package lists...').start();
   try {
-    await execa('sudo', ['apt-get', 'update', '-y'], {
+    await execa('sudo', ['-n', 'apt-get', 'update', '-y'], {
       timeout: IS_CI ? 300000 : undefined
     });
     spinner.succeed('Package lists updated');
@@ -308,7 +360,7 @@ async function installAptPackages(): Promise<void> {
     const batch = packages.slice(i, i + BATCH_SIZE);
     const batchSpinner = ora(`Installing batch: ${batch.join(', ')}...`).start();
     try {
-      await execa('sudo', ['apt-get', 'install', '-y', ...batch], {
+      await execa('sudo', ['-n', 'apt-get', 'install', '-y', ...batch], {
         timeout: IS_CI ? 300000 : undefined
       });
       batchSpinner.succeed(`Installed: ${batch.join(', ')}`);
@@ -317,7 +369,7 @@ async function installAptPackages(): Promise<void> {
       for (const pkg of batch) {
         const pkgSpinner = ora(`Installing ${pkg}...`).start();
         try {
-          await execa('sudo', ['apt-get', 'install', '-y', pkg], {
+          await execa('sudo', ['-n', 'apt-get', 'install', '-y', pkg], {
             timeout: IS_CI ? 300000 : undefined
           });
           pkgSpinner.succeed(`Successfully installed ${pkg}`);
@@ -364,6 +416,10 @@ async function createLinuxCompatSymlinks(): Promise<void> {
 
 async function installSpecialPackagesLinux(): Promise<void> {
   log('Installing tools that require special installation methods...', 'info');
+
+  // lazygit and gh shell out to sudo below; make sure the password prompt
+  // happens here, visibly, rather than silently inside a piped subprocess.
+  const hasSudo = await ensureSudo();
 
   // sheldon (zsh plugin manager)
   if (!await commandExists('sheldon')) {
@@ -413,7 +469,10 @@ async function installSpecialPackagesLinux(): Promise<void> {
   if (!await commandExists('atuin')) {
     const spinner = ora('Installing atuin...').start();
     try {
-      await execa('bash', ['-c', 'curl --proto "=https" --tlsv1.2 -LsSf https://setup.atuin.sh | sh']);
+      // --non-interactive: the installer otherwise reads from /dev/tty to ask
+      // about history import and sync signup, which hangs here forever because
+      // its stdout is piped and the question is never displayed.
+      await execa('bash', ['-c', 'curl --proto "=https" --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive']);
       spinner.succeed('atuin installed');
     } catch (error) {
       spinner.fail('Failed to install atuin');
@@ -431,7 +490,11 @@ async function installSpecialPackagesLinux(): Promise<void> {
       const { stdout: unameMachine } = await execa('uname', ['-m']);
       const archMap: Record<string, string> = { x86_64: 'x86_64', aarch64: 'arm64', arm64: 'arm64' };
       const arch = archMap[unameMachine] ?? unameMachine;
-      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_${arch}.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && sudo install /tmp/lazygit /usr/local/bin && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
+      // Install into ~/.local/bin like sheldon/bat/fd rather than /usr/local/bin,
+      // so this no longer depends on sudo at all.
+      const localBin = join(HOME, '.local/bin');
+      mkdirSync(localBin, { recursive: true });
+      await execa('bash', ['-c', `curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_${arch}.tar.gz" && tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && install -m755 /tmp/lazygit ${localBin}/lazygit && rm /tmp/lazygit.tar.gz /tmp/lazygit`]);
       spinner.succeed('lazygit installed');
     } catch (error) {
       spinner.fail('Failed to install lazygit');
@@ -445,15 +508,17 @@ async function installSpecialPackagesLinux(): Promise<void> {
   if (!await commandExists('gh')) {
     if (!await commandExists('apt-get')) {
       log('apt-get not found, skipping GitHub CLI installation', 'warning');
+    } else if (!hasSudo) {
+      log('No sudo access, skipping GitHub CLI installation', 'warning');
     } else {
       const spinner = ora('Installing GitHub CLI...').start();
       try {
         await execa('bash', ['-c', [
-          'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
-          'sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
-          'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
-          'sudo apt-get update -y',
-          'sudo apt-get install -y gh'
+          'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo -n dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg',
+          'sudo -n chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg',
+          'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo -n tee /etc/apt/sources.list.d/github-cli.list > /dev/null',
+          'sudo -n apt-get update -y',
+          'sudo -n apt-get install -y gh'
         ].join(' && ')]);
         spinner.succeed('GitHub CLI installed');
       } catch (error) {
@@ -464,6 +529,280 @@ async function installSpecialPackagesLinux(): Promise<void> {
   } else {
     log('gh is already installed', 'success');
   }
+}
+
+async function gsettingsGet(args: string[]): Promise<string> {
+  const { stdout } = await execa('gsettings', ['get', ...args]);
+  return stdout.trim();
+}
+
+// Cinnamon keeps custom shortcuts as custom0/custom1/... under a relocatable
+// schema, plus a separate list naming the live ones. Reuse the slot already
+// holding this command, or re-running setup stacks duplicate shortcuts.
+async function bindCinnamonHotkey(name: string, command: string, binding: string): Promise<void> {
+  const schemaFor = (slot: string) =>
+    `org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/${slot}/`;
+
+  const list = await gsettingsGet(['org.cinnamon.desktop.keybindings', 'custom-list']);
+  const slots = [...list.matchAll(/'([^']+)'/g)].map(match => match[1]);
+
+  let slot = '';
+  for (const candidate of slots) {
+    if (await gsettingsGet([schemaFor(candidate), 'command']) === `'${command}'`) {
+      slot = candidate;
+      break;
+    }
+  }
+
+  if (!slot) {
+    let index = 0;
+    while (slots.includes(`custom${index}`)) index++;
+    slot = `custom${index}`;
+    slots.push(slot);
+  }
+
+  // Fill the slot before advertising it in custom-list. The reverse order
+  // leaves a blank shortcut in Cinnamon's keyboard panel if anything fails
+  // in between, and no later run can match or reclaim it.
+  await execa('gsettings', ['set', schemaFor(slot), 'name', `'${name}'`]);
+  await execa('gsettings', ['set', schemaFor(slot), 'command', `'${command}'`]);
+  await execa('gsettings', ['set', schemaFor(slot), 'binding', `['${binding}']`]);
+
+  if (!list.includes(`'${slot}'`)) {
+    await execa('gsettings', ['set', 'org.cinnamon.desktop.keybindings', 'custom-list',
+      `[${slots.map(s => `'${s}'`).join(', ')}]`]);
+  }
+
+  log(`Bound ${binding} -> ${command} (${slot})`, 'success');
+}
+
+function osField(name: string, text: string): string {
+  return text.match(new RegExp(`^${name}="?([^"\\n]+)"?`, 'm'))?.[1] ?? '';
+}
+
+// ghostty-ubuntu names Ubuntu assets by version ("24.04") but Debian assets by
+// codename ("trixie"), so the two need different fields. Mint reports its own
+// version (22.3), with the Ubuntu base in the upstream-release file it ships.
+// Returns '' when nothing matches, which callers must treat as unsupported
+// rather than splicing an empty string into a filename.
+function debReleaseTag(): string {
+  const osRelease = readFileSync('/etc/os-release', 'utf8');
+
+  if (osField('ID', osRelease) === 'debian') return osField('VERSION_CODENAME', osRelease);
+
+  const upstream = '/etc/upstream-release/lsb-release';
+  if (existsSync(upstream)) return osField('DISTRIB_RELEASE', readFileSync(upstream, 'utf8'));
+
+  return osField('VERSION_ID', osRelease);
+}
+
+async function installUlauncher(): Promise<void> {
+  if (await commandExists('ulauncher')) {
+    log('Ulauncher is already installed', 'success');
+    return;
+  }
+
+  const spinner = ora('Installing Ulauncher...').start();
+  try {
+    await execa('bash', ['-c', [
+      'sudo -n add-apt-repository -y ppa:agornostal/ulauncher',
+      'sudo -n apt-get update -y',
+      'sudo -n apt-get install -y ulauncher'
+    ].join(' && ')]);
+    spinner.succeed('Ulauncher installed');
+  } catch (error) {
+    spinner.fail('Failed to install Ulauncher');
+    log(error instanceof Error ? error.message : 'Unknown error', 'error');
+  }
+}
+
+// The hotkey is useless without a live daemon, and neither the autostart entry
+// nor starting it needs root — so this must stay outside the sudo-gated
+// install, or an already-installed machine gets a shortcut pointing at nothing.
+async function ensureUlauncherRunning(): Promise<void> {
+  if (!await commandExists('ulauncher')) return;
+
+  const autostart = join(HOME, '.config/autostart/ulauncher.desktop');
+  if (!existsSync(autostart)) {
+    mkdirSync(dirname(autostart), { recursive: true });
+    writeFileSync(autostart, [
+      '[Desktop Entry]',
+      'Type=Application',
+      'Name=Ulauncher',
+      'Exec=ulauncher --hide-window',
+      'Icon=ulauncher',
+      'X-GNOME-Autostart-enabled=true',
+      ''
+    ].join('\n'));
+    log(`Created ${autostart}`, 'success');
+  }
+
+  try {
+    // -x matches the process name exactly. -f would scan whole command lines
+    // and match any shell that merely mentions "ulauncher", including this
+    // script's own invocation — a false positive that skips the start below.
+    await execa('pgrep', ['-x', 'ulauncher']);
+    log('Ulauncher daemon already running', 'success');
+    return;
+  } catch {
+    // pgrep exits non-zero when nothing matches — nothing is running yet.
+  }
+
+  const launcher = execa('ulauncher', ['--hide-window'], { detached: true, stdio: 'ignore' });
+  launcher.unref();
+  launcher.catch(() => {});
+
+  // stdio is 'ignore' and the rejection is discarded, so spawning tells us
+  // nothing. Confirm it is actually alive — otherwise we bind Alt+Space to a
+  // launcher that died on startup and report it as a success.
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  try {
+    await execa('pgrep', ['-x', 'ulauncher']);
+    log('Started Ulauncher daemon', 'success');
+  } catch {
+    log('Ulauncher did not stay running — try "ulauncher --hide-window" by hand to see why', 'warning');
+  }
+}
+
+async function aptCandidateExists(pkg: string): Promise<boolean> {
+  try {
+    const { stdout } = await execa('apt-cache', ['policy', pkg]);
+    // An unknown package prints nothing at all; a known-but-unavailable one
+    // prints "Candidate: (none)".
+    return stdout.includes('Candidate:') && !stdout.includes('Candidate: (none)');
+  } catch {
+    return false;
+  }
+}
+
+// Ghostty reached the official Ubuntu archive in 26.04. On older bases (Mint
+// 22.x sits on noble/24.04) there is no apt candidate, and upstream ships no
+// binaries of its own, so fall back to the community .deb builds. Those assets
+// spell the version ".ppaN" where the git tag says "-ppaN" — guess that wrong
+// and the download 404s.
+async function installGhostty(): Promise<void> {
+  if (await commandExists('ghostty')) {
+    log('Ghostty is already installed', 'success');
+    return;
+  }
+
+  if (await aptCandidateExists('ghostty')) {
+    await installAptPackage('ghostty');
+    return;
+  }
+
+  const release = debReleaseTag();
+  if (!release) {
+    log('Could not determine the distro release, skipping Ghostty', 'warning');
+    return;
+  }
+
+  const spinner = ora('Installing Ghostty...').start();
+  try {
+    const { stdout: arch } = await execa('dpkg', ['--print-architecture']);
+    const { stdout: json } = await execa('curl', ['-fsSL',
+      'https://api.github.com/repos/mkasberg/ghostty-ubuntu/releases/latest']);
+    const tag = JSON.parse(json).tag_name as string;
+
+    const deb = `ghostty_${tag.replace(/-(ppa\d+)$/, '.$1')}_${arch}_${release}.deb`;
+    const debPath = join('/tmp', deb);
+    const url = `https://github.com/mkasberg/ghostty-ubuntu/releases/download/${tag}/${deb}`;
+
+    // No shell here on purpose: `deb` is built from a network-supplied tag, and
+    // an unquoted expansion in `bash -c` would word-split or execute on any
+    // metacharacter that turns up in it.
+    await execa('curl', ['-fLo', debPath, url]);
+    await execa('sudo', ['-n', 'apt-get', 'install', '-y', debPath]);
+    await fsExtra.remove(debPath);
+    spinner.succeed(`Ghostty ${tag} installed`);
+  } catch (error) {
+    spinner.fail(`Failed to install Ghostty (no build for ${release}?)`);
+    log(error instanceof Error ? error.message : 'Unknown error', 'error');
+  }
+}
+
+// Seam for plain-apt desktop apps — adding the next one is a single call.
+async function installAptPackage(pkg: string): Promise<void> {
+  if (await commandExists(pkg)) {
+    log(`${pkg} is already installed`, 'success');
+    return;
+  }
+
+  const spinner = ora(`Installing ${pkg}...`).start();
+  try {
+    await execa('sudo', ['-n', 'apt-get', 'install', '-y', pkg]);
+    spinner.succeed(`${pkg} installed`);
+  } catch (error) {
+    spinner.fail(`Failed to install ${pkg}`);
+    log(error instanceof Error ? error.message : 'Unknown error', 'error');
+  }
+}
+
+async function configureCinnamon(): Promise<void> {
+  // expo = Mission Control, scale = App Exposé. Only touched while every corner
+  // is still off, so a later hand-tuned layout survives a re-run.
+  const corners = await gsettingsGet(['org.cinnamon', 'hotcorner-layout']);
+  if (corners.includes(':true:')) {
+    log('Hot corners already configured, leaving as-is', 'success');
+  } else {
+    await execa('gsettings', ['set', 'org.cinnamon', 'hotcorner-layout',
+      "['expo:true:0', 'scale:true:0', 'scale:false:0', 'desktop:false:0']"]);
+    log('Hot corners: top-left Expo, top-right App Exposé', 'success');
+  }
+
+  if (await commandExists('ulauncher')) {
+    // Cinnamon ships Alt+Space bound to the window menu; the launcher never
+    // sees the key until that one is cleared.
+    const windowMenu = await gsettingsGet(['org.cinnamon.desktop.keybindings.wm', 'activate-window-menu']);
+    if (windowMenu.includes('<Alt>space')) {
+      await execa('gsettings', ['set', 'org.cinnamon.desktop.keybindings.wm', 'activate-window-menu', '[]']);
+      log('Freed Alt+Space from the window-menu shortcut', 'info');
+    }
+    await bindCinnamonHotkey('Ulauncher', 'ulauncher-toggle', '<Alt>space');
+  }
+
+  // Super sits where Cmd does, so this becomes Cmd+Shift+4 the moment a
+  // Mac-style remapper is in play, and is harmless before that. Cinnamon's own
+  // screenshot shortcuts all live on Print, so nothing collides.
+  if (await commandExists('flameshot')) {
+    await bindCinnamonHotkey('Flameshot', 'flameshot gui', '<Shift><Super>4');
+  }
+}
+
+async function setupLinuxDesktop(): Promise<void> {
+  if (IS_CI) return;
+  if (!HAS_DESKTOP) {
+    log('No graphical session detected (XDG_CURRENT_DESKTOP unset), skipping desktop setup', 'warning');
+    return;
+  }
+
+  if (!await promptUser('Set up desktop apps? (Ulauncher, Ghostty, Flameshot + Cinnamon settings)', false)) {
+    log('Skipped desktop setup', 'warning');
+    return;
+  }
+
+  // Cinnamon runs on non-Debian distros too, where these installers are simply
+  // absent — one clean skip beats three ENOENT stack traces.
+  if (!await commandExists('apt-get')) {
+    log('apt-get not found — skipping app installs, applying desktop settings only', 'warning');
+  } else if (await ensureSudo()) {
+    await installUlauncher();
+    await installGhostty();
+    await installAptPackage('flameshot');
+  } else {
+    // Settings below need no root, so a failed sudo must not skip them too.
+    log('No sudo access — skipping app installs, applying desktop settings only', 'warning');
+  }
+
+  await ensureUlauncherRunning();
+
+  const desktop = process.env.XDG_CURRENT_DESKTOP ?? '';
+  if (!desktop.toLowerCase().includes('cinnamon')) {
+    log(`${desktop || 'This desktop'} is not Cinnamon — set the Alt+Space and Shift+Super+4 shortcuts manually`, 'warning');
+    return;
+  }
+
+  await configureCinnamon();
 }
 
 async function installPackages(): Promise<void> {
@@ -478,8 +817,65 @@ async function installPackages(): Promise<void> {
     await installAptPackages();
     await createLinuxCompatSymlinks();
     await installSpecialPackagesLinux();
+    // Desktop tweaks are cosmetic and gsettings has plenty of ways to fail —
+    // missing schema, no D-Bus session, dconf unable to commit. Letting one
+    // throw here would reach main()'s catch and skip symlinks, secrets and
+    // fonts, i.e. everything the setup actually exists for. Under --desktop
+    // this guard is absent by design, so an explicit request still fails loud.
+    await setupLinuxDesktop().catch(error => {
+      log(`Desktop setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+    });
   } else {
     log('Unsupported platform. Skipping package installation.', 'warning');
+  }
+}
+
+// Copied rather than symlinked: macOS CoreText is unreliable about symlinked
+// faces in ~/Library/Fonts, and fonts change far too rarely to be worth the
+// inconsistency of doing it two different ways per platform.
+async function installFonts(): Promise<void> {
+  const fontsDir = join(DOTFILES_DIR, 'fonts');
+  if (!existsSync(fontsDir)) {
+    log('No fonts directory in repo, skipping font installation', 'warning');
+    return;
+  }
+
+  const target = IS_MACOS ? join(HOME, 'Library/Fonts') : join(HOME, '.local/share/fonts');
+  // Families live in subdirectories next to licences and READMEs, so recurse
+  // and keep only the actual faces.
+  const faces = readdirSync(fontsDir, { recursive: true, encoding: 'utf8' })
+    .filter(file => /\.(ttf|otf|ttc)$/i.test(file));
+
+  if (faces.length === 0) {
+    log('No font files found in fonts/, skipping', 'warning');
+    return;
+  }
+
+  mkdirSync(target, { recursive: true });
+
+  let installed = 0;
+  for (const face of faces) {
+    const dest = join(target, basename(face));
+    if (existsSync(dest)) continue;
+    copyFileSync(join(fontsDir, face), dest);
+    installed++;
+  }
+
+  if (installed === 0) {
+    log(`Fonts already installed in ${target} (${faces.length} faces)`, 'success');
+  } else {
+    log(`Installed ${installed} font face(s) to ${target}`, 'success');
+  }
+
+  // macOS picks up ~/Library/Fonts on its own; fontconfig needs telling.
+  if (IS_LINUX && !IS_CI && installed > 0 && await commandExists('fc-cache')) {
+    const spinner = ora('Refreshing font cache...').start();
+    try {
+      await execa('fc-cache', ['-f', target]);
+      spinner.succeed('Font cache refreshed');
+    } catch {
+      spinner.warn('Could not refresh font cache — run "fc-cache -f" manually');
+    }
   }
 }
 
@@ -814,8 +1210,27 @@ async function main(): Promise<void> {
   console.log(chalk.blue(`Working directory: ${DOTFILES_DIR}`));
 
   try {
+    if (options.desktop) {
+      // Explicitly requested work: refuse loudly rather than exit 0 having done
+      // nothing, which is indistinguishable from success.
+      if (!IS_LINUX) {
+        log('--desktop is Linux-only', 'error');
+        process.exit(1);
+      }
+      if (!HAS_DESKTOP) {
+        log('No graphical session detected (XDG_CURRENT_DESKTOP unset).', 'error');
+        log('Run this from a desktop session — not SSH, a plain VT, or a pre-login tmux server.', 'error');
+        process.exit(1);
+      }
+      await setupLinuxDesktop();
+      return;
+    }
+
     // Install required packages
     await installPackages();
+
+    // Install bundled fonts (both platforms)
+    await installFonts();
 
     // Install tmux plugin manager
     await installTPM();
@@ -843,6 +1258,8 @@ async function main(): Promise<void> {
   } catch (error) {
     console.error(chalk.red('Setup failed:'), error);
     process.exit(1);
+  } finally {
+    stopSudoKeepAlive();
   }
 }
 

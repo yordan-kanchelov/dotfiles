@@ -101,6 +101,6 @@ Tests use Node.js built-in test runner:
 ## Important Notes
 
 - Primary target is macOS, some features may work on Linux
-- Fonts are included in `fonts/` directory but require manual installation
+- Fonts in `fonts/` are installed automatically by setup — copied to `~/Library/Fonts` on macOS or `~/.local/share/fonts` (plus `fc-cache`) on Linux
 - Sensitive data should be stored in `~/.secrets` (sourced by .zprofile at login)
 - The setup preserves existing tmux/zsh plugin installations

@@ -13,6 +13,7 @@
     "setup:append": "node --experimental-strip-types setup.ts --append",
     "setup:no-packages": "node --experimental-strip-types setup.ts --skip-packages",
     "setup:verify": "node --experimental-strip-types setup.ts --verify",
+    "setup:desktop": "node --experimental-strip-types setup.ts --desktop",
     "test": "node --experimental-strip-types --test",
     "test:watch": "node --experimental-strip-types --test --watch",
     "typecheck": "tsc --noEmit",
