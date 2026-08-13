@@ -40,10 +40,28 @@ fi
 # fzf and atuin must init after zsh-vi-mode finishes recreating keymaps,
 # otherwise their bindings get overwritten. Use array form so multiple
 # hooks can compose; fall back to direct init if plugin not loaded.
+# `fzf --zsh` arrived in fzf 0.48. Debian/Ubuntu still ship 0.44, where it
+# aborts startup with "unknown option: --zsh" and silently costs us Ctrl-T and
+# Alt-C, so fall back to the integration scripts those packages do install.
+_init_fzf() {
+  if fzf --zsh >/dev/null 2>&1; then
+    source <(fzf --zsh)
+    return 0
+  fi
+  local examples=/usr/share/doc/fzf/examples
+  if [[ -f $examples/key-bindings.zsh ]]; then
+    source $examples/key-bindings.zsh
+  fi
+  if [[ -f $examples/completion.zsh ]]; then
+    source $examples/completion.zsh
+  fi
+  return 0
+}
+
 if [[ -n ${zvm_after_init_commands+x} ]]; then
-  zvm_after_init_commands+=('source <(fzf --zsh); eval "$(atuin init zsh)"')
+  zvm_after_init_commands+=('_init_fzf; eval "$(atuin init zsh)"')
 else
-  source <(fzf --zsh)
+  _init_fzf
   eval "$(atuin init zsh)"
 fi
 eval "$(starship init zsh)"

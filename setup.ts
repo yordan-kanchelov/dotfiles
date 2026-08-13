@@ -555,6 +555,37 @@ async function installSpecialPackagesLinux(): Promise<void> {
     log('lazygit is already installed', 'success');
   }
 
+  // fzf: Ubuntu 24.04 ships 0.44, which predates the `fzf --zsh` flag added in
+  // 0.48 that .zshrc.core uses. ~/.local/bin precedes /usr/bin in .zprofile,
+  // so a current build dropped there shadows the distro one.
+  const fzfHasZshFlag = await execa('fzf', ['--zsh']).then(() => true).catch(() => false);
+  if (fzfHasZshFlag) {
+    log('fzf already supports --zsh', 'success');
+  } else {
+    const spinner = ora('Installing current fzf (distro build predates --zsh)...').start();
+    try {
+      const { stdout: json } = await execa('curl', ['-fsSL',
+        'https://api.github.com/repos/junegunn/fzf/releases/latest']);
+      const tag = JSON.parse(json).tag_name as string;
+      const { stdout: unameMachine } = await execa('uname', ['-m']);
+      const archMap: Record<string, string> = { x86_64: 'amd64', aarch64: 'arm64', arm64: 'arm64' };
+      const arch = archMap[unameMachine] ?? unameMachine;
+      // Tags carry a leading "v" that the asset names drop.
+      const tarball = `fzf-${tag.replace(/^v/, '')}-linux_${arch}.tar.gz`;
+      const localBin = join(HOME, '.local/bin');
+      mkdirSync(localBin, { recursive: true });
+      const tmp = join('/tmp', tarball);
+      await execa('curl', ['-fLo', tmp,
+        `https://github.com/junegunn/fzf/releases/download/${tag}/${tarball}`]);
+      await execa('tar', ['xf', tmp, '-C', localBin, 'fzf']);
+      await fsExtra.remove(tmp);
+      spinner.succeed(`fzf ${tag} installed to ~/.local/bin`);
+    } catch (error) {
+      spinner.fail('Failed to install fzf');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    }
+  }
+
   // gh (GitHub CLI)
   if (!await commandExists('gh')) {
     if (!await commandExists('apt-get')) {
