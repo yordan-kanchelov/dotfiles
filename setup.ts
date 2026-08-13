@@ -2,7 +2,7 @@
 import { fileURLToPath } from 'url';
 import { basename, dirname, join, resolve } from 'path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, symlinkSync, readlinkSync, lstatSync, readdirSync } from 'fs';
-import { homedir, platform } from 'os';
+import { homedir, platform, userInfo } from 'os';
 import { program } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -414,6 +414,57 @@ async function createLinuxCompatSymlinks(): Promise<void> {
   }
 }
 
+// Debian/Ubuntu create accounts with bash, so every zsh config this repo links
+// sits inert until the login shell itself changes.
+async function setDefaultShellZsh(): Promise<void> {
+  if (IS_CI) return;
+
+  let zshPath: string;
+  try {
+    zshPath = await which('zsh');
+  } catch {
+    log('zsh not found, skipping default shell change', 'warning');
+    return;
+  }
+
+  // The login shell lives in /etc/passwd. $SHELL only describes the current
+  // process, and reads as bash inside any bash subshell regardless of it.
+  let current: string;
+  try {
+    const { stdout } = await execa('getent', ['passwd', userInfo().username]);
+    current = stdout.trim().split(':').pop() ?? '';
+  } catch {
+    log('Could not read the current login shell, skipping', 'warning');
+    return;
+  }
+
+  if (current === zshPath) {
+    log(`Default shell is already ${zshPath}`, 'success');
+    return;
+  }
+
+  // chsh rejects any shell missing from /etc/shells.
+  const shells = existsSync('/etc/shells') ? readFileSync('/etc/shells', 'utf8').split('\n') : [];
+  if (!shells.includes(zshPath)) {
+    try {
+      await execa('bash', ['-c', `echo ${zshPath} | sudo -n tee -a /etc/shells > /dev/null`]);
+      log(`Added ${zshPath} to /etc/shells`, 'success');
+    } catch {
+      log(`Could not add ${zshPath} to /etc/shells, skipping shell change`, 'warning');
+      return;
+    }
+  }
+
+  const spinner = ora(`Setting default shell to ${zshPath}...`).start();
+  try {
+    await execa('sudo', ['-n', 'chsh', '-s', zshPath, userInfo().username]);
+    spinner.succeed(`Default shell set to ${zshPath} — takes effect at next login`);
+  } catch (error) {
+    spinner.fail('Failed to change the default shell');
+    log(`Run it yourself with: chsh -s ${zshPath}`, 'info');
+  }
+}
+
 async function installSpecialPackagesLinux(): Promise<void> {
   log('Installing tools that require special installation methods...', 'info');
 
@@ -817,6 +868,7 @@ async function installPackages(): Promise<void> {
     await installAptPackages();
     await createLinuxCompatSymlinks();
     await installSpecialPackagesLinux();
+    await setDefaultShellZsh();
     // Desktop tweaks are cosmetic and gsettings has plenty of ways to fail —
     // missing schema, no D-Bus session, dconf unable to commit. Letting one
     // throw here would reach main()'s catch and skip symlinks, secrets and
