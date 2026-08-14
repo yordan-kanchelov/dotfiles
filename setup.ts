@@ -243,15 +243,31 @@ function parseAptPackages(filePath: string): string[] {
   return [...new Set(packages)];
 }
 
+// Checked against the homebrew-core API: these three have no Linux bottle.
+// tart runs Apple Silicon VMs, and apt already covers telnet and pipx.
+const MACOS_ONLY_FORMULAE = new Set(['tart', 'telnet', 'pipx']);
+
 async function installBrewPackages(): Promise<void> {
   if (!await commandExists('brew')) {
+    if (IS_LINUX) {
+      // Linux keeps apt plus the per-tool installers as a fallback, so a
+      // missing brew is a downgrade, not a dead end.
+      log('Homebrew not found, skipping brew packages', 'warning');
+      return;
+    }
     log('Error: Homebrew not found. Please run bootstrap.sh first.', 'error');
     process.exit(1);
   }
 
   log('Installing required packages with Homebrew...', 'info');
 
-  const { formulae, casks } = parseBrewPackages(join(DOTFILES_DIR, 'brew_packages.yml'));
+  const parsed = parseBrewPackages(join(DOTFILES_DIR, 'brew_packages.yml'));
+  const formulae = IS_LINUX
+    ? parsed.formulae.filter(pkg => !MACOS_ONLY_FORMULAE.has(pkg))
+    : parsed.formulae;
+  // Homebrew Cask is macOS-only; on Linux those apps come from apt, flatpak
+  // or the desktop step.
+  const casks = IS_LINUX ? [] : parsed.casks;
   const failedPackages: string[] = [];
 
   for (const pkg of formulae) {
@@ -386,6 +402,39 @@ async function installAptPackages(): Promise<void> {
   }
 }
 
+const LINUXBREW_PREFIX = '/home/linuxbrew/.linuxbrew';
+
+// Homebrew gives Linux current builds of nearly everything in this repo; apt
+// on 24.04 is years behind (neovim 0.9.5 vs 0.12, fd 9 vs 10, eza 0.18 vs 0.23).
+async function installHomebrewLinux(): Promise<void> {
+  if (await commandExists('brew')) {
+    log('Homebrew is already installed', 'success');
+    return;
+  }
+
+  if (!await ensureSudo()) {
+    log('No sudo access, skipping Homebrew installation', 'warning');
+    return;
+  }
+
+  const spinner = ora('Installing Homebrew (this takes a few minutes)...').start();
+  try {
+    // NONINTERACTIVE stops the installer blocking on a RETURN prompt that is
+    // invisible here. It needs sudo for /home/linuxbrew — a HOME-local prefix
+    // would miss every bottle and compile the lot from source instead.
+    await execa('bash', ['-c',
+      'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"']);
+    spinner.succeed('Homebrew installed');
+  } catch (error) {
+    spinner.fail('Failed to install Homebrew');
+    log(error instanceof Error ? error.message : 'Unknown error', 'error');
+    return;
+  }
+
+  // shellenv only reaches future logins; this process needs brew on PATH now.
+  process.env.PATH = `${LINUXBREW_PREFIX}/bin:${LINUXBREW_PREFIX}/sbin:${process.env.PATH}`;
+}
+
 async function createLinuxCompatSymlinks(): Promise<void> {
   // On Debian/Ubuntu, bat installs as "batcat" and fd installs as "fdfind".
   // Our zsh config references "bat" and "fd" directly, so create compatibility symlinks.
@@ -398,6 +447,18 @@ async function createLinuxCompatSymlinks(): Promise<void> {
   ];
 
   for (const [installed, alias] of aliases) {
+    // Homebrew ships a real bat/fd, but .zprofile prepends ~/.local/bin after
+    // brew's shellenv runs — so leaving our shim in place would pin the older
+    // apt build ahead of it.
+    if (existsSync(join(LINUXBREW_PREFIX, 'bin', alias))) {
+      const shim = join(localBin, alias);
+      if (lstatSync(shim, { throwIfNoEntry: false })?.isSymbolicLink()) {
+        await fsExtra.remove(shim);
+        log(`Removed ${alias} shim — Homebrew provides the real binary`, 'success');
+      }
+      continue;
+    }
+
     if (await commandExists(installed) && !await commandExists(alias)) {
       const installedPath = await which(installed);
       const aliasPath = join(localBin, alias);
@@ -896,7 +957,12 @@ async function installPackages(): Promise<void> {
   if (IS_MACOS) {
     await installBrewPackages();
   } else if (IS_LINUX) {
+    // apt first: Homebrew's installer needs build-essential, curl and git.
+    // Then brew for current versions, which leaves the per-tool installers
+    // below as no-ops for anything it already provided.
     await installAptPackages();
+    await installHomebrewLinux();
+    await installBrewPackages();
     await createLinuxCompatSymlinks();
     await installSpecialPackagesLinux();
     await setDefaultShellZsh();

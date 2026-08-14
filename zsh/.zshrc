@@ -17,8 +17,12 @@ fi
 # Tools can safely add their configurations below
 # ============================================
 
+# These were appended by their installers on macOS with an absolute /Users path,
+# which is dead weight on PATH everywhere else. $HOME-relative and guarded on
+# the directory existing, so each machine only picks up what it actually has.
+
 # Added by Antigravity
-export PATH="/Users/yordan.kanchelov/.antigravity/antigravity/bin:$PATH"
+[ -d "$HOME/.antigravity/antigravity/bin" ] && export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
 # Added by Antigravity IDE
-export PATH="/Users/yordan.kanchelov/.antigravity-ide/antigravity-ide/bin:$PATH"
+[ -d "$HOME/.antigravity-ide/antigravity-ide/bin" ] && export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
