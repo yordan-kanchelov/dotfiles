@@ -889,6 +889,72 @@ async function ensureUlauncherRunning(): Promise<void> {
   }
 }
 
+// Cinnamon's keyboard panel only accepts key combos, so the mouse side buttons
+// (X numbers them 8/9) need xbindkeys holding a grab on them. Nothing here wants
+// root, so it stays outside the sudo-gated installs — same reasoning as
+// ensureUlauncherRunning.
+async function ensureXbindkeys(): Promise<void> {
+  if (!await commandExists('xbindkeys')) return;
+
+  // xbindkeys grabs through X. Under Wayland it starts, binds nothing, and
+  // reports success — worse than not running at all.
+  if (process.env.XDG_SESSION_TYPE === 'wayland') {
+    log('Wayland session — xbindkeys cannot grab mouse buttons, skipping', 'warning');
+    return;
+  }
+
+  await createSymlink(join(DOTFILES_DIR, 'xbindkeys/.xbindkeysrc'), join(HOME, '.xbindkeysrc'));
+  await fsExtra.ensureDir(join(HOME, '.local/bin'));
+  await createSymlink(join(DOTFILES_DIR, 'xbindkeys/app-expose'), join(HOME, '.local/bin/app-expose'));
+  await createSymlink(join(DOTFILES_DIR, 'xbindkeys/mission-control'), join(HOME, '.local/bin/mission-control'));
+  await createSymlink(join(DOTFILES_DIR, 'xbindkeys/tile'), join(HOME, '.local/bin/tile'));
+
+  if (!await commandExists('rofi')) {
+    log('rofi not installed — mouse button 5 (App Exposé) will do nothing', 'warning');
+  }
+  if (!await commandExists('wmctrl')) {
+    log('wmctrl not installed — the Ctrl+Super tiling keys will do nothing', 'warning');
+  }
+
+  const autostart = join(HOME, '.config/autostart/xbindkeys.desktop');
+  if (!existsSync(autostart)) {
+    mkdirSync(dirname(autostart), { recursive: true });
+    writeFileSync(autostart, [
+      '[Desktop Entry]',
+      'Type=Application',
+      'Name=xbindkeys',
+      'Exec=xbindkeys',
+      'X-GNOME-Autostart-enabled=true',
+      'NoDisplay=true',
+      ''
+    ].join('\n'));
+    log(`Created ${autostart}`, 'success');
+  }
+
+  // Unconditional restart: xbindkeys reads ~/.xbindkeysrc once at startup, so an
+  // instance left over from before this run would keep serving stale bindings.
+  // pkill returns once the signal is sent, not once the process is gone — spawn
+  // into the old instance's still-live button grabs and the new one comes up
+  // bound to nothing, which the pgrep check below would happily call a success.
+  await execa('bash', ['-c',
+    'pkill -x xbindkeys || true; timeout 5 sh -c "while pgrep -x xbindkeys >/dev/null; do sleep 0.1; done"'
+  ]).catch(() => {});
+
+  const daemon = execa('xbindkeys', [], { detached: true, stdio: 'ignore' });
+  daemon.unref();
+  daemon.catch(() => {});
+
+  // xbindkeys exits on a config it cannot parse, and stdio is discarded above,
+  // so spawning it proves nothing on its own.
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  try {
+    await execa('pgrep', ['-x', 'xbindkeys']);
+    log('xbindkeys running — mouse buttons 4/5 = Expo/App Exposé, Ctrl+Super+arrows/letters tile', 'success');
+  } catch {
+    log('xbindkeys did not stay running — run "xbindkeys -n -v" to see why', 'warning');
+  }
+}
+
 async function aptCandidateExists(pkg: string): Promise<boolean> {
   try {
     const { stdout } = await execa('apt-cache', ['policy', pkg]);
@@ -1001,7 +1067,7 @@ async function setupLinuxDesktop(): Promise<void> {
     return;
   }
 
-  if (!await promptUser('Set up desktop apps? (Ulauncher, Ghostty, Flameshot + Cinnamon settings)', false)) {
+  if (!await promptUser('Set up desktop apps? (Ulauncher, Ghostty, Flameshot, mouse buttons + Cinnamon settings)', false)) {
     log('Skipped desktop setup', 'warning');
     return;
   }
@@ -1014,6 +1080,12 @@ async function setupLinuxDesktop(): Promise<void> {
     await installUlauncher();
     await installGhostty();
     await installAptPackage('flameshot');
+    await installAptPackage('xbindkeys');
+    // Cinnamon has no per-app window overview, so App Exposé is rofi's window
+    // mode filtered to one WM_CLASS — see xbindkeys/app-expose.
+    await installAptPackage('rofi');
+    // xbindkeys/tile moves the active window through wmctrl's EWMH messages.
+    await installAptPackage('wmctrl');
   } else {
     // Settings below need no root, so a failed sudo must not skip them too.
     log('No sudo access — skipping app installs, applying desktop settings only', 'warning');
@@ -1023,11 +1095,12 @@ async function setupLinuxDesktop(): Promise<void> {
 
   const desktop = process.env.XDG_CURRENT_DESKTOP ?? '';
   if (!desktop.toLowerCase().includes('cinnamon')) {
-    log(`${desktop || 'This desktop'} is not Cinnamon — set the Alt+Space and Shift+Super+4 shortcuts manually`, 'warning');
+    log(`${desktop || 'This desktop'} is not Cinnamon — set the shortcuts and mouse bindings manually`, 'warning');
     return;
   }
 
   await configureCinnamon();
+  await ensureXbindkeys();
 }
 
 async function installPackages(): Promise<void> {

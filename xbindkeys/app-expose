@@ -1,0 +1,10 @@
+#!/bin/sh
+# macOS App Exposé analog: pick among the windows of the focused app.
+# Cinnamon has no per-app window overview, so rofi's window mode is
+# pre-filtered to the active window's WM_CLASS.
+set -eu
+
+id=$(xprop -root _NET_ACTIVE_WINDOW | grep -o '0x[0-9a-f]*')
+class=$(xprop -id "$id" WM_CLASS | sed 's/.*, "//; s/"$//')
+
+exec rofi -show window -window-match-fields class -filter "$class"

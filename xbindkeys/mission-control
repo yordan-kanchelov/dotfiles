@@ -1,0 +1,18 @@
+#!/bin/sh
+# macOS Mission Control analog: Cinnamon's Scale (all windows, current workspace).
+#
+# Not org.Cinnamon.ShowOverview. That method — and ShowExpo — reply without error
+# and do nothing at all on this Cinnamon; Main.overview.visible stays "false"
+# across a call, so the D-Bus return code tells you nothing. Eval drives the same
+# toggle the hot corner uses, which does work.
+#
+# Bound on button *release* in .xbindkeysrc: a press-bound mouse grab fires
+# several times per physical click, and each repeat would toggle the view
+# straight back shut.
+set -eu
+
+# --print-reply is load-bearing, not debug output: without it dbus-send marks the
+# message NO_REPLY_EXPECTED and Cinnamon drops the Eval on the floor. Verified by
+# watching Main.overview.visible stay "false" across a call that omitted it.
+exec dbus-send --session --print-reply --dest=org.Cinnamon /org/Cinnamon \
+  org.Cinnamon.Eval string:'Main.overview.toggle()' >/dev/null
