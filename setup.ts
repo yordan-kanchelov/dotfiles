@@ -243,9 +243,11 @@ function parseAptPackages(filePath: string): string[] {
   return [...new Set(packages)];
 }
 
-// Checked against the homebrew-core API: these three have no Linux bottle.
-// tart runs Apple Silicon VMs, and apt already covers telnet and pipx.
-const MACOS_ONLY_FORMULAE = new Set(['tart', 'telnet', 'pipx']);
+// Formulae brew must not install on Linux. Checked against the homebrew-core
+// API, the first three have no Linux bottle: tart runs Apple Silicon VMs, and
+// apt already covers telnet and pipx. ollama does have one, but it is CPU-only
+// — see installOllamaLinux, which fetches the upstream build instead.
+const MACOS_ONLY_FORMULAE = new Set(['tart', 'telnet', 'pipx', 'ollama']);
 
 async function installBrewPackages(): Promise<void> {
   if (!await commandExists('brew')) {
@@ -671,6 +673,86 @@ async function installSpecialPackagesLinux(): Promise<void> {
     }
   } else {
     log('gh is already installed', 'success');
+  }
+
+  await installOllamaLinux();
+}
+
+// Homebrew's Linux bottle ships only libggml-cpu-*.so, so brew's ollama runs
+// 27B models at ~5 tok/s on CPU even with a 3090 idle next to it. The upstream
+// tarball carries the CUDA runners; ollama is in MACOS_ONLY_FORMULAE so brew
+// never installs the crippled one here.
+async function installOllamaLinux(): Promise<void> {
+  const prefix = join(HOME, '.local/ollama');
+  const binary = join(prefix, 'bin/ollama');
+  const localBin = join(HOME, '.local/bin');
+
+  if (!existsSync(binary)) {
+    // tar needs the zstd binary to decompress upstream's .tar.zst assets.
+    if (!await commandExists('zstd')) {
+      log('zstd not found, skipping ollama (apt install zstd, then re-run)', 'warning');
+      return;
+    }
+
+    const spinner = ora('Installing ollama (~1.4GB, bundles CUDA runners)...').start();
+    try {
+      const { stdout: json } = await execa('curl', ['-fsSL',
+        'https://api.github.com/repos/ollama/ollama/releases/latest']);
+      const tag = JSON.parse(json).tag_name as string;
+      const { stdout: unameMachine } = await execa('uname', ['-m']);
+      const archMap: Record<string, string> = { x86_64: 'amd64', aarch64: 'arm64', arm64: 'arm64' };
+      const arch = archMap[unameMachine] ?? unameMachine;
+      const tmp = join('/tmp', `ollama-linux-${arch}.tar.zst`);
+      await execa('curl', ['-fLo', tmp,
+        `https://github.com/ollama/ollama/releases/download/${tag}/ollama-linux-${arch}.tar.zst`]);
+      mkdirSync(prefix, { recursive: true });
+      await execa('tar', ['--zstd', '-xf', tmp, '-C', prefix]);
+      await fsExtra.remove(tmp);
+      spinner.succeed(`ollama ${tag} installed to ~/.local/ollama`);
+    } catch (error) {
+      spinner.fail('Failed to install ollama');
+      log(error instanceof Error ? error.message : 'Unknown error', 'error');
+      return;
+    }
+  } else {
+    log('ollama is already installed', 'success');
+  }
+
+  // The bundle keeps its libs beside the binary, so ~/.local/bin gets a link
+  // rather than a copy. .zprofile already has ~/.local/bin on PATH.
+  mkdirSync(localBin, { recursive: true });
+  await createSymlink(binary, join(localBin, 'ollama'));
+
+  if (!await commandExists('systemctl')) return;
+
+  // A user unit, not a system one: no sudo, and the daemon follows the login
+  // session like every other tool this script installs.
+  const unit = join(HOME, '.config/systemd/user/ollama.service');
+  if (!existsSync(unit)) {
+    mkdirSync(dirname(unit), { recursive: true });
+    writeFileSync(unit, [
+      '[Unit]',
+      'Description=Ollama',
+      'After=network-online.target',
+      '',
+      '[Service]',
+      `ExecStart=${binary} serve`,
+      'Restart=always',
+      'RestartSec=3',
+      '',
+      '[Install]',
+      'WantedBy=default.target',
+      ''
+    ].join('\n'));
+    log(`Created ${unit}`, 'success');
+  }
+
+  try {
+    await execa('systemctl', ['--user', 'daemon-reload']);
+    await execa('systemctl', ['--user', 'enable', '--now', 'ollama.service']);
+    log('ollama service running (systemctl --user status ollama)', 'success');
+  } catch (error) {
+    log(`Could not start ollama service: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warning');
   }
 }
 
