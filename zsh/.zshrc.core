@@ -221,6 +221,13 @@ cat() {
     esac
 }
 
+clear() {
+  command clear
+  if [[ -n $TMUX ]]; then
+    tmux clear-history
+  fi
+}
+
 # Quick reload of zsh configuration (exec avoids double plugin init from re-sourcing)
 alias reload='exec zsh'
 
