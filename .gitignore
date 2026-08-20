@@ -24,3 +24,6 @@ history*
 sessions/
 shell-snapshots/
 shell_snapshots/
+
+# Agent worktree scratch state
+.claude/worktrees/
