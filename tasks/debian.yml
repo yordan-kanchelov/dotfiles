@@ -1,0 +1,93 @@
+---
+# Debian/Ubuntu/Mint. The become tasks come first so one sudo ticket covers them.
+- name: Apt packages
+  ansible.builtin.apt:
+    name: "{{ apt_packages }}"
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+# Debian creates accounts with bash, so every zsh config this repo links sits
+# inert until the login shell itself changes. usermod does not consult /etc/shells.
+- name: Zsh as login shell
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    shell: "{{ zsh_path }}"
+  become: true
+
+# Homebrew's installer refuses to run as root and calls sudo itself — invisible
+# under Ansible. A prefix that already exists and is user-writable makes it skip
+# sudo entirely.
+- name: Linuxbrew prefix owned by user
+  ansible.builtin.file:
+    path: "{{ brew_prefix }}"
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    mode: "0755"
+  become: true
+
+# apt on 24.04 is years behind (neovim 0.9.5 vs 0.12, fd 9 vs 10); brew gives
+# current builds of nearly everything in brew_packages.yml.
+- name: Homebrew
+  ansible.builtin.shell: NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  args:
+    creates: "{{ brew_prefix }}/bin/brew"
+
+# Homebrew's Linux bottle ships only the CPU runner, so brew's ollama runs 27B
+# models at ~5 tok/s with a 3090 idle next to it. Upstream's tarball carries the
+# CUDA runners. Skip with --skip-tags ollama (1.4 GB; needs a user systemd).
+- name: Ollama dirs # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ home }}/.local/bin"
+    - "{{ home }}/.local/ollama"
+    - "{{ home }}/.config/systemd/user"
+  tags: ollama
+
+- name: Ollama upstream build
+  ansible.builtin.unarchive:
+    src: "https://github.com/ollama/ollama/releases/latest/download/ollama-linux-{{ deb_arch }}.tar.zst"
+    dest: "{{ home }}/.local/ollama"
+    remote_src: true
+    creates: "{{ home }}/.local/ollama/bin/ollama"
+  tags: ollama
+
+# The bundle keeps its libs beside the binary, so ~/.local/bin gets a link, not a copy.
+- name: Ollama on PATH
+  ansible.builtin.file:
+    src: "{{ home }}/.local/ollama/bin/ollama"
+    dest: "{{ home }}/.local/bin/ollama"
+    state: link
+  tags: ollama
+
+# A user unit, not a system one: no sudo, and the daemon follows the login session.
+- name: Ollama user unit
+  ansible.builtin.copy:
+    dest: "{{ home }}/.config/systemd/user/ollama.service"
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Ollama
+      After=network-online.target
+
+      [Service]
+      ExecStart={{ home }}/.local/ollama/bin/ollama serve
+      Restart=always
+      RestartSec=3
+
+      [Install]
+      WantedBy=default.target
+  tags: ollama
+
+- name: Ollama service
+  ansible.builtin.systemd_service:
+    name: ollama
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: ansible_service_mgr == 'systemd'
+  tags: ollama

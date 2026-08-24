@@ -39,7 +39,7 @@ formulae:
     - lazygit
     - neovim
     - ollama
-    - opencode     
+    - opencode
     - shellcheck
 
   api-and-testing:

@@ -1,0 +1,214 @@
+---
+# Linux desktop: Ulauncher, Ghostty, Flameshot, Cinnamon settings, xbindkeys.
+# Only reached via --tags desktop from a graphical session (see setup.yml).
+- name: Installed packages
+  ansible.builtin.package_facts:
+
+# Mint reports its own codename (zena); the PPA only has Ubuntu series, so pass
+# the base one explicitly.
+- name: Ulauncher PPA
+  ansible.builtin.apt_repository:
+    repo: ppa:agornostal/ulauncher
+    codename: "{{ lookup('ansible.builtin.ini', 'UBUNTU_CODENAME', type='properties', file='/etc/os-release') }}"
+  become: true
+  when: ansible_distribution != 'Debian' and 'ulauncher' not in ansible_facts.packages
+
+# rofi: Cinnamon has no per-app window overview, so App Exposé is rofi's window
+# mode filtered to one WM_CLASS (xbindkeys/app-expose). wmctrl: xbindkeys/tile
+# moves windows through EWMH messages.
+- name: Desktop packages
+  ansible.builtin.apt:
+    name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl]
+  become: true
+
+# Ghostty reached the Ubuntu archive in 26.04. Older bases (Mint 22 sits on
+# 24.04) have no apt candidate and upstream ships no binaries, so fall back to
+# the community .deb builds, which name Ubuntu assets by version ("24.04") and
+# Debian ones by codename, and spell the version ".ppaN" where the tag says "-ppaN".
+- name: Ghostty
+  when: "'ghostty' not in ansible_facts.packages"
+  vars:
+    ghostty_in_apt: "{{ 'Candidate:' in ghostty_policy.stdout and '(none)' not in ghostty_policy.stdout }}"
+  block:
+    - name: Ghostty apt candidate
+      ansible.builtin.command: apt-cache policy ghostty
+      register: ghostty_policy
+      changed_when: false
+
+    - name: Ghostty from apt
+      ansible.builtin.apt:
+        name: ghostty
+      become: true
+      when: ghostty_in_apt
+
+    - name: Ghostty latest community release
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/mkasberg/ghostty-ubuntu/releases/latest
+        return_content: true
+      register: ghostty_latest
+      when: not ghostty_in_apt
+
+    - name: Ghostty community .deb
+      ansible.builtin.apt:
+        deb: "{{ ghostty_downloads }}/{{ tag }}/ghostty_{{ tag | replace('-ppa', '.ppa') }}_{{ deb_arch }}_{{ release }}.deb"
+      vars:
+        ghostty_downloads: https://github.com/mkasberg/ghostty-ubuntu/releases/download
+        tag: "{{ ghostty_latest.json.tag_name }}"
+        release: >-
+          {{ ansible_distribution_release if ansible_distribution == 'Debian'
+             else (lookup('ansible.builtin.ini', 'DISTRIB_RELEASE', type='properties',
+                          file='/etc/upstream-release/lsb-release', errors='ignore')
+                   or ansible_distribution_version) }}
+      become: true
+      when: not ghostty_in_apt
+
+- name: Autostart dir # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: "{{ home }}/.config/autostart"
+    state: directory
+
+# The hotkey is useless without a live daemon; neither the autostart entry nor
+# starting it needs root.
+- name: Ulauncher autostart
+  ansible.builtin.copy:
+    dest: "{{ home }}/.config/autostart/ulauncher.desktop"
+    mode: "0644"
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=Ulauncher
+      Exec=ulauncher --hide-window
+      Icon=ulauncher
+      X-GNOME-Autostart-enabled=true
+
+# -x matches the process name exactly; -f would match this very play's command line.
+- name: Ulauncher running
+  ansible.builtin.command: pgrep -x ulauncher
+  register: ulauncher_pgrep
+  changed_when: false
+  failed_when: false
+
+- name: Start Ulauncher
+  ansible.builtin.shell: setsid ulauncher --hide-window >/dev/null 2>&1 &
+  changed_when: true
+  when: ulauncher_pgrep.rc != 0
+
+- name: Cinnamon settings
+  when: "'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)"
+  block:
+    - name: Hot corners (current)
+      ansible.builtin.command: gsettings get org.cinnamon hotcorner-layout
+      register: hotcorners
+      changed_when: false
+
+    # expo = Mission Control, scale = App Exposé. Only touched while every corner
+    # is still off, so a hand-tuned layout survives a re-run.
+    - name: Hot corners (top-left Expo, top-right App Exposé)
+      ansible.builtin.command: >
+        gsettings set org.cinnamon hotcorner-layout
+        "['expo:true:0', 'scale:true:0', 'scale:false:0', 'desktop:false:0']"
+      when: "':true:' not in hotcorners.stdout"
+      changed_when: true
+
+    # Cinnamon ships Alt+Space on the window menu; the launcher never sees the key
+    # until that one is cleared.
+    - name: Free Alt+Space from the window menu
+      ansible.builtin.shell: |
+        set -o pipefail
+        if gsettings get org.cinnamon.desktop.keybindings.wm activate-window-menu | grep -q '<Alt>space'; then
+          gsettings set org.cinnamon.desktop.keybindings.wm activate-window-menu "[]" && echo changed
+        fi
+      args:
+        executable: /bin/bash
+      register: window_menu
+      changed_when: "'changed' in window_menu.stdout"
+
+    # Cinnamon keeps custom shortcuts as custom0/custom1/... under a relocatable
+    # schema plus a list naming the live ones. Reuse the slot already holding
+    # this command, or re-runs stack duplicates. Fill the slot before advertising
+    # it in custom-list, or a failure in between leaves a blank shortcut nothing
+    # can reclaim. Super sits where Cmd does, so Shift+Super+4 becomes
+    # Cmd+Shift+4 under a Mac-style remapper and is harmless before that.
+    - name: Custom hotkeys
+      ansible.builtin.shell: |
+        set -o pipefail
+        schema() { echo "org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/$1/"; }
+        list=$(gsettings get org.cinnamon.desktop.keybindings custom-list)
+        slots=$(echo "$list" | grep -o "'[^']*'" | tr -d "'" || true)
+        slot=
+        for s in $slots; do
+          [ "$(gsettings get "$(schema "$s")" command)" = "'{{ item.command }}'" ] && { slot=$s; break; }
+        done
+        if [ -z "$slot" ]; then
+          i=0; while echo "$slots" | grep -qx "custom$i"; do i=$((i + 1)); done
+          slot=custom$i
+        elif [ "$(gsettings get "$(schema "$slot")" binding)" = "['{{ item.binding }}']" ] &&
+             [ "$(gsettings get "$(schema "$slot")" name)" = "'{{ item.name }}'" ]; then
+          exit 0
+        fi
+        gsettings set "$(schema "$slot")" name "'{{ item.name }}'"
+        gsettings set "$(schema "$slot")" command "'{{ item.command }}'"
+        gsettings set "$(schema "$slot")" binding "['{{ item.binding }}']"
+        if ! echo "$list" | grep -q "'$slot'"; then
+          gsettings set org.cinnamon.desktop.keybindings custom-list "[$(printf "'%s', " $slots "$slot" | sed 's/, $//')]"
+        fi
+        echo changed
+      args:
+        executable: /bin/bash
+      loop:
+        - { name: Ulauncher, command: ulauncher-toggle, binding: "<Alt>space" }
+        - { name: Flameshot, command: flameshot gui, binding: "<Shift><Super>4" }
+      loop_control:
+        label: "{{ item.binding }} -> {{ item.command }}"
+      register: hotkey
+      changed_when: "'changed' in hotkey.stdout"
+
+# Cinnamon's keyboard panel only accepts key combos, so the mouse side buttons
+# (X numbers them 8/9) need xbindkeys holding a grab on them. Under Wayland it
+# starts, binds nothing and reports success — worse than not running at all.
+- name: Xbindkeys
+  when: >-
+    'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)
+    and (ansible_env.XDG_SESSION_TYPE | default('')) != 'wayland'
+  block:
+    - name: Xbindkeys links
+      ansible.builtin.import_tasks: symlinks.yml
+      vars:
+        links:
+          - { src: xbindkeys/.xbindkeysrc, dest: .xbindkeysrc }
+          - { src: xbindkeys/app-expose, dest: .local/bin/app-expose }
+          - { src: xbindkeys/mission-control, dest: .local/bin/mission-control }
+          - { src: xbindkeys/tile, dest: .local/bin/tile }
+
+    - name: Xbindkeys autostart
+      ansible.builtin.copy:
+        dest: "{{ home }}/.config/autostart/xbindkeys.desktop"
+        mode: "0644"
+        content: |
+          [Desktop Entry]
+          Type=Application
+          Name=xbindkeys
+          Exec=xbindkeys
+          X-GNOME-Autostart-enabled=true
+          NoDisplay=true
+
+    # Unconditional: xbindkeys reads ~/.xbindkeysrc once at startup, so a leftover
+    # instance keeps serving stale bindings. pkill returns once the signal is
+    # sent, not once the process is gone — spawn into the old instance's live
+    # grabs and the new one comes up bound to nothing.
+    - name: Restart xbindkeys
+      ansible.builtin.shell: |
+        pkill -x xbindkeys || true
+        timeout 5 sh -c 'while pgrep -x xbindkeys >/dev/null; do sleep 0.1; done'
+        setsid xbindkeys >/dev/null 2>&1 &
+      changed_when: true
+
+    # xbindkeys exits on a config it cannot parse, and its output is discarded
+    # above, so spawning it proves nothing on its own.
+    - name: Xbindkeys alive
+      ansible.builtin.command: pgrep -x xbindkeys
+      register: xbindkeys_pgrep
+      until: xbindkeys_pgrep.rc == 0
+      retries: 5
+      delay: 1
+      changed_when: false
