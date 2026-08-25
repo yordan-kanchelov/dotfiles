@@ -26,3 +26,9 @@ shell_snapshots/
 
 # Agent worktree scratch state
 .claude/worktrees/
+
+# Claude Code syncs Anthropic-authored skills into ~/.claude/skills, which the
+# symlinks task points at this directory — so they land inside the repo. They
+# are re-fetched on demand; only skills we author here belong in git.
+claude/skills/synced/
+claude/skills/session-start-hook/
