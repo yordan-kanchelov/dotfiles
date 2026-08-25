@@ -39,7 +39,7 @@ formulae:
     - lazygit
     - neovim
     - ollama
-    - opencode     
+    - opencode
     - shellcheck
 
   api-and-testing:
@@ -52,7 +52,7 @@ formulae:
   devops:
     - act            # Run GitHub Actions locally
     - awscli
-    - tart           # macOS VM runner (Apple Silicon)
+    - cirruslabs/cli/tart  # macOS VM runner (Apple Silicon); tap formula, see setup.yml
     - telnet
 
   media:
