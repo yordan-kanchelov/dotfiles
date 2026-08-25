@@ -10,7 +10,7 @@ deb_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
 # the first three have no Linux bottle (tart runs Apple Silicon VMs; apt already
 # covers telnet and pipx). ollama does, but it is CPU-only — tasks/debian.yml
 # fetches the upstream build instead.
-brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten | difference(['tart', 'telnet', 'pipx', 'ollama']) }}"
+brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten | difference(['cirruslabs/cli/tart', 'telnet', 'pipx', 'ollama']) }}"
 
 # apt first: Homebrew's installer needs build-essential, curl and git, and brew then
 # supplies current builds of nearly everything else in brew_packages.yml.
