@@ -54,9 +54,14 @@
       tags: packages
 
     # Tap-qualified names (cirruslabs/cli/tart) bypass the module: it fails on any stderr from
-    # `brew info`, and taps print deprecation warnings. `brew install` taps on its own.
+    # `brew info`, and taps print deprecation warnings. Newer brews also refuse formulae from
+    # untrusted taps (tart pulls softnet from its own tap), so the tap is trusted first; the
+    # `|| true` covers brews too old to have `brew trust` -- the install is the real check.
     - name: Homebrew tap formulae # ponytail: assumes the formula installs bin/<name>
-      ansible.builtin.command: brew install {{ item }}
+      ansible.builtin.shell: >
+        brew tap {{ item | dirname }} &&
+        (brew trust {{ item | dirname }} 2>/dev/null || true) &&
+        brew install {{ item }}
       args:
         creates: "{{ brew_prefix }}/bin/{{ item | basename }}"
       loop: "{{ brew_formulae | select('search', '/') }}"
