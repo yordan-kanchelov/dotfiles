@@ -2,7 +2,6 @@
 # Debian/Ubuntu/Mint values, loaded by setup.yml via vars_files on ansible_os_family.
 brew_prefix: /home/linuxbrew/.linuxbrew
 fonts_dir: "{{ ansible_env.HOME }}/.local/share/fonts"
-fnm_dir: "{{ ansible_env.HOME }}/.local/share/fnm"
 zsh_path: /usr/bin/zsh
 deb_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
 

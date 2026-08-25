@@ -76,10 +76,17 @@
       when: ansible_os_family == 'Darwin'
       tags: packages
 
+    # fnm picks its data dir itself (legacy ~/.fnm, XDG_DATA_HOME, per-OS default), so ask it
+    # what is installed instead of guessing the path for `creates`.
     - name: Node via fnm
-      ansible.builtin.shell: fnm install {{ node_version }} && fnm default {{ node_version }}
+      ansible.builtin.shell: |
+        set -o pipefail
+        fnm ls | grep -q " v{{ node_version }}\." && exit 0
+        fnm install {{ node_version }} && fnm default {{ node_version }} && echo installed
       args:
-        creates: "{{ fnm_dir }}/node-versions/v{{ node_version }}.*"
+        executable: /bin/bash
+      register: node
+      changed_when: "'installed' in node.stdout"
       environment: "{{ tool_env }}"
       tags: packages
 

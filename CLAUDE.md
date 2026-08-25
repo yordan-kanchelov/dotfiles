@@ -30,7 +30,7 @@ Verify = run the playbook again and expect `changed=0`.
 - `setup.yml` — the play. Holds the symlink allowlist (`dotfile_links`), the backup dir, the per-task
   `tool_env` (brew/fnm/tmux on PATH within the run), and the ordered tasks with their tags. Per-OS values come
   from `vars/{{ ansible_os_family }}.yml` via `vars_files`.
-- `vars/Darwin.yml`, `vars/Debian.yml` — brew prefix, fonts dir, fnm dir, the flattened formula list. Debian
+- `vars/Darwin.yml`, `vars/Debian.yml` — brew prefix, fonts dir, the flattened formula list. Debian
   also holds the apt package list and the formulae brew must not install on Linux.
 - `tasks/symlinks.yml` — `stat` → move anything in the way to `~/.dotfiles_backup/<timestamp>/` → `file state=link`.
   Parametrised on `links`; imported from `setup.yml` and again from `tasks/desktop.yml` for the xbindkeys files.
