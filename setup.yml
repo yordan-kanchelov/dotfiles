@@ -46,17 +46,20 @@
       when: ansible_os_family == 'Debian'
       tags: packages
 
-    - name: Homebrew taps # tart lives in cirruslabs/cli, not homebrew-core
-      community.general.homebrew_tap:
-        name: cirruslabs/cli
-      environment: "{{ tool_env }}"
-      when: ansible_os_family == 'Darwin'
-      tags: packages
-
     - name: Homebrew formulae
       community.general.homebrew:
-        name: "{{ brew_formulae }}"
+        name: "{{ brew_formulae | reject('search', '/') }}"
         state: present
+      environment: "{{ tool_env }}"
+      tags: packages
+
+    # Tap-qualified names (cirruslabs/cli/tart) bypass the module: it fails on any stderr from
+    # `brew info`, and taps print deprecation warnings. `brew install` taps on its own.
+    - name: Homebrew tap formulae # ponytail: assumes the formula installs bin/<name>
+      ansible.builtin.command: brew install {{ item }}
+      args:
+        creates: "{{ brew_prefix }}/bin/{{ item | basename }}"
+      loop: "{{ brew_formulae | select('search', '/') }}"
       environment: "{{ tool_env }}"
       tags: packages
 

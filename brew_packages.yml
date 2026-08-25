@@ -52,7 +52,7 @@ formulae:
   devops:
     - act            # Run GitHub Actions locally
     - awscli
-    - cirruslabs/cli/tart  # macOS VM runner (Apple Silicon); tap formula, tapped in setup.yml
+    - cirruslabs/cli/tart  # macOS VM runner (Apple Silicon); tap formula, see setup.yml
     - telnet
 
   media:
