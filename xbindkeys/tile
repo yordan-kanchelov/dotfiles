@@ -15,7 +15,9 @@ win=$(xprop -root _NET_ACTIVE_WINDOW | grep -o '0x[0-9a-f]*')
 # The cycle continues only while the same binding keeps hitting the same window;
 # any other window or binding starts over at the first position. Moving the
 # window by hand in between is not noticed — the next press resumes the cycle.
-state="${XDG_RUNTIME_DIR:-/tmp}/tile.state"
+# Per-uid name: the /tmp fallback is shared between users, and a fixed name
+# there is one pre-planted symlink away from clobbering someone else's file.
+state="${XDG_RUNTIME_DIR:-/tmp}/tile.$(id -u).state"
 signature="$win $*"
 prev='' index=0
 [ -f "$state" ] && { IFS= read -r prev && read -r index; } < "$state" || true

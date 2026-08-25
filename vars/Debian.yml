@@ -3,7 +3,9 @@
 brew_prefix: /home/linuxbrew/.linuxbrew
 fonts_dir: "{{ ansible_env.HOME }}/.local/share/fonts"
 zsh_path: /usr/bin/zsh
-deb_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+# Unknown arches pass through by name, so a download fails naming the real arch
+# instead of fetching an arm64 binary that cannot run.
+deb_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64', 'arm64': 'arm64'}.get(ansible_architecture, ansible_architecture) }}"
 
 # Formulae brew must not install on Linux. Checked against the homebrew-core API:
 # the first three have no Linux bottle (tart runs Apple Silicon VMs; apt already
@@ -28,6 +30,7 @@ apt_packages:
   # development
   - git
   - git-lfs
+  - telnet # excluded from brew_formulae above, so apt must actually supply it
   - golang-go
   - neovim
   - pipx

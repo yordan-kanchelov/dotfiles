@@ -55,12 +55,15 @@
     creates: "{{ home }}/.local/ollama/bin/ollama"
   tags: ollama
 
-# The bundle keeps its libs beside the binary, so ~/.local/bin gets a link, not a copy.
+# The bundle keeps its libs beside the binary, so ~/.local/bin gets a link, not a
+# copy. force: a leftover real file there (ollama's own installer) must not abort
+# the play after the 1.4 GB download already happened.
 - name: Ollama on PATH
   ansible.builtin.file:
     src: "{{ home }}/.local/ollama/bin/ollama"
     dest: "{{ home }}/.local/bin/ollama"
     state: link
+    force: true
   tags: ollama
 
 # A user unit, not a system one: no sudo, and the daemon follows the login session.
@@ -80,14 +83,19 @@
 
       [Install]
       WantedBy=default.target
+  register: ollama_unit
   tags: ollama
 
+# XDG_RUNTIME_DIR guard: `systemctl --user` needs a live user manager, and PID 1
+# being systemd says nothing about that (su/ssh-without-pam/cron all fail with
+# "Failed to connect to bus"). restarted-on-change: `started` alone would leave a
+# running daemon on the old unit forever.
 - name: Ollama service
   ansible.builtin.systemd_service:
     name: ollama
     scope: user
     enabled: true
-    state: started
+    state: "{{ 'restarted' if ollama_unit.changed else 'started' }}"
     daemon_reload: true
-  when: ansible_service_mgr == 'systemd'
+  when: ansible_service_mgr == 'systemd' and ansible_env.XDG_RUNTIME_DIR is defined
   tags: ollama

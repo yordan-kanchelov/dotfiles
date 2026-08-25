@@ -1,6 +1,14 @@
 ---
 # Linux desktop: Ulauncher, Ghostty, Flameshot, Cinnamon settings, xbindkeys.
-# Only reached via --tags desktop from a graphical session (see setup.yml).
+# Only reached via --tags desktop (see setup.yml). Failing loudly beats the
+# alternative — every task silently skipping on an SSH run that asked for
+# desktop by name.
+- name: Graphical session required
+  ansible.builtin.assert:
+    that: ansible_env.XDG_CURRENT_DESKTOP is defined
+    fail_msg: --tags desktop needs a graphical session; run it from the desktop, not SSH/cron
+    quiet: true
+
 - name: Installed packages
   ansible.builtin.package_facts:
 
@@ -15,10 +23,11 @@
 
 # rofi: Cinnamon has no per-app window overview, so App Exposé is rofi's window
 # mode filtered to one WM_CLASS (xbindkeys/app-expose). wmctrl: xbindkeys/tile
-# moves windows through EWMH messages.
+# moves windows through EWMH messages. x11-utils: those scripts also shell out
+# to xprop/xwininfo, which cinnamon-core does not guarantee.
 - name: Desktop packages
   ansible.builtin.apt:
-    name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl]
+    name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl, x11-utils]
   become: true
 
 # Ghostty reached the Ubuntu archive in 26.04. Older bases (Mint 22 sits on
@@ -28,12 +37,17 @@
 - name: Ghostty
   when: "'ghostty' not in ansible_facts.packages"
   vars:
-    ghostty_in_apt: "{{ 'Candidate:' in ghostty_policy.stdout and '(none)' not in ghostty_policy.stdout }}"
+    # Not `'(none)' not in stdout`: apt-cache policy prints "Installed: (none)"
+    # for any not-installed package, and this block only runs for those.
+    ghostty_in_apt: "{{ 'Candidate:' in ghostty_policy.stdout and 'Candidate: (none)' not in ghostty_policy.stdout }}"
   block:
+    # check_mode: false on the read-only probes: --check skips them otherwise,
+    # and the when-clauses below dereference their results.
     - name: Ghostty apt candidate
       ansible.builtin.command: apt-cache policy ghostty
       register: ghostty_policy
       changed_when: false
+      check_mode: false
 
     - name: Ghostty from apt
       ansible.builtin.apt:
@@ -47,6 +61,7 @@
         return_content: true
       register: ghostty_latest
       when: not ghostty_in_apt
+      check_mode: false
 
     - name: Ghostty community .deb
       ansible.builtin.apt:
@@ -87,10 +102,22 @@
   register: ulauncher_pgrep
   changed_when: false
   failed_when: false
+  check_mode: false
 
 - name: Start Ulauncher
   ansible.builtin.shell: setsid ulauncher --hide-window >/dev/null 2>&1 &
   changed_when: true
+  when: ulauncher_pgrep.rc != 0
+
+# The spawn discards output and backgrounds, so it succeeds even when the
+# daemon dies on startup; only pgrep proves it came up (same as xbindkeys).
+- name: Ulauncher alive
+  ansible.builtin.command: pgrep -x ulauncher
+  register: ulauncher_alive
+  until: ulauncher_alive.rc == 0
+  retries: 5
+  delay: 1
+  changed_when: false
   when: ulauncher_pgrep.rc != 0
 
 - name: Cinnamon settings
@@ -100,6 +127,7 @@
       ansible.builtin.command: gsettings get org.cinnamon hotcorner-layout
       register: hotcorners
       changed_when: false
+      check_mode: false
 
     # expo = Mission Control, scale = App Exposé. Only touched while every corner
     # is still off, so a hand-tuned layout survives a re-run.
@@ -111,12 +139,15 @@
       changed_when: true
 
     # Cinnamon ships Alt+Space on the window menu; the launcher never sees the key
-    # until that one is cleared.
+    # until that one is cleared. Remove just that element — wiping the whole list
+    # would take any other binding (e.g. the Menu key) down with it.
     - name: Free Alt+Space from the window menu
       ansible.builtin.shell: |
-        set -o pipefail
-        if gsettings get org.cinnamon.desktop.keybindings.wm activate-window-menu | grep -q '<Alt>space'; then
-          gsettings set org.cinnamon.desktop.keybindings.wm activate-window-menu "[]" && echo changed
+        set -e -o pipefail
+        cur=$(gsettings get org.cinnamon.desktop.keybindings.wm activate-window-menu)
+        if [[ $cur == *"'<Alt>space'"* ]]; then
+          new=$(printf '%s' "$cur" | sed "s/'<Alt>space', //; s/, '<Alt>space'//; s/'<Alt>space'//")
+          gsettings set org.cinnamon.desktop.keybindings.wm activate-window-menu "$new" && echo changed
         fi
       args:
         executable: /bin/bash
@@ -129,9 +160,11 @@
     # it in custom-list, or a failure in between leaves a blank shortcut nothing
     # can reclaim. Super sits where Cmd does, so Shift+Super+4 becomes
     # Cmd+Shift+4 under a Mac-style remapper and is harmless before that.
+    # set -e: without it a failed `gsettings set` would fall through to `echo
+    # changed` and report success while nothing was written.
     - name: Custom hotkeys
       ansible.builtin.shell: |
-        set -o pipefail
+        set -e -o pipefail
         schema() { echo "org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/$1/"; }
         list=$(gsettings get org.cinnamon.desktop.keybindings custom-list)
         slots=$(echo "$list" | grep -o "'[^']*'" | tr -d "'" || true)

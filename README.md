@@ -62,7 +62,6 @@ ansible-playbook setup.yml       # macOS
 - **yazi** - Terminal file manager with shell drop-in, Git-root jump, Quick Look, and tab-safe quit
 - **atuin** - Sync shell history across machines
 - **zoxide** - Smarter `cd` command
-- **bruno** - API client
 
 ### Fonts
 - 0xProto Nerd Font

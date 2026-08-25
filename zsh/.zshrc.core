@@ -27,12 +27,18 @@ eval "$(sheldon source)"
 # COMPLETIONS
 # ============================================
 autoload -Uz compinit
-# -u skips compaudit permission checks (single-user macOS, no need)
-if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
-  compinit -u
-else
-  compinit -C
-fi
+# -u skips compaudit permission checks (single-user machine, no need).
+# The (#q...) glob qualifier only expands under extendedglob — without it the
+# test is a literal non-empty string, always true, and every shell start pays
+# the full dump rebuild. Anonymous function keeps the setopt local.
+() {
+  setopt localoptions extendedglob
+  if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
+    compinit -u
+  else
+    compinit -C
+  fi
+}
 
 # ============================================
 # INTERACTIVE TOOL INITIALIZATIONS

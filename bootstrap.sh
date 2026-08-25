@@ -17,8 +17,9 @@ case "$OSTYPE" in
     if ! command -v ansible-playbook >/dev/null; then
       sudo apt-get update -y && sudo apt-get install -y ansible
     fi
-    # apt and usermod need sudo; CI runners are passwordless.
-    [ -n "${CI:-}" ] || set -- -K "$@"
+    # apt and usermod need sudo. Probe for it instead of keying on $CI: -K only
+    # when sudo actually needs a password (CI runners and cached tickets don't).
+    sudo -n true 2>/dev/null || set -- -K "$@"
     ;;
   *)
     echo "Unsupported OS: $OSTYPE" >&2
@@ -27,7 +28,9 @@ case "$OSTYPE" in
 esac
 
 # pip/pipx ansible-core ships without community.general; apt/brew's `ansible` bundles it.
-ansible-galaxy collection list community.general 2>/dev/null | grep -q '^community.general ' ||
+# grep without -q: it must drain the pipe, or pipefail can turn ansible-galaxy's
+# EPIPE into a bogus miss that reinstalls the collection every run.
+ansible-galaxy collection list community.general 2>/dev/null | grep '^community.general ' >/dev/null ||
   ansible-galaxy collection install -r requirements.yml
 
 exec ansible-playbook setup.yml "$@"
