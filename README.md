@@ -84,10 +84,11 @@ ansible-playbook setup.yml       # macOS
 
 Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timestamp>/` first. There is no interactive prompting — the playbook always backs up, then links.
 
-The desktop tag installs an app-aware, MX Mechanical-only xremap configuration
-for macOS-style Command shortcuts. It adds the account to the `input` group,
-which grants input-device access equivalent to keylogging; sign out and back in
-after the first run. Stop `xremap` to disable the remapping immediately.
+On Cinnamon/X11, the desktop tag installs an app-aware, MX Mechanical-only
+xremap configuration for macOS-style Command shortcuts. It adds the account to
+the `input` group, which grants input-device access equivalent to keylogging;
+sign out and back in after the first run. Stop `xremap` to disable the remapping
+immediately. Other desktop/session types are left unchanged.
 
 ## Configuration
 

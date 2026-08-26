@@ -1,0 +1,15 @@
+#!/bin/sh
+# Xremap's application-aware X11 build must not capture the keyboard in another
+# desktop or under Cinnamon's experimental Wayland session.
+desktop=$(printf '%s' "${XDG_CURRENT_DESKTOP:-}" | tr '[:upper:]' '[:lower:]')
+case "$desktop" in
+  *cinnamon*) ;;
+  *) exit 0 ;;
+esac
+
+[ "${XDG_SESSION_TYPE:-}" = x11 ] || exit 0
+
+exec "$HOME/.local/bin/xremap" \
+  --device "MX MCHNCL Keyboard" \
+  --watch=config,device \
+  "$HOME/.config/xremap/config.yml"

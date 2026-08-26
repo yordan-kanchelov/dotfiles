@@ -124,6 +124,9 @@
 # process connecting to X11, but requires the input group and uinput access. The
 # new group is picked up at the next login, when the autostart entry first runs.
 - name: Xremap
+  when:
+    - "'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)"
+    - (ansible_env.XDG_SESSION_TYPE | default('')) == 'x11'
   vars:
     xremap_version: 0.15.11
     xremap_arch: "{{ {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64'}.get(ansible_architecture, ansible_architecture) }}"
@@ -202,7 +205,9 @@
 
     - name: Uinput module at boot
       ansible.builtin.copy:
-        dest: /etc/modules-load.d/uinput.conf
+        dest: /etc/modules-load.d/xremap-uinput.conf
+        owner: root
+        group: root
         mode: "0644"
         content: "uinput\n"
       become: true
@@ -213,7 +218,9 @@
 
     - name: Uinput access for input group
       ansible.builtin.copy:
-        dest: /etc/udev/rules.d/99-input.rules
+        dest: /etc/udev/rules.d/99-xremap-uinput.rules
+        owner: root
+        group: root
         mode: "0644"
         content: |
           KERNEL=="uinput", GROUP="input", MODE:="0660", OPTIONS+="static_node=uinput"
@@ -238,7 +245,7 @@
           Type=Application
           Name=xremap
           TryExec={{ home }}/.local/bin/xremap
-          Exec={{ home }}/.local/bin/xremap --device "MX MCHNCL Keyboard" --watch=config,device {{ home }}/.config/xremap/config.yml
+          Exec={{ home }}/.config/xremap/start
           X-GNOME-Autostart-enabled=true
           NoDisplay=true
 
