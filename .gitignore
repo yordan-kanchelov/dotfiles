@@ -10,6 +10,9 @@
 # Local backups and temporary files
 .tmp/
 
+# ansible-galaxy/ansible-lint scratch dir, created next to the playbook
+.ansible/
+
 # This repo IS the source of these files, but the user's global gitignore
 # ignores CLAUDE.md everywhere — re-include the one we deliberately track.
 !claude/CLAUDE.md
