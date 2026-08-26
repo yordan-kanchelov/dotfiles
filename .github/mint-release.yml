@@ -1,0 +1,42 @@
+---
+# Asserted by the Mint CI job against fixtured 22.3 identity files. The two
+# expressions below are copied from tasks/desktop.yml; Mint is the only distro
+# where they differ from the plain facts, and --tags desktop cannot run in CI
+# (it needs a graphical session), so this is the only cover they get.
+- name: Mint release resolution
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Mint lands in the Debian var file under its own codename
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'Linux Mint'
+          - ansible_os_family == 'Debian' # picks vars/Debian.yml
+          - ansible_distribution_release == 'zena' # what a PPA would choke on
+        fail_msg: "got {{ ansible_distribution }}/{{ ansible_os_family }}/{{ ansible_distribution_release }}"
+        quiet: true
+
+    # Ulauncher's PPA only has Ubuntu series, so the repo task passes this
+    # explicitly rather than letting apt_repository default to 'zena'.
+    - name: Ulauncher PPA codename
+      ansible.builtin.assert:
+        that: codename == 'noble'
+        fail_msg: "UBUNTU_CODENAME resolved to '{{ codename }}', not noble"
+        quiet: true
+      vars:
+        codename: "{{ lookup('ansible.builtin.ini', 'UBUNTU_CODENAME', type='properties', file='/etc/os-release') }}"
+
+    # Ghostty's community .deb names Ubuntu assets by version, so Mint must
+    # resolve 24.04 from upstream-release, never its own 22.3.
+    - name: Ghostty .deb release
+      ansible.builtin.assert:
+        that: release == '24.04'
+        fail_msg: "release resolved to '{{ release }}', not 24.04"
+        quiet: true
+      vars:
+        release: >-
+          {{ ansible_distribution_release if ansible_distribution == 'Debian'
+             else (lookup('ansible.builtin.ini', 'DISTRIB_RELEASE', type='properties',
+                          file='/etc/upstream-release/lsb-release', errors='ignore')
+                   or ansible_distribution_version) }}

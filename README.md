@@ -132,8 +132,9 @@ ansible-lint                     # with ansible-core: ansible-galaxy collection 
 shellcheck bootstrap.sh
 ```
 
-CI runs `bootstrap.sh` and the playbook on macOS, Ubuntu, and Linux Mint 22.3 (in the official container, as a
-non-root user), then runs the playbook a second time and fails unless it reports `changed=0`.
+CI runs `bootstrap.sh` and the playbook on macOS and Ubuntu, then runs the playbook a second time and fails
+unless it reports `changed=0`. A third job checks the Linux Mint release resolution the desktop tasks depend
+on, which no runner can cover directly.
 
 ## Customization
 

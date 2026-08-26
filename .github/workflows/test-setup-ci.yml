@@ -46,68 +46,52 @@ jobs:
           timeout 120 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 120s"
           tmux -f ~/.tmux.conf list-keys >/dev/null
 
-  # Mint is the one supported distro the matrix cannot cover: GitHub has no Mint
-  # runner, and Mint is the reason several tasks exist at all -- it reports its
-  # own codename and keeps the Ubuntu base it derives from in a separate file.
-  # Container jobs run as root and Homebrew refuses to install as root, so the
-  # playbook runs as a created user with passwordless sudo, as it would on a
-  # real desktop.
+  # Mint is the reason several tasks branch: it reports its own codename
+  # ("zena", which no PPA publishes) and keeps the Ubuntu release it derives
+  # from in a separate file. No runner ships Mint, and the official container
+  # turns out to report ID=ubuntu -- it carries Mint's package base, not its
+  # identity -- so the identity files are written here from a real 22.3 install
+  # and the resolution logic is asserted against them. That logic is the part
+  # unique to Mint; the packages themselves are already covered by
+  # ubuntu-latest, which shares the same noble base.
   mint:
-    name: Setup on Linux Mint 22.3
+    name: Mint release resolution
     runs-on: ubuntu-latest
     container: linuxmintd/mint22.3-amd64:latest
     defaults:
       run:
         shell: bash
-    env:
-      CI: "true"
-      HOMEBREW_NO_ANALYTICS: "1"
-      HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
-      # The image is a bare rootfs: actions/checkout wants git, bootstrap wants
-      # curl, and nothing can drop privileges without sudo.
-      - name: Container prerequisites
+      - name: Ansible
         run: |
           apt-get update -y
-          apt-get install -y sudo git curl ca-certificates
-          useradd -m -s /bin/bash builder
-          echo 'builder ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/builder
+          apt-get install -y ansible git ca-certificates
 
       - uses: actions/checkout@v4
 
-      # The two facts the desktop tasks key on, asserted before the slow half so
-      # a mismatch fails in seconds. ubuntu-latest has neither: UBUNTU_CODENAME
-      # is what the Ulauncher PPA needs (Mint's own VERSION_CODENAME is "zena",
-      # which no PPA publishes), and upstream-release is what Ghostty's .deb
-      # name is built from.
-      - name: Mint release identifiers resolve
+      # After the install, so apt still sees the image's own identity.
+      - name: Identify as Linux Mint 22.3
         run: |
-          set -eux
-          . /etc/os-release
-          [ "$ID" = linuxmint ]
-          [ -n "$UBUNTU_CODENAME" ]
-          grep -q '^DISTRIB_RELEASE=' /etc/upstream-release/lsb-release
+          mkdir -p /etc/upstream-release
+          cat > /etc/os-release <<'EOF'
+          NAME="Linux Mint"
+          VERSION="22.3 (Zena)"
+          ID=linuxmint
+          ID_LIKE="ubuntu debian"
+          PRETTY_NAME="Linux Mint 22.3"
+          VERSION_ID="22.3"
+          VERSION_CODENAME=zena
+          UBUNTU_CODENAME=noble
+          EOF
+          cat > /etc/upstream-release/lsb-release <<'EOF'
+          DISTRIB_ID=Ubuntu
+          DISTRIB_RELEASE=24.04
+          DISTRIB_CODENAME=noble
+          DISTRIB_DESCRIPTION="Ubuntu 24.04 LTS"
+          EOF
 
-      - name: Bootstrap and run the playbook
-        run: |
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-          sudo -u builder -H env CI=true HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_AUTO_UPDATE=1 \
-            ./bootstrap.sh --skip-tags ollama
-
-      - name: Second run is a no-op
-        run: |
-          sudo -u builder -H env CI=true HOMEBREW_NO_AUTO_UPDATE=1 \
-            ansible-playbook setup.yml --skip-tags ollama | tee run2.log
-          grep -E 'changed=0 ' run2.log
-
-      - name: Smoke-test linked configs
-        run: |
-          sudo -u builder -H bash -c '
-            set -eux
-            ls -la ~/.zshrc ~/.zshrc.core ~/.tmux.conf ~/.config/nvim ~/.claude/CLAUDE.md
-            zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
-            tmux -f ~/.tmux.conf list-keys >/dev/null
-          '
+      - name: Desktop tasks resolve the Ubuntu series, not Mint's
+        run: ansible-playbook .github/mint-release.yml
 
   lint:
     name: Lint

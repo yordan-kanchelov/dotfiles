@@ -70,10 +70,9 @@ tasks) use `become: true`; run with `-K` on Linux. macOS needs no sudo.
 ### Testing
 CI (`.github/workflows/test-setup-ci.yml`) runs `bootstrap.sh` + the playbook on `macos-latest` and
 `ubuntu-latest` with `--skip-tags ollama`, then runs the playbook again and fails unless the recap shows
-`changed=0`. A third job repeats that in the `linuxmintd/mint22.3-amd64` container — GitHub has no Mint
-runner, and Mint is why several tasks branch at all — as a created user, since Homebrew refuses to run as
-root; it also asserts the `UBUNTU_CODENAME` and `/etc/upstream-release` identifiers the desktop tasks key
-on. A lint job runs `ansible-lint` and `shellcheck`. The desktop and ollama tasks are not exercised in CI.
+`changed=0`. A third job runs `.github/mint-release.yml`, which asserts the release
+resolution the desktop tasks rely on against fixtured Linux Mint 22.3 identity files (no runner ships Mint,
+and the official container reports `ID=ubuntu` — it carries Mint's package base, not its identity). A lint job runs `ansible-lint` and `shellcheck`. The desktop and ollama tasks are not exercised in CI.
 
 ## Important Notes
 
