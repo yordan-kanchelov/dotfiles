@@ -48,19 +48,27 @@ autoload -Uz compinit
 # hooks can compose; fall back to direct init if plugin not loaded.
 # `fzf --zsh` arrived in fzf 0.48. Debian/Ubuntu still ship 0.44, where it
 # aborts startup with "unknown option: --zsh" and silently costs us Ctrl-T and
-# Alt-C, so fall back to the integration scripts those packages do install.
+# Alt-C, so fall back to the integration scripts older packages do install.
+# Homebrew is not exempt: the playbook installs formulae with state: present,
+# which never upgrades an fzf that predates the flag. Each layout keeps the
+# scripts somewhere else -- Debian as doc examples, Homebrew in the opt prefix.
 _init_fzf() {
   if fzf --zsh >/dev/null 2>&1; then
     source <(fzf --zsh)
     return 0
   fi
-  local examples=/usr/share/doc/fzf/examples
-  if [[ -f $examples/key-bindings.zsh ]]; then
-    source $examples/key-bindings.zsh
-  fi
-  if [[ -f $examples/completion.zsh ]]; then
-    source $examples/completion.zsh
-  fi
+  local -a dirs=(/usr/share/doc/fzf/examples)
+  # .zprofile's shellenv exports HOMEBREW_PREFIX; only shell out to brew when a
+  # non-login shell left it unset, and only here, where the flag already failed.
+  local prefix=${HOMEBREW_PREFIX:-$(command -v brew >/dev/null && brew --prefix)}
+  [[ -n $prefix ]] && dirs+=("$prefix/opt/fzf/shell")
+  local dir
+  for dir in $dirs; do
+    [[ -f $dir/key-bindings.zsh || -f $dir/completion.zsh ]] || continue
+    [[ -f $dir/key-bindings.zsh ]] && source $dir/key-bindings.zsh
+    [[ -f $dir/completion.zsh ]] && source $dir/completion.zsh
+    break
+  done
   return 0
 }
 

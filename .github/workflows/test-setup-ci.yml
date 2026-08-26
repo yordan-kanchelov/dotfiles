@@ -46,6 +46,69 @@ jobs:
           timeout 120 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 120s"
           tmux -f ~/.tmux.conf list-keys >/dev/null
 
+  # Mint is the one supported distro the matrix cannot cover: GitHub has no Mint
+  # runner, and Mint is the reason several tasks exist at all -- it reports its
+  # own codename and keeps the Ubuntu base it derives from in a separate file.
+  # Container jobs run as root and Homebrew refuses to install as root, so the
+  # playbook runs as a created user with passwordless sudo, as it would on a
+  # real desktop.
+  mint:
+    name: Setup on Linux Mint 22.3
+    runs-on: ubuntu-latest
+    container: linuxmintd/mint22.3-amd64:latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      CI: "true"
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      # The image is a bare rootfs: actions/checkout wants git, bootstrap wants
+      # curl, and nothing can drop privileges without sudo.
+      - name: Container prerequisites
+        run: |
+          apt-get update -y
+          apt-get install -y sudo git curl ca-certificates
+          useradd -m -s /bin/bash builder
+          echo 'builder ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/builder
+
+      - uses: actions/checkout@v4
+
+      # The two facts the desktop tasks key on, asserted before the slow half so
+      # a mismatch fails in seconds. ubuntu-latest has neither: UBUNTU_CODENAME
+      # is what the Ulauncher PPA needs (Mint's own VERSION_CODENAME is "zena",
+      # which no PPA publishes), and upstream-release is what Ghostty's .deb
+      # name is built from.
+      - name: Mint release identifiers resolve
+        run: |
+          set -eux
+          . /etc/os-release
+          [ "$ID" = linuxmint ]
+          [ -n "$UBUNTU_CODENAME" ]
+          grep -q '^DISTRIB_RELEASE=' /etc/upstream-release/lsb-release
+
+      - name: Bootstrap and run the playbook
+        run: |
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          sudo -u builder -H env CI=true HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_AUTO_UPDATE=1 \
+            ./bootstrap.sh --skip-tags ollama
+
+      - name: Second run is a no-op
+        run: |
+          sudo -u builder -H env CI=true HOMEBREW_NO_AUTO_UPDATE=1 \
+            ansible-playbook setup.yml --skip-tags ollama | tee run2.log
+          grep -E 'changed=0 ' run2.log
+
+      - name: Smoke-test linked configs
+        run: |
+          sudo -u builder -H bash -c '
+            set -eux
+            ls -la ~/.zshrc ~/.zshrc.core ~/.tmux.conf ~/.config/nvim ~/.claude/CLAUDE.md
+            zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
+            tmux -f ~/.tmux.conf list-keys >/dev/null
+          '
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
