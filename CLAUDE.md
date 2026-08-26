@@ -16,7 +16,7 @@ ansible-playbook setup.yml -K                     # Re-run on Linux (apt/usermod
 ansible-playbook setup.yml                        # Re-run on macOS
 ansible-playbook setup.yml --skip-tags packages   # Configs only
 ansible-playbook setup.yml -K --skip-tags ollama  # Skip the 1.4 GB ollama build
-ansible-playbook setup.yml -K --tags desktop      # Linux desktop (Ulauncher, Ghostty, Cinnamon, xbindkeys); never runs unless asked
+ansible-playbook setup.yml -K --tags desktop      # Linux desktop (Ulauncher, Ghostty, Bitwarden, draw.io, Cinnamon, xbindkeys); never runs unless asked
 ansible-playbook setup.yml --check --diff         # Dry run (already set-up machine; -K on Linux)
 ansible-playbook setup.yml --syntax-check
 ansible-lint                                      # With ansible-core: ansible-galaxy collection install -r requirements.yml first
@@ -36,8 +36,9 @@ Verify = run the playbook again and expect `changed=0`.
   Parametrised on `links`; imported from `setup.yml` and again from `tasks/desktop.yml` for the xbindkeys files.
 - `tasks/debian.yml` — apt, zsh as login shell, Homebrew on Linux (the prefix is pre-created user-owned so the
   installer never calls sudo), ollama upstream build + systemd user unit (tag `ollama`).
-- `tasks/desktop.yml` — Ulauncher (PPA), Ghostty (apt or community .deb), Flameshot/xbindkeys/rofi/wmctrl,
-  Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys restart. Tagged `[desktop, never]`.
+- `tasks/desktop.yml` — Ulauncher (PPA), Ghostty (apt or community .deb), Bitwarden and draw.io (upstream
+  .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
+  restart. Tagged `[desktop, never]`.
 - `brew_packages.yml` — `formulae:` grouped by category plus `casks:`; used on both OSes.
 - `.config/` (nvim, ghostty, atuin, sheldon, yazi, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `claude/`,
   `codex/`, `fonts/` — the linked/copied content.

@@ -1,5 +1,6 @@
 ---
-# Linux desktop: Ulauncher, Ghostty, Flameshot, Cinnamon settings, xbindkeys.
+# Linux desktop: Ulauncher, Ghostty, Flameshot, Bitwarden, draw.io, Cinnamon
+# settings, xbindkeys.
 # Only reached via --tags desktop (see setup.yml). Failing loudly beats the
 # alternative — every task silently skipping on an SSH run that asked for
 # desktop by name.
@@ -76,6 +77,39 @@
                    or ansible_distribution_version) }}
       become: true
       when: not ghostty_in_apt
+
+# Neither ships an apt repo, so both come from an upstream .deb. Gated on
+# package_facts: the URLs always serve the current build, so an ungated task
+# would re-download on every run and reinstall whenever upstream moved.
+- name: Bitwarden
+  ansible.builtin.apt:
+    # /download redirects to the current versioned .deb; there is no stable URL
+    # to pin. apt follows the redirect itself, and dpkg reads the file's
+    # contents rather than its name, so the query string costs nothing.
+    deb: https://vault.bitwarden.com/download/?app=desktop&platform=linux
+  become: true
+  # "bitwarden", not "Bitwarden": the desktop app is @bitwarden/desktop, so
+  # electron-builder falls back to the product name and fpm downcases it.
+  when: "'bitwarden' not in ansible_facts.packages"
+
+# Upstream publishes no "latest" asset URL, so resolve the release first, the
+# same way Ghostty's community .deb is resolved above.
+- name: Drawio
+  when: "'draw.io' not in ansible_facts.packages" # package.json name, not the "drawio" the assets carry
+  block:
+    - name: Drawio latest release
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/jgraph/drawio-desktop/releases/latest
+        return_content: true
+      register: drawio_latest
+      check_mode: false
+
+    # Pick the asset instead of rebuilding its name from the tag: the release
+    # also carries an .AppImage and an .rpm, so match the arch and the suffix.
+    - name: Drawio .deb
+      ansible.builtin.apt:
+        deb: "{{ drawio_latest.json.assets | map(attribute='browser_download_url') | select('search', 'drawio-' ~ deb_arch ~ '-.*\\.deb$') | first }}"
+      become: true
 
 - name: Autostart dir # noqa: risky-file-permissions
   ansible.builtin.file:

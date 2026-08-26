@@ -76,7 +76,7 @@ ansible-playbook setup.yml       # macOS
 | Configs only, no packages | `ansible-playbook setup.yml --skip-tags packages` |
 | Just the symlinks / fonts / tmux / secrets | `ansible-playbook setup.yml --tags symlinks` (or `fonts`, `tmux`, `secrets`) |
 | Skip the 1.4 GB ollama build (Linux) | `ansible-playbook setup.yml -K --skip-tags ollama` |
-| Linux desktop: Ulauncher, Ghostty, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
+| Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
 | Dry run (on an already set-up machine; `-K` on Linux) | `ansible-playbook setup.yml --check --diff` |
 | Verify | Run it again and expect `changed=0` |
 
@@ -87,7 +87,8 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ## Configuration
 
 ### Adding New Packages
-- `brew_packages.yml` — Homebrew `formulae:` (grouped by category) and `casks:`. Used on both macOS and Linux (casks are macOS-only).
+- `brew_packages.yml` — Homebrew `formulae:` (grouped by category) and `casks:`. Used on both macOS and Linux
+  (casks are macOS-only; the GUI apps that have a Linux build are installed from upstream .debs by `tasks/desktop.yml`).
 - `vars/Debian.yml` — the apt package list, plus the formulae brew must not install on Linux.
 
 ### Directory Structure
