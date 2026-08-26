@@ -211,10 +211,12 @@
         mode: "0644"
         content: "uinput\n"
       become: true
-      notify:
-        - Reload udev rules for uinput
-        - Load uinput module
-        - Apply uinput permissions
+
+    # Converge live state too: a no-change run must repair an unloaded module.
+    - name: Uinput module loaded
+      ansible.builtin.command: modprobe uinput
+      changed_when: false
+      become: true
 
     - name: Uinput access for input group
       ansible.builtin.copy:
@@ -225,10 +227,18 @@
         content: |
           KERNEL=="uinput", GROUP="input", MODE:="0660", OPTIONS+="static_node=uinput"
       become: true
-      notify:
-        - Reload udev rules for uinput
-        - Load uinput module
-        - Apply uinput permissions
+
+    # Reload and trigger on every normal run so unchanged files can still repair
+    # daemon/runtime drift. Both commands are idempotent from Ansible's view.
+    - name: Udev rules loaded
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: false
+      become: true
+
+    - name: Uinput permissions applied
+      ansible.builtin.command: udevadm trigger --action=change --name-match=uinput
+      changed_when: false
+      become: true
 
     - name: Xremap config link
       ansible.builtin.import_tasks: symlinks.yml

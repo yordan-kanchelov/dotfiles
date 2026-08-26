@@ -9,7 +9,23 @@ esac
 
 [ "${XDG_SESSION_TYPE:-}" = x11 ] || exit 0
 
+device=/dev/input/by-id/usb-Logitech_USB_Receiver-event-kbd
+if [ ! -e "$device" ]; then
+  device=
+  for name_file in /sys/class/input/event*/device/name; do
+    [ -r "$name_file" ] || continue
+    IFS= read -r name < "$name_file"
+    if [ "$name" = "MX MCHNCL Keyboard" ]; then
+      event_dir=${name_file%/device/name}
+      device=/dev/input/${event_dir##*/}
+      break
+    fi
+  done
+fi
+
+[ -n "$device" ] || exit 0
+
 exec "$HOME/.local/bin/xremap" \
-  --device "MX MCHNCL Keyboard" \
+  --device "$device" \
   --watch=config,device \
   "$HOME/.config/xremap/config.yml"
