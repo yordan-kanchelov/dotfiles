@@ -1,0 +1,64 @@
+---
+# macOS-style Command shortcuts for the MX Mechanical keyboard.
+#
+# The key in the Command position reports as Super on Linux. Exact matches are
+# deliberate: Cinnamon's Super+arrows, Super+Tab, Super+Space and xbindkeys'
+# Ctrl+Super tiling bindings pass through unchanged.
+keymap:
+  # Terminal emulators need their own clipboard/window actions. Sending Ctrl+C
+  # here would interrupt the foreground process instead of copying text.
+  - name: macOS shortcuts in terminals
+    application:
+      only:
+        - /(?i)ghostty/
+        - /(?i)gnome-terminal/
+        - /(?i)alacritty/
+        - /(?i)kitty/
+        - /(?i)konsole/
+        - /(?i)wezterm/
+    exact_match: true
+    remap:
+      Super-C: Ctrl-Shift-C
+      Super-V: Ctrl-Shift-V
+      Super-A: Ctrl-Shift-A
+      Super-F: Ctrl-Shift-F
+      Super-N: Ctrl-Shift-N
+      Super-T: Ctrl-Shift-T
+      Super-K: Ctrl-L
+      Super-Equal: Ctrl-Equal
+      Super-Minus: Ctrl-Minus
+      Super-0: Ctrl-0
+
+  # Normal Linux applications conventionally expose these actions through
+  # Ctrl. Terminal windows are excluded so shell control keys remain intact.
+  - name: macOS shortcuts in desktop applications
+    application:
+      not:
+        - /(?i)ghostty/
+        - /(?i)gnome-terminal/
+        - /(?i)alacritty/
+        - /(?i)kitty/
+        - /(?i)konsole/
+        - /(?i)wezterm/
+    exact_match: true
+    remap:
+      Super-A: Ctrl-A
+      Super-B: Ctrl-B
+      Super-C: Ctrl-C
+      Super-F: Ctrl-F
+      Super-I: Ctrl-I
+      Super-L: Ctrl-L
+      Super-N: Ctrl-N
+      Super-O: Ctrl-O
+      Super-P: Ctrl-P
+      Super-R: Ctrl-R
+      Super-S: Ctrl-S
+      Super-T: Ctrl-T
+      Super-U: Ctrl-U
+      Super-V: Ctrl-V
+      Super-X: Ctrl-X
+      Super-Z: Ctrl-Z
+      Super-Shift-Z: Ctrl-Shift-Z
+      Super-Equal: Ctrl-Equal
+      Super-Minus: Ctrl-Minus
+      Super-0: Ctrl-0

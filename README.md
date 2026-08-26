@@ -76,13 +76,18 @@ ansible-playbook setup.yml       # macOS
 | Configs only, no packages | `ansible-playbook setup.yml --skip-tags packages` |
 | Just the symlinks / fonts / tmux / secrets | `ansible-playbook setup.yml --tags symlinks` (or `fonts`, `tmux`, `secrets`) |
 | Skip the 1.4 GB ollama build (Linux) | `ansible-playbook setup.yml -K --skip-tags ollama` |
-| Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
+| Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys, xremap | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
 | Dry run (on an already set-up machine; `-K` on Linux) | `ansible-playbook setup.yml --check --diff` |
 | Verify | Run it again and expect `changed=0` |
 
 `./bootstrap.sh` passes extra arguments through, so `./bootstrap.sh --tags symlinks` works too.
 
 Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timestamp>/` first. There is no interactive prompting — the playbook always backs up, then links.
+
+The desktop tag installs an app-aware, MX Mechanical-only xremap configuration
+for macOS-style Command shortcuts. It adds the account to the `input` group,
+which grants input-device access equivalent to keylogging; sign out and back in
+after the first run. Stop `xremap` to disable the remapping immediately.
 
 ## Configuration
 
@@ -113,6 +118,7 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
 ├── tmux/                 # .tmux.conf
 ├── xbindkeys/            # Linux mouse-button / tiling bindings
+├── xremap/               # MX keyboard macOS-style Command shortcuts
 └── fonts/                # Nerd Font collections
 ```
 

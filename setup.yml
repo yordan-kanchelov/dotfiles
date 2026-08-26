@@ -198,3 +198,19 @@
       ansible.builtin.import_tasks: tasks/desktop.yml
       when: ansible_os_family == 'Debian'
       tags: [desktop, never]
+
+  handlers:
+    - name: Reload udev rules for uinput
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: true
+      become: true
+
+    - name: Load uinput module
+      ansible.builtin.command: modprobe uinput
+      changed_when: true
+      become: true
+
+    - name: Apply uinput permissions
+      ansible.builtin.command: udevadm trigger --action=change --name-match=uinput
+      changed_when: true
+      become: true
