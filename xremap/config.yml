@@ -24,6 +24,8 @@ keymap:
       Super-F: Ctrl-Shift-F
       Super-N: Ctrl-Shift-N
       Super-T: Ctrl-Shift-T
+      Super-W: Ctrl-Shift-W
+      Super-Q: Ctrl-Shift-Q
       Super-K: Ctrl-L
       Super-Equal: Ctrl-Equal
       Super-Minus: Ctrl-Minus
@@ -51,11 +53,13 @@ keymap:
       Super-N: Ctrl-N
       Super-O: Ctrl-O
       Super-P: Ctrl-P
+      Super-Q: Ctrl-Q
       Super-R: Ctrl-R
       Super-S: Ctrl-S
       Super-T: Ctrl-T
       Super-U: Ctrl-U
       Super-V: Ctrl-V
+      Super-W: Ctrl-W
       Super-X: Ctrl-X
       Super-Z: Ctrl-Z
       Super-Shift-Z: Ctrl-Shift-Z
