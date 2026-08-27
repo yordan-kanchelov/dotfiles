@@ -31,6 +31,10 @@ ansible-playbook setup.yml -K    # Linux
 ansible-playbook setup.yml       # macOS
 ```
 
+The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
+sources on login — fill in the ones you use. It is written only when missing, so re-runs never
+overwrite it.
+
 ## What's Included
 
 ### Terminal & Shell
@@ -96,6 +100,7 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 .
 ├── bootstrap.sh          # Installs Ansible, runs setup.yml
 ├── setup.yml             # The playbook: symlink allowlist, package/font/tmux/secrets tasks
+├── requirements.yml      # The community.general collection the playbook needs
 ├── tasks/
 │   ├── symlinks.yml      # Backup-then-link
 │   ├── debian.yml        # apt, zsh login shell, Homebrew on Linux, ollama
@@ -104,14 +109,18 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   ├── Darwin.yml        # macOS paths
 │   └── Debian.yml        # Linux paths, apt packages, brew exclusions
 ├── brew_packages.yml     # Homebrew formulae & casks
+├── .github/              # CI workflow, plus the Mint release-resolution play it runs
 ├── .config/              # Modern tool configs
 │   ├── nvim/             # LazyVim configuration
 │   ├── starship.toml     # Starship prompt
 │   ├── ghostty/          # Ghostty terminal
 │   ├── atuin/            # Shell history
+│   ├── sheldon/          # Zsh plugin manager
 │   └── yazi/             # Terminal file manager
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
 ├── tmux/                 # .tmux.conf
+├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
+├── codex/                # Linked into ~/.codex: AGENTS.md, instructions, rules, keybindings
 ├── xbindkeys/            # Linux mouse-button / tiling bindings
 └── fonts/                # Nerd Font collections
 ```
