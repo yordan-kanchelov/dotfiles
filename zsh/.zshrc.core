@@ -27,12 +27,18 @@ eval "$(sheldon source)"
 # COMPLETIONS
 # ============================================
 autoload -Uz compinit
-# -u skips compaudit permission checks (single-user macOS, no need)
-if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
-  compinit -u
-else
-  compinit -C
-fi
+# -u skips compaudit permission checks (single-user machine, no need).
+# The (#q...) glob qualifier only expands under extendedglob — without it the
+# test is a literal non-empty string, always true, and every shell start pays
+# the full dump rebuild. Anonymous function keeps the setopt local.
+() {
+  setopt localoptions extendedglob
+  if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
+    compinit -u
+  else
+    compinit -C
+  fi
+}
 
 # ============================================
 # INTERACTIVE TOOL INITIALIZATIONS
@@ -40,10 +46,36 @@ fi
 # fzf and atuin must init after zsh-vi-mode finishes recreating keymaps,
 # otherwise their bindings get overwritten. Use array form so multiple
 # hooks can compose; fall back to direct init if plugin not loaded.
+# `fzf --zsh` arrived in fzf 0.48. Debian/Ubuntu still ship 0.44, where it
+# aborts startup with "unknown option: --zsh" and silently costs us Ctrl-T and
+# Alt-C, so fall back to the integration scripts older packages do install.
+# Homebrew is not exempt: the playbook installs formulae with state: present,
+# which never upgrades an fzf that predates the flag. Each layout keeps the
+# scripts somewhere else -- Debian as doc examples, Homebrew in the opt prefix.
+_init_fzf() {
+  if fzf --zsh >/dev/null 2>&1; then
+    source <(fzf --zsh)
+    return 0
+  fi
+  local -a dirs=(/usr/share/doc/fzf/examples)
+  # .zprofile's shellenv exports HOMEBREW_PREFIX; only shell out to brew when a
+  # non-login shell left it unset, and only here, where the flag already failed.
+  local prefix=${HOMEBREW_PREFIX:-$(command -v brew >/dev/null && brew --prefix)}
+  [[ -n $prefix ]] && dirs+=("$prefix/opt/fzf/shell")
+  local dir
+  for dir in $dirs; do
+    [[ -f $dir/key-bindings.zsh || -f $dir/completion.zsh ]] || continue
+    [[ -f $dir/key-bindings.zsh ]] && source $dir/key-bindings.zsh
+    [[ -f $dir/completion.zsh ]] && source $dir/completion.zsh
+    break
+  done
+  return 0
+}
+
 if [[ -n ${zvm_after_init_commands+x} ]]; then
-  zvm_after_init_commands+=('source <(fzf --zsh); eval "$(atuin init zsh)"')
+  zvm_after_init_commands+=('_init_fzf; eval "$(atuin init zsh)"')
 else
-  source <(fzf --zsh)
+  _init_fzf
   eval "$(atuin init zsh)"
 fi
 eval "$(starship init zsh)"
@@ -201,6 +233,13 @@ cat() {
             esac
             ;;
     esac
+}
+
+clear() {
+  command clear
+  if [[ -n $TMUX ]]; then
+    tmux clear-history
+  fi
 }
 
 # Quick reload of zsh configuration (exec avoids double plugin init from re-sourcing)

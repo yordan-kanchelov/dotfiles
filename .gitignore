@@ -1,5 +1,4 @@
 **/.DS_Store*
-node_modules
 
 # Secrets and environment files
 .secrets
@@ -10,6 +9,9 @@ node_modules
 
 # Local backups and temporary files
 .tmp/
+
+# ansible-galaxy/ansible-lint scratch dir, created next to the playbook
+.ansible/
 
 # This repo IS the source of these files, but the user's global gitignore
 # ignores CLAUDE.md everywhere — re-include the one we deliberately track.
@@ -24,3 +26,12 @@ history*
 sessions/
 shell-snapshots/
 shell_snapshots/
+
+# Agent worktree scratch state
+.claude/worktrees/
+
+# Claude Code syncs Anthropic-authored skills into ~/.claude/skills, which the
+# symlinks task points at this directory — so they land inside the repo. They
+# are re-fetched on demand; only skills we author here belong in git.
+claude/skills/synced/
+claude/skills/session-start-hook/

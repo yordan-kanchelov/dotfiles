@@ -1,0 +1,5 @@
+---
+# apt/brew's `ansible` package bundles this already; bootstrap.sh installs it for a bare
+# ansible-core (pip/pipx), and ansible-lint in CI installs from here.
+collections:
+  - name: community.general

@@ -1,0 +1,53 @@
+---
+# Debian/Ubuntu/Mint values, loaded by setup.yml via vars_files on ansible_os_family.
+brew_prefix: /home/linuxbrew/.linuxbrew
+fonts_dir: "{{ ansible_env.HOME }}/.local/share/fonts"
+zsh_path: /usr/bin/zsh
+# Unknown arches pass through by name, so a download fails naming the real arch
+# instead of fetching an arm64 binary that cannot run.
+deb_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64', 'arm64': 'arm64'}.get(ansible_architecture, ansible_architecture) }}"
+
+# Formulae brew must not install on Linux. Checked against the homebrew-core API:
+# the first three have no Linux bottle (tart runs Apple Silicon VMs; apt already
+# covers telnet and pipx). ollama does, but it is CPU-only — tasks/debian.yml
+# fetches the upstream build instead.
+brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten | difference(['cirruslabs/cli/tart', 'telnet', 'pipx', 'ollama']) }}"
+
+# apt first: Homebrew's installer needs build-essential, curl and git, and brew then
+# supplies current builds of nearly everything else in brew_packages.yml.
+apt_packages:
+  # core
+  - bat
+  - btop
+  - eza
+  - fd-find
+  - fzf
+  - htop
+  - ncdu
+  - ripgrep
+  - tmux
+  - tree
+  # development
+  - git
+  - git-lfs
+  - telnet # excluded from brew_formulae above, so apt must actually supply it
+  - golang-go
+  - neovim
+  - pipx
+  - python3
+  - python3-pip
+  - shellcheck
+  # shell
+  - zoxide
+  - zsh
+  # build essentials
+  - apt-transport-https
+  - build-essential
+  - ca-certificates
+  - curl
+  - fontconfig # fc-cache; absent on minimal installs
+  - gnupg
+  - lsb-release
+  - software-properties-common
+  - wget
+  - zstd # tar needs it for ollama's .tar.zst

@@ -1,0 +1,71 @@
+#!/bin/sh
+# Rectangle-style window tiling: place the active window on a fraction of the
+# work area. Each argument is one "X Y W H" quadruple in fractions
+# ('0 0 .5 1' = left half), or the word 'center' to keep the window's size and
+# centre it. Pressing the same binding again advances to the next argument, so
+# Ctrl+Super+D walks first -> center -> last third and wraps.
+#
+# ponytail: single work area — _NET_WORKAREA is the union of all monitors, so on
+# a multi-head setup "left half" spans the whole desk. Split per monitor with
+# xrandr geometry if that ever matters.
+set -eu
+
+win=$(xprop -root _NET_ACTIVE_WINDOW | grep -o '0x[0-9a-f]*')
+
+# The cycle continues only while the same binding keeps hitting the same window;
+# any other window or binding starts over at the first position. Moving the
+# window by hand in between is not noticed — the next press resumes the cycle.
+# Per-uid name: the /tmp fallback is shared between users, and a fixed name
+# there is one pre-planted symlink away from clobbering someone else's file.
+state="${XDG_RUNTIME_DIR:-/tmp}/tile.$(id -u).state"
+signature="$win $*"
+prev='' index=0
+[ -f "$state" ] && { IFS= read -r prev && read -r index; } < "$state" || true
+[ "$prev" = "$signature" ] && index=$(( (index + 1) % $# )) || index=0
+printf '%s\n%s\n' "$signature" "$index" > "$state"
+
+while [ "$index" -gt 0 ]; do shift; index=$((index - 1)); done
+position=$1
+
+# A maximized window ignores resize requests, so drop the state first.
+state_before=$(xprop -id "$win" _NET_WM_STATE)
+wmctrl -r :ACTIVE: -b remove,maximized_vert,maximized_horz
+# GTK drops its shadow while maximized and takes ~150ms to grow it back; reading
+# the extents any earlier sizes the window as if it had none.
+case $state_before in *MAXIMIZED*) sleep 0.2 ;; esac
+
+# _NET_WORKAREA is the screen minus panels; commas are xprop's, not data.
+area=$(xprop -root _NET_WORKAREA | tr -d ',' | awk '{print $3, $4, $5, $6}')
+
+# Both extents are left/right/top/bottom and only one ever applies to a window:
+#   _NET_FRAME_EXTENTS — the WM's title bar and borders. wmctrl positions the
+#     frame but sizes the *client*, so this must come off the target size or the
+#     window overhangs its cell by the title bar (measured: 128px of overlap
+#     between the top and bottom halves).
+#   _GTK_FRAME_EXTENTS — the invisible shadow margin GTK apps carry inside their
+#     own geometry (122/122/110/134 on Ghostty here). Added back on, so it is the
+#     *visible* edge that lands on the cell rather than the transparent one.
+extents() { xprop -id "$win" "$1" | tr -d ',' | awk '/=/{print $3, $4, $5, $6}'; }
+net=$(extents _NET_FRAME_EXTENTS); net=${net:-0 0 0 0}
+gtk=$(extents _GTK_FRAME_EXTENTS); gtk=${gtk:-0 0 0 0}
+
+if [ "$position" = center ]; then
+  size=$(xwininfo -id "$win" | awk '/Width:/{w=$NF} /Height:/{h=$NF} END{print w, h}')
+  geom=$(awk -v a="$area" -v s="$size" -v n="$net" -v g="$gtk" \
+    'BEGIN { split(a, r, " "); split(s, c, " "); split(n, e, " "); split(g, k, " ")
+             vw = c[1] + e[1] + e[2] - k[1] - k[2]   # visible width, whichever style
+             vh = c[2] + e[3] + e[4] - k[3] - k[4]
+             printf "%.0f,%.0f,-1,-1", r[1] + (r[3] - vw) / 2 - k[1], \
+                                       r[2] + (r[4] - vh) / 2 - k[3] }')
+else
+  set -- $position  # unquoted on purpose: split this position's "X Y W H"
+  geom=$(awk -v a="$area" -v n="$net" -v g="$gtk" -v x="$1" -v y="$2" -v w="$3" -v h="$4" \
+    'BEGIN { split(a, r, " "); split(n, e, " "); split(g, k, " ")
+             printf "%.0f,%.0f,%.0f,%.0f", r[1] + x*r[3] - k[1], r[2] + y*r[4] - k[3], \
+                                           w*r[3] - e[1] - e[2] + k[1] + k[2], \
+                                           h*r[4] - e[3] - e[4] + k[3] + k[4] }')
+fi
+
+# Gravity 1 (north-west), not 0: 0 means "the gravity the app declared", and an
+# app declaring CenterGravity then lands measurably off its cell.
+exec wmctrl -r :ACTIVE: -e "1,$geom"

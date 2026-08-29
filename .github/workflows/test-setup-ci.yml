@@ -8,214 +8,102 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-setup-macos:
-    name: Test Setup Script on macOS
-    runs-on: macos-latest
+  setup:
+    name: Setup on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    defaults:
+      run:
+        shell: bash # -eo pipefail: a failed playbook behind `| tee` must fail the step
+    env:
+      CI: "true"
+      HOMEBREW_NO_ANALYTICS: "1"
+      # The playbook's tool_env sets this for its own tasks, but bootstrap.sh's
+      # `brew install ansible` runs before that and would trigger a full update.
+      HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up environment variables
+      # ollama: a 1.4 GB download and a user systemd the runner does not have.
+      - name: Bootstrap and run the playbook
+        run: ./bootstrap.sh --skip-tags ollama
+
+      - name: Second run is a no-op
         run: |
-          echo "HOMEBREW_NO_ANALYTICS=1" >> $GITHUB_ENV
-          echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
-          echo "CI=true" >> $GITHUB_ENV
+          ansible-playbook setup.yml --skip-tags ollama | tee run2.log
+          grep -E 'changed=0 ' run2.log
 
-      - name: Run bootstrap script
+      - name: Smoke-test linked configs
         run: |
-          chmod +x bootstrap.sh
-          ./bootstrap.sh
+          ls -la ~/.zshrc ~/.zprofile ~/.zshrc.core ~/.tmux.conf ~/.config/nvim \
+            ~/.claude/CLAUDE.md ~/.claude/commands ~/.codex/rules ~/.codex/config.toml
+          # .zshrc.core is pulled in by a runtime `source`, so parsing .zshrc alone proves nothing about it
+          zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
+          # First start bootstraps every LazyVim plugin (+ Mason, treesitter); bound it, don't fail on it.
+          timeout 120 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 120s"
+          tmux -f ~/.tmux.conf list-keys >/dev/null
 
-      - name: Install dependencies
+  # Mint is the reason several tasks branch: it reports its own codename
+  # ("zena", which no PPA publishes) and keeps the Ubuntu release it derives
+  # from in a separate file. No runner ships Mint, and the official container
+  # turns out to report ID=ubuntu -- it carries Mint's package base, not its
+  # identity -- so the identity files are written here from a real 22.3 install
+  # and the resolution logic is asserted against them. That logic is the part
+  # unique to Mint; the packages themselves are already covered by
+  # ubuntu-latest, which shares the same noble base.
+  mint:
+    name: Mint release resolution
+    runs-on: ubuntu-latest
+    container: linuxmintd/mint22.3-amd64:latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Ansible
         run: |
-          export PATH="$HOME/.fnm:$PATH"
-          eval "$(fnm env)"
-          npm install
+          apt-get update -y
+          apt-get install -y ansible git ca-certificates
 
-      - name: Run tests
+      - uses: actions/checkout@v4
+
+      # After the install, so apt still sees the image's own identity.
+      - name: Identify as Linux Mint 22.3
         run: |
-          export PATH="$HOME/.fnm:$PATH"
-          eval "$(fnm env)"
-          npm test
+          mkdir -p /etc/upstream-release
+          cat > /etc/os-release <<'EOF'
+          NAME="Linux Mint"
+          VERSION="22.3 (Zena)"
+          ID=linuxmint
+          ID_LIKE="ubuntu debian"
+          PRETTY_NAME="Linux Mint 22.3"
+          VERSION_ID="22.3"
+          VERSION_CODENAME=zena
+          UBUNTU_CODENAME=noble
+          EOF
+          cat > /etc/upstream-release/lsb-release <<'EOF'
+          DISTRIB_ID=Ubuntu
+          DISTRIB_RELEASE=24.04
+          DISTRIB_CODENAME=noble
+          DISTRIB_DESCRIPTION="Ubuntu 24.04 LTS"
+          EOF
 
-      - name: Run setup script
-        run: |
-          export PATH="$HOME/.fnm:$PATH"
-          eval "$(fnm env)"
-          npm run ci:setup
+      - name: Desktop tasks resolve the Ubuntu series, not Mint's
+        run: ansible-playbook .github/mint-release.yml
 
-      - name: Verify symlinks were created
-        run: |
-          echo "Verifying symlinks..."
-
-          # Check if config directories exist
-          config_dirs=(".config/ghostty" ".config/starship.toml" ".config/atuin" ".config/nvim")
-          for config in "${config_dirs[@]}"; do
-            if [ -L "$HOME/$config" ] || [ -e "$HOME/$config" ]; then
-              echo "✅ $config exists"
-              ls -la "$HOME/$config"
-            else
-              echo "❌ $config missing"
-              exit 1
-            fi
-          done
-
-          # Check if dotfiles exist
-          dotfiles=(".zshrc" ".tmux.conf" ".claude/CLAUDE.md" ".claude/commands" ".codex/rules" ".codex/config.toml")
-          for dotfile in "${dotfiles[@]}"; do
-            if [ -L "$HOME/$dotfile" ] || [ -e "$HOME/$dotfile" ]; then
-              echo "✅ $dotfile exists"
-              ls -la "$HOME/$dotfile"
-            else
-              echo "❌ $dotfile missing"
-              exit 1
-            fi
-          done
-
-      - name: Test tmux configuration
-        run: |
-          if command -v tmux &> /dev/null; then
-            echo "Testing tmux configuration..."
-            tmux -f ~/.tmux.conf list-keys | head -5 || echo "Tmux config test completed"
-          else
-            echo "Tmux not installed, skipping config test"
-          fi
-
-      - name: Test zsh configuration (basic syntax)
-        run: |
-          if command -v zsh &> /dev/null && [ -f "$HOME/.zshrc" ]; then
-            echo "Testing zsh configuration syntax..."
-            zsh -n ~/.zshrc && echo "✅ .zshrc syntax is valid" || echo "⚠️ .zshrc syntax issues found"
-          else
-            echo "Zsh not available or .zshrc missing"
-          fi
-
-      - name: Test Neovim configuration
-        run: |
-          if command -v nvim &> /dev/null && [ -L "$HOME/.config/nvim" ]; then
-            echo "Testing Neovim configuration..."
-            # Check if symlink points to dotfiles
-            link_target=$(readlink "$HOME/.config/nvim")
-            echo "Symlink target: $link_target"
-
-            # Verify init.lua exists
-            if [ -f "$HOME/.config/nvim/init.lua" ]; then
-              echo "✅ init.lua found"
-            else
-              echo "❌ init.lua missing"
-              exit 1
-            fi
-
-            # Test basic nvim syntax check
-            nvim --headless -c "quit" && echo "✅ Neovim can start with config" || echo "⚠️ Neovim config issues"
-          else
-            echo "Neovim not installed or config not linked"
-          fi
-
-      - name: Display installed packages
-        run: |
-          echo "Installed Homebrew packages:"
-          brew list || echo "Could not list brew packages"
-
-  test-setup-ubuntu:
-    name: Test Setup Script on Ubuntu (Limited)
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Run bootstrap script
-        run: |
-          chmod +x bootstrap.sh
-          ./bootstrap.sh
+      - uses: ansible/ansible-lint@main
 
-      - name: Install dependencies
-        run: |
-          # Set up fnm environment
-          export PATH="$HOME/.local/share/fnm:$PATH"
-          eval "$(fnm env)"
-          npm install
-
-      - name: Run tests
-        run: |
-          # Set up fnm environment
-          export PATH="$HOME/.local/share/fnm:$PATH"
-          eval "$(fnm env)"
-          npm test
-
-      - name: Run setup script on Linux
-        run: |
-          export PATH="$HOME/.local/share/fnm:$PATH"
-          eval "$(fnm env)"
-          npm run ci:setup
-
-      - name: Verify symlinks were created
-        run: |
-          echo "Verifying symlinks on Linux..."
-          dotfiles=(".zshrc" ".zprofile" ".zshrc.core" ".tmux.conf" ".claude/CLAUDE.md" ".claude/commands" ".codex/rules" ".codex/config.toml")
-          for dotfile in "${dotfiles[@]}"; do
-            if [ -L "$HOME/$dotfile" ] || [ -e "$HOME/$dotfile" ]; then
-              echo "  $dotfile exists"
-              ls -la "$HOME/$dotfile"
-            else
-              echo "  $dotfile missing"
-              exit 1
-            fi
-          done
-
-      - name: Validate apt_packages.yml
-        run: |
-          export PATH="$HOME/.local/share/fnm:$PATH"
-          eval "$(fnm env)"
-          node --experimental-strip-types --input-type=module -e "
-            import YAML from 'yaml';
-            import { readFileSync } from 'fs';
-            const data = YAML.parse(readFileSync('apt_packages.yml', 'utf8'));
-            const sections = Object.keys(data);
-            if (sections.length === 0) { console.error('No sections found'); process.exit(1); }
-            for (const s of sections) {
-              if (!Array.isArray(data[s])) { console.error(s + ' is not an array'); process.exit(1); }
-            }
-            console.log('apt_packages.yml is valid (' + sections.length + ' sections)');
-          "
-
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run ShellCheck on bootstrap script
+      - name: ShellCheck
         uses: ludeeus/action-shellcheck@master
         with:
-          check_together: "yes"
           severity: error
           scandir: "."
-          ignore_paths: "zsh node_modules" # Skip zsh scripts and node_modules
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run TypeScript check
-        run: npm run typecheck
-
-      - name: Check for common issues
-        run: |
-          echo "Checking for potential issues..."
-
-          # Check if required files exist
-          required_files=("setup.ts" "bootstrap.sh" "brew_packages.yml" "apt_packages.yml" ".config/starship.toml" "tmux/.tmux.conf" "zsh/.zshrc" ".config/nvim/init.lua")
-          for file in "${required_files[@]}"; do
-            if [ -e "$file" ]; then
-              echo "✅ $file exists"
-            else
-              echo "❌ $file missing"
-              exit 1
-            fi
-          done
+          ignore_paths: "zsh"

@@ -1,15 +1,15 @@
 # Dotfiles
 
-Modern macOS terminal setup with automated installation and configuration for productivity-focused developers.
+Terminal setup for macOS and Debian/Ubuntu (incl. Linux Mint), installed and kept in sync by one Ansible playbook.
 
 ## Features
 
-- 🚀 **One-command setup** - Automated installation with intelligent prompts
+- 🚀 **One-command setup** - `./bootstrap.sh` installs Ansible and runs the playbook
 - 🛡️ **Safe installation** - Automatic backups before overwriting existing configs
+- 🔁 **Idempotent** - Re-run any time; a second run reports `changed=0`
 - 📦 **Modern CLI tools** - Curated collection of productivity-enhancing utilities
 - 🎨 **Beautiful terminal** - Pre-configured with Nerd Fonts and modern themes
 - ⚡ **Performance focused** - Fast shell startup with lazy-loaded plugins
-- 🔧 **TypeScript-powered** - Type-safe setup script with comprehensive error handling
 - 📝 **LazyVim IDE** - Full-featured Neovim setup with LSP, debugging, and more
 
 ## Quick Start
@@ -19,18 +19,26 @@ Modern macOS terminal setup with automated installation and configuration for pr
 git clone https://github.com/yordan-kanchelov/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
-# Run the bootstrap script (installs Node.js if needed)
+# Installs Ansible (and Homebrew on macOS), then runs setup.yml.
+# On Linux it asks for your sudo password (apt, login shell).
 ./bootstrap.sh
-
-# Run the interactive setup
-npm install
-npm run setup
 ```
+
+Afterwards, re-run the playbook directly:
+
+```bash
+ansible-playbook setup.yml -K    # Linux
+ansible-playbook setup.yml       # macOS
+```
+
+The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
+sources on login — fill in the ones you use. It is written only when missing, so re-runs never
+overwrite it.
 
 ## What's Included
 
 ### Terminal & Shell
-- **ZSH** with zplug plugin manager
+- **ZSH** with sheldon plugin manager
   - Syntax highlighting
   - Auto-suggestions
   - Vi-mode with visual feedback
@@ -58,68 +66,63 @@ npm run setup
 - **yazi** - Terminal file manager with shell drop-in, Git-root jump, Quick Look, and tab-safe quit
 - **atuin** - Sync shell history across machines
 - **zoxide** - Smarter `cd` command
-- **bruno** - API client
 
 ### Fonts
+- 0xProto Nerd Font
 - FiraCode Nerd Font
 - RobotoMono Nerd Font
 
-## Installation Options
+## Running the Playbook
 
-### Interactive Setup (Default)
-```bash
-npm run setup
-```
-Prompts for each action with options to overwrite, skip, or backup existing files.
+| Want | Run |
+|---|---|
+| Everything | `ansible-playbook setup.yml -K` (`-K` only on Linux) |
+| Configs only, no packages | `ansible-playbook setup.yml --skip-tags packages` |
+| Just the symlinks / fonts / tmux / secrets | `ansible-playbook setup.yml --tags symlinks` (or `fonts`, `tmux`, `secrets`) |
+| Skip the 1.4 GB ollama build (Linux) | `ansible-playbook setup.yml -K --skip-tags ollama` |
+| Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
+| Dry run (on an already set-up machine; `-K` on Linux) | `ansible-playbook setup.yml --check --diff` |
+| Verify | Run it again and expect `changed=0` |
 
-### Force Installation
-```bash
-npm run setup:force
-```
-Overwrites existing files without prompting (creates backups first).
+`./bootstrap.sh` passes extra arguments through, so `./bootstrap.sh --tags symlinks` works too.
 
-### Append to Existing Configs
-```bash
-npm run setup:append
-```
-Appends configuration to existing shell RC files instead of replacing them.
-
-### Skip Package Installation
-```bash
-npm run setup:no-packages
-```
-Only sets up configuration files, skips Homebrew package installation.
-
-### CI/Automated Setup
-```bash
-npm run ci:setup
-```
-Non-interactive installation for CI environments.
+Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timestamp>/` first. There is no interactive prompting — the playbook always backs up, then links.
 
 ## Configuration
 
 ### Adding New Packages
-Edit `brew_packages.yml` to add new Homebrew packages under `formulae:` or `casks:` sections.
+- `brew_packages.yml` — Homebrew `formulae:` (grouped by category) and `casks:`. Used on both macOS and Linux
+  (casks are macOS-only; the GUI apps that have a Linux build are installed from upstream .debs by `tasks/desktop.yml`).
+- `vars/Debian.yml` — the apt package list, plus the formulae brew must not install on Linux.
 
 ### Directory Structure
 ```
 .
-├── bootstrap.sh          # Node.js setup script
-├── setup.ts             # Main installation script
-├── brew_packages.yml    # Homebrew formulae & casks
-├── .config/            # Modern tool configs
-│   ├── nvim/           # LazyVim configuration
-│   │   ├── init.lua    # Main config entry
-│   │   └── lua/        # Lua configurations
-│   ├── starship.toml   # Starship prompt
-│   ├── ghostty/        # Ghostty terminal
-│   ├── atuin/          # Shell history
-│   └── yazi/           # Terminal file manager
-├── zsh/                # ZSH configuration
-│   └── .zshrc
-├── tmux/               # Tmux configuration
-│   └── .tmux.conf
-└── fonts/              # Nerd Font collections
+├── bootstrap.sh          # Installs Ansible, runs setup.yml
+├── setup.yml             # The playbook: symlink allowlist, package/font/tmux/secrets tasks
+├── requirements.yml      # The community.general collection the playbook needs
+├── tasks/
+│   ├── symlinks.yml      # Backup-then-link
+│   ├── debian.yml        # apt, zsh login shell, Homebrew on Linux, ollama
+│   └── desktop.yml       # Linux desktop apps and Cinnamon settings (--tags desktop)
+├── vars/
+│   ├── Darwin.yml        # macOS paths
+│   └── Debian.yml        # Linux paths, apt packages, brew exclusions
+├── brew_packages.yml     # Homebrew formulae & casks
+├── .github/              # CI workflow, plus the Mint release-resolution play it runs
+├── .config/              # Modern tool configs
+│   ├── nvim/             # LazyVim configuration
+│   ├── starship.toml     # Starship prompt
+│   ├── ghostty/          # Ghostty terminal
+│   ├── atuin/            # Shell history
+│   ├── sheldon/          # Zsh plugin manager
+│   └── yazi/             # Terminal file manager
+├── zsh/                  # .zprofile, .zshrc, .zshrc.core
+├── tmux/                 # .tmux.conf
+├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
+├── codex/                # Linked into ~/.codex: AGENTS.md, instructions, rules, keybindings
+├── xbindkeys/            # Linux mouse-button / tiling bindings
+└── fonts/                # Nerd Font collections
 ```
 
 ### Backup Location
@@ -127,39 +130,35 @@ Existing files are backed up to `~/.dotfiles_backup/` with timestamps.
 
 ## Requirements
 
-- macOS (primary target, some features work on Linux)
-- Command Line Tools for Xcode
+- macOS, or a Debian/Ubuntu-based Linux (apt); sudo on Linux
 - Internet connection for package downloads
 
 ## Development
 
-### Running Tests
 ```bash
-# Run all tests
-npm test
+ansible-playbook setup.yml --syntax-check
+ansible-lint                     # with ansible-core: ansible-galaxy collection install -r requirements.yml first
+shellcheck bootstrap.sh
+```
 
-# Type checking
-npm run typecheck
-```
-### Testing Setup Locally
-```bash
-# Test CI mode without actually installing
-CI=true npm run ci:setup
-```
+CI runs `bootstrap.sh` and the playbook on macOS and Ubuntu, then runs the playbook a second time and fails
+unless it reports `changed=0`. A third job checks the Linux Mint release resolution the desktop tasks depend
+on, which no runner can cover directly.
 
 ## Customization
 
-1. **Shell Configuration**: Edit `zsh/.zshrc` for ZSH customizations
+1. **Shell Configuration**: Edit `zsh/.zshrc.core` for ZSH customizations
 2. **Neovim/LazyVim**: Customize in `.config/nvim/lua/plugins/` for additional plugins
 3. **Tmux**: Modify `tmux/.tmux.conf` for tmux settings
 4. **Starship Prompt**: Customize `.config/starship.toml`
-5. **Package List**: Update `brew_packages.txt` with your preferred tools
+5. **Package List**: Update `brew_packages.yml` (and `vars/Debian.yml` for apt) with your preferred tools
 
 ## Troubleshooting
 
 ### Setup Issues
 - Check `~/.dotfiles_backup/` for backed up files
-- Ensure Xcode Command Line Tools are installed: `xcode-select --install`
+- `-K` prompts for your sudo password; without it the apt and login-shell tasks fail
+- Run with `-v` for module output, `--check --diff` to see what would change
 
 ## License
 
