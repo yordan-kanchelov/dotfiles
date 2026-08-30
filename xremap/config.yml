@@ -1,0 +1,90 @@
+---
+# macOS-style Command shortcuts for the MX Mechanical keyboard.
+#
+# The key in the Command position reports as Super on Linux. Exact matches are
+# deliberate: Cinnamon's Super+arrows, Super+Tab, Super+Space and xbindkeys'
+# Ctrl+Super tiling bindings pass through unchanged.
+shared:
+  # IDE terminals have the same WM_CLASS as their editor. Treating the whole IDE
+  # as a terminal is conservative: Command shortcuts remain safe in its shell.
+  terminal_contexts: &terminal_contexts
+    - /(?i)ghostty/
+    - /(?i)gnome-terminal/
+    - /(?i)alacritty/
+    - /(?i)kitty/
+    - /(?i)konsole/
+    - /(?i)wezterm/
+    - /(?i)xfce4-terminal/
+    - /(?i)terminator/
+    - /(?i)tilix/
+    - /(?i)(^|\.)xterm$/
+    - /(?i)urxvt|rxvt/
+    - /(?i)(^|\.)foot$/
+    - /(?i)mate-terminal/
+    - /(?i)code|codium|jetbrains|idea|pycharm|webstorm|clion|goland|eclipse/
+  desktop_contexts: &desktop_contexts
+    - /(?i)firefox|chrome|chromium|brave/
+    - /(?i)nemo|nautilus|thunar|dolphin/
+    - /(?i)bitwarden|drawio|libreoffice/
+    - /(?i)slack|discord|teams|telegram/
+    - /(?i)thunderbird|evolution/
+    - /(?i)evince|xreader|okular/
+    - /(?i)steam|spotify|obsidian/
+  terminal_remap: &terminal_remap
+    Super-C: Ctrl-Shift-C
+    Super-V: Ctrl-Shift-V
+    Super-A: Ctrl-Shift-A
+    Super-F: Ctrl-Shift-F
+    Super-N: Ctrl-Shift-N
+    Super-T: Ctrl-Shift-T
+    Super-W: Ctrl-Shift-W
+    Super-Q: Ctrl-Shift-Q
+    Super-K: Ctrl-L
+    Super-Equal: Ctrl-Equal
+    Super-Minus: Ctrl-Minus
+    Super-0: Ctrl-0
+
+keymap:
+  # Terminal emulators need their own clipboard/window actions. Sending Ctrl+C
+  # here would interrupt the foreground process instead of copying text.
+  - name: macOS shortcuts in terminal contexts
+    application:
+      only: *terminal_contexts
+    exact_match: true
+    remap: *terminal_remap
+
+  # Recognized desktop applications conventionally expose these actions through
+  # Ctrl. An allowlist makes unresolved and unfamiliar classes fail closed.
+  - name: macOS shortcuts in desktop applications
+    application:
+      only: *desktop_contexts
+    exact_match: true
+    remap:
+      Super-A: Ctrl-A
+      Super-B: Ctrl-B
+      Super-C: Ctrl-C
+      Super-F: Ctrl-F
+      Super-I: Ctrl-I
+      Super-L: Ctrl-L
+      Super-N: Ctrl-N
+      Super-O: Ctrl-O
+      Super-P: Ctrl-P
+      Super-Q: Ctrl-Q
+      Super-R: Ctrl-R
+      Super-S: Ctrl-S
+      Super-T: Ctrl-T
+      Super-U: Ctrl-U
+      Super-V: Ctrl-V
+      Super-W: Ctrl-W
+      Super-X: Ctrl-X
+      Super-Z: Ctrl-Z
+      Super-Shift-Z: Ctrl-Shift-Z
+      Super-Equal: Ctrl-Equal
+      Super-Minus: Ctrl-Minus
+      Super-0: Ctrl-0
+
+  # First matching definition wins. Unknown classes and a temporarily missing
+  # _NET_ACTIVE_WINDOW reach this terminal-safe catch-all instead of Ctrl+C/Q/W.
+  - name: Terminal-safe fallback for unknown applications
+    exact_match: true
+    remap: *terminal_remap

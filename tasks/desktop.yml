@@ -1,6 +1,6 @@
 ---
 # Linux desktop: Ulauncher, Ghostty, Flameshot, Bitwarden, draw.io, Cinnamon
-# settings, xbindkeys.
+# settings, xbindkeys, xremap.
 # Only reached via --tags desktop (see setup.yml). Failing loudly beats the
 # alternative — every task silently skipping on an SSH run that asked for
 # desktop by name.
@@ -28,7 +28,7 @@
 # to xprop/xwininfo, which cinnamon-core does not guarantee.
 - name: Desktop packages
   ansible.builtin.apt:
-    name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl, x11-utils]
+    name: [ulauncher, flameshot, xbindkeys, rofi, unzip, wmctrl, x11-utils]
   become: true
 
 # Ghostty reached the Ubuntu archive in 26.04. Older bases (Mint 22 sits on
@@ -116,6 +116,223 @@
     path: "{{ home }}/.config/autostart"
     state: directory
 
+# Super is the MX Mechanical key in the macOS Command position. A whole-key
+# swap would turn terminal copy into SIGINT and would destroy Cinnamon's Super
+# shortcuts, so xremap translates only an exact allowlist and can special-case
+# terminal windows. Limit capture to the MX keyboard: the laptop/other keyboards
+# retain normal Linux semantics. Running as the desktop user avoids a root-owned
+# process connecting to X11, but requires the input group and uinput access. The
+# new group is picked up at the next login, when the autostart entry first runs.
+- name: Xremap
+  when:
+    - "'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)"
+    - (ansible_env.XDG_SESSION_TYPE | default('')) == 'x11'
+  vars:
+    xremap_version: 0.15.11
+    xremap_arch: "{{ {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64'}.get(ansible_architecture, ansible_architecture) }}"
+    xremap_archive: "{{ home }}/.cache/xremap-{{ xremap_version }}-{{ xremap_arch }}-x11.zip"
+    xremap_checksums:
+      x86_64: 2e83a3befde38747087cc740492a4af73feb3a5a3705fbdc71a48ec916601723
+      aarch64: 4593ec9ea7ca6ec9472254bbc6a7551f77ba8daec01986c6b3a4d7534d9da7f1
+    xremap_binary_checksums:
+      x86_64: ddbf3a43623d10b3bf6f4737fc3ebb8c49b9882b5b4920eba084f0aacc8a025c
+      aarch64: bf580a96c73efb38dfc79b947dfc514c22e7bf62c403b7b29c3baa010d3fe8ff
+  block:
+    - name: Xremap architecture supported
+      ansible.builtin.assert:
+        that:
+          - xremap_arch in xremap_checksums
+          - xremap_arch in xremap_binary_checksums
+        fail_msg: "No pinned xremap binary for architecture {{ ansible_architecture }}"
+        quiet: true
+
+    - name: Xremap installed binary
+      ansible.builtin.stat:
+        path: "{{ home }}/.local/bin/xremap"
+        checksum_algorithm: sha256
+      register: xremap_binary
+      check_mode: false
+
+    - name: Xremap directories # noqa: risky-file-permissions
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ home }}/.cache"
+        - "{{ home }}/.local/bin"
+
+    - name: Xremap archive
+      ansible.builtin.get_url:
+        url: "https://github.com/xremap/xremap/releases/download/v{{ xremap_version }}/xremap-linux-{{ xremap_arch }}-x11.zip"
+        dest: "{{ xremap_archive }}"
+        checksum: "sha256:{{ xremap_checksums[xremap_arch] }}"
+        mode: "0644"
+      when: >-
+        not (xremap_binary.stat.isreg | default(false))
+        or (xremap_binary.stat.checksum | default('')) != xremap_binary_checksums[xremap_arch]
+
+    - name: Invalid xremap binary path absent
+      ansible.builtin.file:
+        path: "{{ home }}/.local/bin/xremap"
+        state: absent
+      when:
+        - xremap_binary.stat.exists
+        - not (xremap_binary.stat.isreg | default(false))
+
+    - name: Xremap binary
+      ansible.builtin.unarchive:
+        src: "{{ xremap_archive }}"
+        dest: "{{ home }}/.local/bin"
+        remote_src: true
+      when:
+        - not (xremap_binary.stat.isreg | default(false)) or (xremap_binary.stat.checksum | default('')) != xremap_binary_checksums[xremap_arch]
+        - not ansible_check_mode
+
+    # SHA-256 does not cover mode bits. Enforce executable-mode drift on existing
+    # binaries, but skip a nonexistent path during fresh-machine check mode.
+    - name: Xremap binary executable
+      ansible.builtin.file:
+        path: "{{ home }}/.local/bin/xremap"
+        mode: "0755"
+      when:
+        - not ansible_check_mode or (xremap_binary.stat.isreg | default(false))
+
+    # Reading event devices is equivalent to keylogger access. Keep this explicit
+    # rather than hiding it in a privileged service or running xremap as root.
+    - name: Input group
+      ansible.builtin.group:
+        name: input
+        system: true
+      become: true
+
+    - name: Input group membership
+      ansible.builtin.user:
+        name: "{{ ansible_user_id }}"
+        groups: input
+        append: true
+      become: true
+
+    - name: Uinput module at boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/xremap-uinput.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: "uinput\n"
+      become: true
+
+    # Converge live state too: a no-change run must repair an unloaded module.
+    - name: Uinput module loaded
+      community.general.modprobe:
+        name: uinput
+        state: present
+      become: true
+
+    - name: Uinput access for input group
+      ansible.builtin.copy:
+        dest: /etc/udev/rules.d/99-xremap-uinput.rules
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          KERNEL=="uinput", GROUP="input", MODE:="0660", OPTIONS+="static_node=uinput"
+      become: true
+
+    # Reload and trigger on every normal run so unchanged files can still repair
+    # daemon/runtime drift. Both commands are idempotent from Ansible's view.
+    - name: Udev rules loaded
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: false
+      become: true
+
+    - name: Uinput permissions applied
+      ansible.builtin.command: udevadm trigger --action=change --name-match=uinput
+      changed_when: false
+      become: true
+
+    - name: Xremap config link
+      ansible.builtin.import_tasks: symlinks.yml
+      vars:
+        links:
+          - { src: xremap, dest: .config/xremap }
+
+    - name: Xremap autostart
+      ansible.builtin.copy:
+        dest: "{{ home }}/.config/autostart/xremap.desktop"
+        mode: "0644"
+        content: |
+          [Desktop Entry]
+          Type=Application
+          Name=xremap
+          TryExec={{ home }}/.local/bin/xremap
+          Exec={{ home }}/.config/xremap/start
+          X-GNOME-Autostart-enabled=true
+          NoDisplay=true
+
+    - name: Xremap supervisor running
+      ansible.builtin.shell: |
+        pidfile="{{ home }}/.cache/xremap-supervisor.pid"
+        [ -r "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null
+        cmdline=$(tr '\0' ' ' < "/proc/$(cat "$pidfile")/cmdline")
+        case "$cmdline" in *"{{ home }}/.config/xremap/start"*) exit 0;; *) exit 1;; esac
+      register: xremap_pgrep
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Effective input group membership
+      ansible.builtin.command: id -nG
+      register: effective_groups
+      changed_when: false
+      check_mode: false
+
+    - name: Stop legacy directly launched xremap
+      ansible.builtin.shell: |
+        binary="{{ home }}/.local/bin/xremap"
+        config="{{ home }}/.config/xremap/config.yml"
+        changed=false
+        for pid in $(pgrep -u "$(id -u)" -x xremap || true); do
+          cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+          case "$cmdline" in
+            "$binary"*"$config"*)
+              kill "$pid"
+              changed=true
+              for _ in 1 2 3 4 5; do
+                kill -0 "$pid" 2>/dev/null || break
+                sleep 0.2
+              done
+              kill -0 "$pid" 2>/dev/null && exit 1
+              ;;
+          esac
+        done
+        $changed && echo changed
+        exit 0
+      register: legacy_xremap
+      changed_when: "'changed' in legacy_xremap.stdout"
+      when: xremap_pgrep.rc != 0
+
+    - name: Start xremap
+      ansible.builtin.shell: >-
+        setsid "{{ home }}/.config/xremap/start"
+        >"{{ home }}/.cache/xremap.log" 2>&1 &
+      changed_when: true
+      when:
+        - xremap_pgrep.rc != 0
+        - "'input' in effective_groups.stdout.split()"
+
+    - name: Xremap supervisor alive
+      ansible.builtin.shell: |
+        pidfile="{{ home }}/.cache/xremap-supervisor.pid"
+        [ -r "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null
+        cmdline=$(tr '\0' ' ' < "/proc/$(cat "$pidfile")/cmdline")
+        case "$cmdline" in *"{{ home }}/.config/xremap/start"*) exit 0;; *) exit 1;; esac
+      register: xremap_alive
+      until: xremap_alive.rc == 0
+      retries: 5
+      delay: 1
+      changed_when: false
+      when: "'input' in effective_groups.stdout.split()"
+
 # The hotkey is useless without a live daemon; neither the autostart entry nor
 # starting it needs root.
 - name: Ulauncher autostart
@@ -157,6 +374,36 @@
 - name: Cinnamon settings
   when: "'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)"
   block:
+    # Keep US as the primary layout and add Bulgarian's traditional phonetic
+    # variant. Cinnamon handles layout switching itself; the matching WM
+    # keybindings preserve the hardware keyboard key and add
+    # Ctrl+Super+Space / Ctrl+Shift+Super+Space switching explicitly.
+    - name: Keyboard layouts and input switching
+      ansible.builtin.shell: |
+        set -e
+        current=$(gsettings get {{ item.schema }} {{ item.key }})
+        desired="{{ item.value }}"
+        if [ "$current" != "$desired" ]; then
+          gsettings set {{ item.schema }} {{ item.key }} "$desired"
+          echo changed
+        fi
+      args:
+        executable: /bin/bash
+      loop:
+        - schema: org.cinnamon.desktop.input-sources
+          key: sources
+          value: "[('xkb', 'us'), ('xkb', 'bg+phonetic')]"
+        - schema: org.cinnamon.desktop.keybindings.wm
+          key: switch-input-source
+          value: "['<Control><Super>space', 'XF86Keyboard']"
+        - schema: org.cinnamon.desktop.keybindings.wm
+          key: switch-input-source-backward
+          value: "['<Control><Shift><Super>space', '<Shift>XF86Keyboard']"
+      loop_control:
+        label: "{{ item.schema }} {{ item.key }}"
+      register: keyboard_input
+      changed_when: "'changed' in keyboard_input.stdout"
+
     - name: Hot corners (current)
       ansible.builtin.command: gsettings get org.cinnamon hotcorner-layout
       register: hotcorners
@@ -187,6 +434,31 @@
         executable: /bin/bash
       register: window_menu
       changed_when: "'changed' in window_menu.stdout"
+
+    # These four defaults overlap common Command shortcuts (location, open,
+    # print and save). Keep the Cinnamon actions available one chord higher;
+    # xremap uses exact matching, so Ctrl+Super passes through untouched.
+    - name: Move conflicting Cinnamon Super shortcuts to Ctrl+Super
+      ansible.builtin.shell: |
+        set -e -o pipefail
+        cur=$(gsettings get {{ item.schema }} {{ item.key }})
+        if [[ $cur == *"'<Super>{{ item.letter }}'"* ]]; then
+          new=$(printf '%s' "$cur" | sed "s/'<Super>{{ item.letter }}'/'<Control><Super>{{ item.letter }}'/")
+          gsettings set {{ item.schema }} {{ item.key }} "$new"
+          echo changed
+        fi
+      args:
+        executable: /bin/bash
+      loop:
+        - { schema: org.cinnamon.desktop.keybindings, key: looking-glass-keybinding, letter: l }
+        - { schema: org.cinnamon.desktop.keybindings, key: show-desklets, letter: s }
+        - { schema: org.cinnamon.desktop.keybindings.media-keys, key: video-rotation-lock, letter: o }
+        - { schema: org.cinnamon.desktop.keybindings.wm, key: switch-monitor, letter: p }
+      loop_control:
+        label: "Super+{{ item.letter | upper }} -> Ctrl+Super+{{ item.letter | upper }}"
+      register: cinnamon_super_shortcuts
+      changed_when: "'changed' in cinnamon_super_shortcuts.stdout"
+      when: (ansible_env.XDG_SESSION_TYPE | default('')) == 'x11'
 
     # Cinnamon keeps custom shortcuts as custom0/custom1/... under a relocatable
     # schema plus a list naming the live ones. Reuse the slot already holding

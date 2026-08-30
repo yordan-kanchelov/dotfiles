@@ -16,7 +16,8 @@
 
 # Rectangle-style window tiling on Ctrl+Super. Rectangle's own Ctrl+Alt is taken
 # here: the arrows switch workspace and Ctrl+Alt+T opens a terminal. Ctrl+Super
-# is unbound across the whole gsettings tree, so nothing has to be surrendered.
+# avoids Cinnamon's native Ctrl+Alt chords. The setup reserves Ctrl+Super+L/S/O/P
+# for migrated Cinnamon actions; the tiling bindings below use different keys.
 #
 # Each quoted argument is one "X Y W H" position; repeating the binding steps to
 # the next one and wraps, the way Rectangle cycles. The keys that lead a group

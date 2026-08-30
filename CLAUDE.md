@@ -16,7 +16,7 @@ ansible-playbook setup.yml -K                     # Re-run on Linux (apt/usermod
 ansible-playbook setup.yml                        # Re-run on macOS
 ansible-playbook setup.yml --skip-tags packages   # Configs only
 ansible-playbook setup.yml -K --skip-tags ollama  # Skip the 1.4 GB ollama build
-ansible-playbook setup.yml -K --tags desktop      # Linux desktop (Ulauncher, Ghostty, Bitwarden, draw.io, Cinnamon, xbindkeys); never runs unless asked
+ansible-playbook setup.yml -K --tags desktop      # Linux desktop (apps, Cinnamon, xbindkeys, xremap); never runs unless asked
 ansible-playbook setup.yml --check --diff         # Dry run (already set-up machine; -K on Linux)
 ansible-playbook setup.yml --syntax-check
 ansible-lint                                      # With ansible-core: ansible-galaxy collection install -r requirements.yml first
@@ -33,15 +33,15 @@ Verify = run the playbook again and expect `changed=0`.
 - `vars/Darwin.yml`, `vars/Debian.yml` — brew prefix, fonts dir, the flattened formula list. Debian
   also holds the apt package list and the formulae brew must not install on Linux.
 - `tasks/symlinks.yml` — `stat` → move anything in the way to `~/.dotfiles_backup/<timestamp>/` → `file state=link`.
-  Parametrised on `links`; imported from `setup.yml` and again from `tasks/desktop.yml` for the xbindkeys files.
+  Parametrised on `links`; imported from `setup.yml` and from `tasks/desktop.yml` for xbindkeys and xremap.
 - `tasks/debian.yml` — apt, zsh as login shell, Homebrew on Linux (the prefix is pre-created user-owned so the
   installer never calls sudo), ollama upstream build + systemd user unit (tag `ollama`).
 - `tasks/desktop.yml` — Ulauncher (PPA), Ghostty (apt or community .deb), Bitwarden and draw.io (upstream
-  .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
-  restart. Tagged `[desktop, never]`.
+  .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, and pinned
+  app-aware xremap with explicit input/uinput provisioning. Tagged `[desktop, never]`.
 - `brew_packages.yml` — `formulae:` grouped by category plus `casks:`; used on both OSes.
 - `.config/` (nvim, ghostty, atuin, sheldon, yazi, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `claude/`,
-  `codex/`, `fonts/` — the linked/copied content.
+  `codex/`, `xremap/`, `fonts/` — the linked/copied content.
 
 ## Key Implementation Details
 
