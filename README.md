@@ -88,7 +88,10 @@ On Cinnamon/X11, the desktop tag installs an app-aware, MX Mechanical-only
 xremap configuration for macOS-style Command shortcuts. It adds the account to
 the `input` group, which grants input-device access equivalent to keylogging;
 sign out and back in after the first run. Stop `xremap` to disable the remapping
-immediately. Other desktop/session types are left unchanged.
+immediately. An exact-name supervisor keeps the remapper scoped to that keyboard
+across sleep, reconnects, and event-number changes; unknown application classes
+use terminal-safe mappings rather than risk sending shell control keys. Other
+desktop/session types are left unchanged.
 
 ## Configuration
 

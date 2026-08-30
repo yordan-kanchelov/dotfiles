@@ -140,7 +140,9 @@
   block:
     - name: Xremap architecture supported
       ansible.builtin.assert:
-        that: xremap_arch in xremap_checksums
+        that:
+          - xremap_arch in xremap_checksums
+          - xremap_arch in xremap_binary_checksums
         fail_msg: "No pinned xremap binary for architecture {{ ansible_architecture }}"
         quiet: true
 
@@ -149,7 +151,6 @@
         path: "{{ home }}/.local/bin/xremap"
         checksum_algorithm: sha256
       register: xremap_binary
-      changed_when: false
       check_mode: false
 
     - name: Xremap directories # noqa: risky-file-permissions
@@ -167,8 +168,16 @@
         checksum: "sha256:{{ xremap_checksums[xremap_arch] }}"
         mode: "0644"
       when: >-
-        not xremap_binary.stat.exists
-        or xremap_binary.stat.checksum != xremap_binary_checksums[xremap_arch]
+        not (xremap_binary.stat.isreg | default(false))
+        or (xremap_binary.stat.checksum | default('')) != xremap_binary_checksums[xremap_arch]
+
+    - name: Invalid xremap binary path absent
+      ansible.builtin.file:
+        path: "{{ home }}/.local/bin/xremap"
+        state: absent
+      when:
+        - xremap_binary.stat.exists
+        - not (xremap_binary.stat.isreg | default(false))
 
     - name: Xremap binary
       ansible.builtin.unarchive:
@@ -176,17 +185,17 @@
         dest: "{{ home }}/.local/bin"
         remote_src: true
       when:
-        - not xremap_binary.stat.exists or xremap_binary.stat.checksum != xremap_binary_checksums[xremap_arch]
+        - not (xremap_binary.stat.isreg | default(false)) or (xremap_binary.stat.checksum | default('')) != xremap_binary_checksums[xremap_arch]
         - not ansible_check_mode
 
+    # SHA-256 does not cover mode bits. Enforce executable-mode drift on existing
+    # binaries, but skip a nonexistent path during fresh-machine check mode.
     - name: Xremap binary executable
       ansible.builtin.file:
         path: "{{ home }}/.local/bin/xremap"
         mode: "0755"
-      when: >-
-        not ansible_check_mode
-        or (xremap_binary.stat.exists
-            and xremap_binary.stat.checksum == xremap_binary_checksums[xremap_arch])
+      when:
+        - not ansible_check_mode or (xremap_binary.stat.isreg | default(false))
 
     # Reading event devices is equivalent to keylogger access. Keep this explicit
     # rather than hiding it in a privileged service or running xremap as root.
@@ -214,8 +223,9 @@
 
     # Converge live state too: a no-change run must repair an unloaded module.
     - name: Uinput module loaded
-      ansible.builtin.command: modprobe uinput
-      changed_when: false
+      community.general.modprobe:
+        name: uinput
+        state: present
       become: true
 
     - name: Uinput access for input group
@@ -258,6 +268,70 @@
           Exec={{ home }}/.config/xremap/start
           X-GNOME-Autostart-enabled=true
           NoDisplay=true
+
+    - name: Xremap supervisor running
+      ansible.builtin.shell: |
+        pidfile="{{ home }}/.cache/xremap-supervisor.pid"
+        [ -r "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null
+        cmdline=$(tr '\0' ' ' < "/proc/$(cat "$pidfile")/cmdline")
+        case "$cmdline" in *"{{ home }}/.config/xremap/start"*) exit 0;; *) exit 1;; esac
+      register: xremap_pgrep
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Effective input group membership
+      ansible.builtin.command: id -nG
+      register: effective_groups
+      changed_when: false
+      check_mode: false
+
+    - name: Stop legacy directly launched xremap
+      ansible.builtin.shell: |
+        binary="{{ home }}/.local/bin/xremap"
+        config="{{ home }}/.config/xremap/config.yml"
+        changed=false
+        for pid in $(pgrep -u "$(id -u)" -x xremap || true); do
+          cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+          case "$cmdline" in
+            "$binary"*"$config"*)
+              kill "$pid"
+              changed=true
+              for _ in 1 2 3 4 5; do
+                kill -0 "$pid" 2>/dev/null || break
+                sleep 0.2
+              done
+              kill -0 "$pid" 2>/dev/null && exit 1
+              ;;
+          esac
+        done
+        $changed && echo changed
+        exit 0
+      register: legacy_xremap
+      changed_when: "'changed' in legacy_xremap.stdout"
+      when: xremap_pgrep.rc != 0
+
+    - name: Start xremap
+      ansible.builtin.shell: >-
+        setsid "{{ home }}/.config/xremap/start"
+        >"{{ home }}/.cache/xremap.log" 2>&1 &
+      changed_when: true
+      when:
+        - xremap_pgrep.rc != 0
+        - "'input' in effective_groups.stdout.split()"
+
+    - name: Xremap supervisor alive
+      ansible.builtin.shell: |
+        pidfile="{{ home }}/.cache/xremap-supervisor.pid"
+        [ -r "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null
+        cmdline=$(tr '\0' ' ' < "/proc/$(cat "$pidfile")/cmdline")
+        case "$cmdline" in *"{{ home }}/.config/xremap/start"*) exit 0;; *) exit 1;; esac
+      register: xremap_alive
+      until: xremap_alive.rc == 0
+      retries: 5
+      delay: 1
+      changed_when: false
+      when: "'input' in effective_groups.stdout.split()"
 
 # The hotkey is useless without a live daemon; neither the autostart entry nor
 # starting it needs root.
@@ -354,6 +428,7 @@
         label: "Super+{{ item.letter | upper }} -> Ctrl+Super+{{ item.letter | upper }}"
       register: cinnamon_super_shortcuts
       changed_when: "'changed' in cinnamon_super_shortcuts.stdout"
+      when: (ansible_env.XDG_SESSION_TYPE | default('')) == 'x11'
 
     # Cinnamon keeps custom shortcuts as custom0/custom1/... under a relocatable
     # schema plus a list naming the live ones. Reuse the slot already holding

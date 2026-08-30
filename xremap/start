@@ -1,6 +1,8 @@
 #!/bin/sh
 # Xremap's application-aware X11 build must not capture the keyboard in another
 # desktop or under Cinnamon's experimental Wayland session.
+set -eu
+
 desktop=$(printf '%s' "${XDG_CURRENT_DESKTOP:-}" | tr '[:upper:]' '[:lower:]')
 case "$desktop" in
   *cinnamon*) ;;
@@ -9,23 +11,39 @@ esac
 
 [ "${XDG_SESSION_TYPE:-}" = x11 ] || exit 0
 
-device=/dev/input/by-id/usb-Logitech_USB_Receiver-event-kbd
-if [ ! -e "$device" ]; then
+sys_input=${XREMAP_SYS_INPUT:-/sys/class/input}
+dev_input=${XREMAP_DEV_INPUT:-/dev/input}
+pidfile="$HOME/.cache/xremap-supervisor.pid"
+mkdir -p "${pidfile%/*}"
+printf '%s\n' "$$" > "$pidfile"
+trap 'rm -f "$pidfile"' EXIT
+trap 'exit 0' HUP INT TERM
+
+while :; do
   device=
-  for name_file in /sys/class/input/event*/device/name; do
+  for name_file in "$sys_input"/event*/device/name; do
     [ -r "$name_file" ] || continue
     IFS= read -r name < "$name_file"
     if [ "$name" = "MX MCHNCL Keyboard" ]; then
       event_dir=${name_file%/device/name}
-      device=/dev/input/${event_dir##*/}
+      device=$dev_input/${event_dir##*/}
       break
     fi
   done
-fi
 
-[ -n "$device" ] || exit 0
+  if [ -z "$device" ]; then
+    sleep 2
+    continue
+  fi
 
-exec "$HOME/.local/bin/xremap" \
-  --device "$device" \
-  --watch=config,device \
-  "$HOME/.config/xremap/config.yml"
+  status=0
+  "$HOME/.local/bin/xremap" \
+    --device "$device" \
+    --watch=config \
+    "$HOME/.config/xremap/config.yml" || status=$?
+
+  # A disconnect makes xremap exit after its exact event path disappears. Scan
+  # again so a reconnected keyboard can use its newly assigned event number.
+  [ ! -e "$device" ] || exit "$status"
+  sleep 2
+done
