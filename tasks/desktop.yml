@@ -374,6 +374,36 @@
 - name: Cinnamon settings
   when: "'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)"
   block:
+    # Keep US as the primary layout and add Bulgarian's traditional phonetic
+    # variant. Cinnamon handles layout switching itself; the matching WM
+    # keybindings preserve the hardware keyboard key and add
+    # Ctrl+Super+Space / Ctrl+Shift+Super+Space switching explicitly.
+    - name: Keyboard layouts and input switching
+      ansible.builtin.shell: |
+        set -e
+        current=$(gsettings get {{ item.schema }} {{ item.key }})
+        desired="{{ item.value }}"
+        if [ "$current" != "$desired" ]; then
+          gsettings set {{ item.schema }} {{ item.key }} "$desired"
+          echo changed
+        fi
+      args:
+        executable: /bin/bash
+      loop:
+        - schema: org.cinnamon.desktop.input-sources
+          key: sources
+          value: "[('xkb', 'us'), ('xkb', 'bg+phonetic')]"
+        - schema: org.cinnamon.desktop.keybindings.wm
+          key: switch-input-source
+          value: "['<Control><Super>space', 'XF86Keyboard']"
+        - schema: org.cinnamon.desktop.keybindings.wm
+          key: switch-input-source-backward
+          value: "['<Control><Shift><Super>space', '<Shift>XF86Keyboard']"
+      loop_control:
+        label: "{{ item.schema }} {{ item.key }}"
+      register: keyboard_input
+      changed_when: "'changed' in keyboard_input.stdout"
+
     - name: Hot corners (current)
       ansible.builtin.command: gsettings get org.cinnamon hotcorner-layout
       register: hotcorners
