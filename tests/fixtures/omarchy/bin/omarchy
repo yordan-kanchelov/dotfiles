@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+state="$root/present"
+calls="$root/calls"
+
+[[ ${1-} == pkg ]] || exit 64
+case ${2-} in
+  present)
+    [[ $# -eq 3 ]] || exit 64
+    grep -Fxq -- "$3" "$state" 2>/dev/null
+    ;;
+  add)
+    shift 2
+    [[ $# -gt 0 ]] || exit 64
+    printf 'add' >> "$calls"
+    for package in "$@"; do
+      printf ' %s' "$package" >> "$calls"
+      grep -Fxq -- "$package" "$state" 2>/dev/null || printf '%s\n' "$package" >> "$state"
+    done
+    printf '\n' >> "$calls"
+    ;;
+  *) exit 64 ;;
+esac

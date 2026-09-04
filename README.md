@@ -1,10 +1,10 @@
 # Dotfiles
 
-Terminal setup for macOS and Debian/Ubuntu (incl. Linux Mint), installed and kept in sync by one Ansible playbook.
+Terminal setup for macOS, Debian/Ubuntu (including Linux Mint), and opt-in Omarchy, kept in sync by one Ansible playbook.
 
 ## Features
 
-- 🚀 **One-command setup** - `./bootstrap.sh` installs Ansible and runs the playbook
+- 🚀 **One-command legacy setup** - `./bootstrap.sh` installs Ansible and runs the playbook on macOS/Debian
 - 🛡️ **Safe installation** - Automatic backups before overwriting existing configs
 - 🔁 **Idempotent** - Re-run any time; a second run reports `changed=0`
 - 📦 **Modern CLI tools** - Curated collection of productivity-enhancing utilities
@@ -34,6 +34,95 @@ ansible-playbook setup.yml       # macOS
 The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
 sources on login — fill in the ones you use. It is written only when missing, so re-runs never
 overwrite it.
+
+## Omarchy (opt-in)
+
+Omarchy support is an adapter, not a replacement desktop configuration. It leaves Omarchy's Hyprland,
+keybindings, bar, theme, Foot, Neovim, tmux, Bash loader, and canonical Starship file untouched. The adapter
+only installs the allowlisted `omarchy-zsh` and `yazi` packages, adds the official Zsh loaders followed by a
+personal overlay, selects this repository's Starship config in Zsh through `STARSHIP_CONFIG`, and links the
+Yazi config. The adapter is tagged `never`, so an untagged playbook run cannot apply it.
+
+Do not use `bootstrap.sh` on Omarchy. Ansible is a prerequisite; after separate package-install approval it
+can be installed with:
+
+```bash
+omarchy pkg add ansible
+```
+
+Capture the current Omarchy-owned state and choose a rollback directory before any authorized apply:
+
+```bash
+baseline=$(mktemp -d)
+omarchy menu keybindings --print > "$baseline/keybindings.before"
+sha256sum ~/.config/hypr/hyprland.lua ~/.config/hypr/bindings.lua > "$baseline/hypr.before"
+sha256sum ~/.config/omarchy/shell.json ~/.config/foot/foot.ini \
+  ~/.config/nvim/init.lua ~/.config/tmux/tmux.conf > "$baseline/owned.before"
+omarchy theme current > "$baseline/theme.before"
+rollback="$HOME/.dotfiles_backup/omarchy-$(date +%Y%m%d-%H%M%S)"
+```
+
+Dry-run first, then apply only after reviewing the diff. The adapter supports the concise forms below:
+
+```bash
+ansible-playbook setup.yml -K --tags omarchy --check --diff
+ansible-playbook setup.yml -K --tags omarchy
+```
+
+For a controlled rollback, use the explicit directory captured above for both runs:
+
+```bash
+ansible-playbook setup.yml -K -e backup_dir="$rollback" --tags omarchy --check --diff
+ansible-playbook setup.yml -K -e backup_dir="$rollback" --tags omarchy
+
+# Later config-only reruns never perform package actions.
+ansible-playbook setup.yml --tags omarchy_config
+```
+
+Validate that Omarchy-owned surfaces did not move, the shell tools are available, and a second adapter run
+reports `changed=0`:
+
+```bash
+omarchy menu keybindings --print > "$baseline/keybindings.after"
+cmp "$baseline/keybindings.before" "$baseline/keybindings.after"
+sha256sum ~/.config/hypr/hyprland.lua ~/.config/hypr/bindings.lua > "$baseline/hypr.after"
+cmp "$baseline/hypr.before" "$baseline/hypr.after"
+sha256sum ~/.config/omarchy/shell.json ~/.config/foot/foot.ini \
+  ~/.config/nvim/init.lua ~/.config/tmux/tmux.conf > "$baseline/owned.after"
+cmp "$baseline/owned.before" "$baseline/owned.after"
+omarchy theme current > "$baseline/theme.after"
+cmp "$baseline/theme.before" "$baseline/theme.after"
+test -z "$(hyprctl configerrors)"
+pacman -Q omarchy-zsh yazi
+zsh -lic 'test "$STARSHIP_CONFIG" = "$HOME/.config/dotfiles/starship.toml"'
+ansible-playbook setup.yml -K -e backup_dir="$rollback" --tags omarchy
+```
+
+Zsh activation remains manual and requires separate approval. If `omarchy-setup-zsh` is later chosen, first
+back up `.bashrc` and `.inputrc`; the official command replaces `.zshrc`, so rerun
+`ansible-playbook setup.yml --tags omarchy_config` afterward. The adapter never runs that command or `chsh`.
+
+### Omarchy rollback
+
+Rollback does not require removing packages. Using the exact directory passed as `backup_dir`, remove only
+`.zshrc`, `.zprofile`, `.config/dotfiles/zsh/personal.zsh`, `.config/dotfiles/starship.toml`, and
+`.config/yazi`; then restore the corresponding `.bak` entries from that directory only where a pre-apply
+target existed. Start a fresh Bash shell and repeat the keybinding, Hyprland, owner-file, and theme
+comparisons above. Package removal is a separate approval because dependency removal may be destructive.
+If `omarchy-setup-zsh` was run separately, also restore its exact pre-activation `.bashrc` and `.inputrc`
+backups.
+
+Repository-only validation is safe on any development host:
+
+```bash
+bash tests/omarchy-boundaries.sh
+REQUIRE_ANSIBLE=1 bash tests/omarchy-integration.sh
+ansible-playbook setup.yml --syntax-check
+zsh -n omarchy/zsh/.zshrc omarchy/zsh/.zprofile omarchy/zsh/personal.zsh
+```
+
+The integration test uses a disposable HOME, fixture marker paths, and a mock Omarchy command. It never
+writes under `/usr/share/omarchy` or invokes a real package manager.
 
 ## What's Included
 
@@ -81,6 +170,8 @@ overwrite it.
 | Just the symlinks / fonts / tmux / secrets | `ansible-playbook setup.yml --tags symlinks` (or `fonts`, `tmux`, `secrets`) |
 | Skip the 1.4 GB ollama build (Linux) | `ansible-playbook setup.yml -K --skip-tags ollama` |
 | Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
+| Omarchy adapter | `ansible-playbook setup.yml -K --tags omarchy` (never runs unless asked) |
+| Omarchy config only | `ansible-playbook setup.yml --tags omarchy_config` |
 | Dry run (on an already set-up machine; `-K` on Linux) | `ansible-playbook setup.yml --check --diff` |
 | Verify | Run it again and expect `changed=0` |
 
@@ -104,10 +195,12 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── tasks/
 │   ├── symlinks.yml      # Backup-then-link
 │   ├── debian.yml        # apt, zsh login shell, Homebrew on Linux, ollama
+│   ├── omarchy.yml       # Opt-in Omarchy package/config adapter
 │   └── desktop.yml       # Linux desktop apps and Cinnamon settings (--tags desktop)
 ├── vars/
 │   ├── Darwin.yml        # macOS paths
-│   └── Debian.yml        # Linux paths, apt packages, brew exclusions
+│   ├── Debian.yml        # Linux paths, apt packages, brew exclusions
+│   └── Omarchy.yml       # Exact package and managed-path allowlists
 ├── brew_packages.yml     # Homebrew formulae & casks
 ├── .github/              # CI workflow, plus the Mint release-resolution play it runs
 ├── .config/              # Modern tool configs
@@ -118,6 +211,8 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   ├── sheldon/          # Zsh plugin manager
 │   └── yazi/             # Terminal file manager
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
+├── omarchy/zsh/          # Official-loader integration and personal overlay
+├── tests/                # Omarchy policy and disposable-HOME checks
 ├── tmux/                 # .tmux.conf
 ├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
 ├── codex/                # Linked into ~/.codex: AGENTS.md, instructions, rules, keybindings
@@ -130,7 +225,7 @@ Existing files are backed up to `~/.dotfiles_backup/` with timestamps.
 
 ## Requirements
 
-- macOS, or a Debian/Ubuntu-based Linux (apt); sudo on Linux
+- macOS, Debian/Ubuntu-based Linux (apt), or Omarchy; sudo on Linux
 - Internet connection for package downloads
 
 ## Development
@@ -142,8 +237,9 @@ shellcheck bootstrap.sh
 ```
 
 CI runs `bootstrap.sh` and the playbook on macOS and Ubuntu, then runs the playbook a second time and fails
-unless it reports `changed=0`. A third job checks the Linux Mint release resolution the desktop tasks depend
-on, which no runner can cover directly.
+unless it reports `changed=0`. Other jobs check Linux Mint release resolution, static Omarchy boundaries,
+and the Omarchy adapter against a disposable HOME and mock package command. No hosted runner provides a live
+Omarchy/Hyprland session, so compositor, key-dispatch, theme, and reboot/login checks remain real-host gates.
 
 ## Customization
 

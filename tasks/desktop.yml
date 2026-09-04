@@ -4,6 +4,14 @@
 # Only reached via --tags desktop (see setup.yml). Failing loudly beats the
 # alternative — every task silently skipping on an SSH run that asked for
 # desktop by name.
+- name: Debian desktop boundary
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Debian'
+      - not is_omarchy
+    fail_msg: Desktop tasks are only supported on non-Omarchy Debian-family systems
+    quiet: true
+
 - name: Graphical session required
   ansible.builtin.assert:
     that: ansible_env.XDG_CURRENT_DESKTOP is defined
