@@ -374,9 +374,11 @@ fi
 mkdir -p "$backup_dir"
 write_receipt_header > "$receipt"
 run_recorded() {
-  printf 'command:' >> "$receipt"
-  printf ' %q' "$@" >> "$receipt"
-  printf '\n' >> "$receipt"
+  {
+    printf 'command:'
+    printf ' %q' "$@"
+    printf '\n'
+  } >> "$receipt"
   set +e
   "$@"
   status=$?

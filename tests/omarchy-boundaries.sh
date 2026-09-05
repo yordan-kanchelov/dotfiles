@@ -36,8 +36,14 @@ fi
 
 # The installer's complete fixed catalog and public package route are explicit.
 require_text install-omarchy.sh 'catalog=(omarchy-zsh yazi shellcheck git-lfs glow viu act pandoc-cli fnm)'
+# Match source variable references literally, not this test's variables.
+# shellcheck disable=SC2016
 require_text install-omarchy.sh 'validate_csv "$components_csv" components zsh yazi'
+# Match the literal optional-tools validation call in the source.
+# shellcheck disable=SC2016
 require_text install-omarchy.sh 'validate_csv "$optional_csv" optional-tools shellcheck git-lfs glow viu act pandoc-cli'
+# Match the source array expansion without expanding it in this test.
+# shellcheck disable=SC2016
 require_text install-omarchy.sh 'run_recorded omarchy pkg add "${queued[@]}"'
 require_text install-omarchy.sh 'omarchy install dev-env node'
 require_text install-omarchy.sh 'omarchy-base.packages'
@@ -56,6 +62,8 @@ done
 forbid_text install-omarchy.sh 'arbitrary|passthrough|dev-env[[:space:]]+(python|go|rust|java)'
 
 # Bootstrap owns only the Omarchy Ansible prerequisite and never dispatches setup on that branch.
+# Match the bootstrap source condition, not the test environment's OS.
+# shellcheck disable=SC2016
 require_text bootstrap.sh '[[ $os_id == omarchy ]]'
 require_text bootstrap.sh 'omarchy pkg add ansible'
 require_text bootstrap.sh 'Prerequisites ready. Next: ./install-omarchy.sh'
@@ -104,6 +112,8 @@ personal_line=$(grep -nF 'source "$HOME/.config/dotfiles/zsh/personal.zsh"' "$zs
 # shellcheck disable=SC2016
 require_text omarchy/zsh/.zshrc 'export STARSHIP_CONFIG="$HOME/.config/dotfiles/starship.toml"'
 require_text omarchy/zsh/personal.zsh 'if (( $+commands[fnm] )) && ! mise where node >/dev/null 2>&1; then'
+# Match the Zsh source command substitution without executing fnm here.
+# shellcheck disable=SC2016
 require_text omarchy/zsh/personal.zsh 'eval "$(fnm env --use-on-cd --shell zsh)"'
 forbid_text omarchy/zsh/personal.zsh '^eval .*fnm env'
 forbid_text omarchy/zsh/personal.zsh 'atuin|sheldon|starship init|zoxide init|fzf --zsh'
