@@ -3,13 +3,13 @@
   ansible.builtin.stat:
     path: "{{ omarchy_path }}/default/hypr/bootstrap.lua"
   register: omarchy_bootstrap
-  tags: [omarchy_packages, omarchy_config, never]
+  tags: [omarchy_config, never]
 
 - name: Inspect Omarchy command
   ansible.builtin.stat:
     path: "{{ omarchy_command | default('/usr/bin/omarchy') }}"
   register: omarchy_command_stat
-  tags: [omarchy_packages, omarchy_config, never]
+  tags: [omarchy_config, never]
 
 - name: Require a real Omarchy installation
   ansible.builtin.assert:
@@ -19,31 +19,7 @@
       - omarchy_command_stat.stat.exists
     fail_msg: Omarchy adapter requires Omarchy markers and its public command
     quiet: true
-  tags: [omarchy_packages, omarchy_config, never]
-
-- name: Probe Omarchy packages
-  ansible.builtin.command:
-    argv: ["{{ omarchy_command | default('/usr/bin/omarchy') }}", "pkg", "present", "{{ item }}"]
-  loop: "{{ omarchy_packages }}"
-  register: omarchy_package_probe
-  changed_when: false
-  failed_when: false
-  check_mode: false
-  tags: [omarchy_packages, never]
-
-- name: Add missing Omarchy packages
-  ansible.builtin.command:
-    argv: "{{ [omarchy_command | default('/usr/bin/omarchy'), 'pkg', 'add'] + omarchy_missing_packages }}"
-  vars:
-    omarchy_missing_packages: >-
-      {{ omarchy_package_probe.results
-         | rejectattr('rc', 'equalto', 0)
-         | map(attribute='item')
-         | list }}
-  become: "{{ omarchy_become | default(true) }}"
-  when: omarchy_missing_packages | length > 0
-  changed_when: true
-  tags: [omarchy_packages, never]
+  tags: [omarchy_config, never]
 
 - name: Back up changed Omarchy Zsh entry files # noqa: command-instead-of-shell
   ansible.builtin.shell: |
@@ -61,7 +37,7 @@
     - { src: omarchy/zsh/.zprofile, dest: .zprofile }
   register: omarchy_zsh_backup
   changed_when: "'backed-up' in omarchy_zsh_backup.stdout"
-  when: omarchy_zsh_enabled
+  when: omarchy_zsh_enabled | bool
   tags: [omarchy_config, never]
 
 - name: Copy Omarchy Zsh entry files
@@ -72,7 +48,7 @@
   loop:
     - { src: omarchy/zsh/.zshrc, dest: .zshrc }
     - { src: omarchy/zsh/.zprofile, dest: .zprofile }
-  when: omarchy_zsh_enabled
+  when: omarchy_zsh_enabled | bool
   tags: [omarchy_config, never]
 
 - name: Link Omarchy extensions

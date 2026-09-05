@@ -102,18 +102,24 @@ jobs:
       - name: Test tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y ansible zsh
+          sudo apt-get install -y ansible shellcheck zsh
           ansible-galaxy collection install -r requirements.yml
 
       - name: Static and syntax checks
         run: |
           bash tests/omarchy-boundaries.sh
-          bash -n bootstrap.sh tests/omarchy-boundaries.sh tests/omarchy-integration.sh
+          bash -n bootstrap.sh install-omarchy.sh tests/omarchy-boundaries.sh \
+            tests/omarchy-integration.sh tests/omarchy-installer.sh
           zsh -n omarchy/zsh/.zshrc omarchy/zsh/.zprofile omarchy/zsh/personal.zsh
           ansible-playbook setup.yml --syntax-check
+          shellcheck bootstrap.sh install-omarchy.sh tests/omarchy-boundaries.sh \
+            tests/omarchy-integration.sh tests/omarchy-installer.sh \
+            tests/fixtures/omarchy/bin/omarchy
 
       - name: Disposable-HOME integration
-        run: REQUIRE_ANSIBLE=1 bash tests/omarchy-integration.sh
+        run: |
+          REQUIRE_ANSIBLE=1 bash tests/omarchy-integration.sh
+          bash tests/omarchy-installer.sh
 
   lint:
     name: Lint

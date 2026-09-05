@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=${DOTFILES_MOCK_ROOT:?}
+case ${1-} in
+  where)
+    [[ ${2-} == node && $# -eq 2 ]] || exit 64
+    [[ -s $root/mise-node ]] || exit 1
+    read -r node_path < "$root/mise-node"
+    printf '%s\n' "$node_path"
+    ;;
+  *) exit 64 ;;
+esac

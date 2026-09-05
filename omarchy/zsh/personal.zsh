@@ -9,6 +9,10 @@ fi
 (( $+commands[nvim] )) && alias vim='nvim'
 (( $+commands[lazygit] )) && alias lg='lazygit'
 
+if (( $+commands[fnm] )) && ! mise where node >/dev/null 2>&1; then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+
 if (( $+commands[yazi] )); then
   y() {
     local tmp cwd

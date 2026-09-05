@@ -1,5 +1,6 @@
 ---
-# Dotfiles setup. First time: ./bootstrap.sh (installs Ansible, then runs this).
+# Dotfiles setup. bootstrap.sh runs this on macOS/Debian; Omarchy calls the
+# explicit config-only adapter from install-omarchy.sh.
 #   ansible-playbook setup.yml -K      # Linux — apt/usermod need sudo
 #   ansible-playbook setup.yml         # macOS
 # Tags:  --skip-tags packages | --tags desktop | --tags symlinks,fonts,tmux,secrets | --skip-tags ollama
@@ -54,10 +55,10 @@
       tags: always
 
   tasks:
-    - name: Omarchy adapter
+    - name: Omarchy config adapter
       ansible.builtin.import_tasks: tasks/omarchy.yml
       when: is_omarchy
-      tags: [omarchy, never]
+      tags: [omarchy_config, never]
 
     - name: Debian/Ubuntu packages
       ansible.builtin.import_tasks: tasks/debian.yml

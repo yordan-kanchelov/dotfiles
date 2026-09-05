@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=${DOTFILES_MOCK_ROOT:?}
+case ${1-} in
+  ls|list)
+    if [[ -f $root/fnm-nodes ]]; then
+      awk '{ print "v" $0 }' "$root/fnm-nodes"
+    fi
+    ;;
+  install)
+    [[ $# -eq 2 ]] || exit 64
+    printf 'fnm install %s\n' "$2" >> "$root/calls"
+    grep -Fxq -- "$2" "$root/fnm-nodes" 2>/dev/null || printf '%s\n' "$2" >> "$root/fnm-nodes"
+    ;;
+  default)
+    if [[ $# -eq 1 ]]; then
+      if [[ -s $root/fnm-default ]]; then
+        read -r value < "$root/fnm-default"
+        printf '%s\n' "$value"
+      fi
+    elif [[ $# -eq 2 ]]; then
+      printf 'fnm default %s\n' "$2" >> "$root/calls"
+      printf '%s\n' "$2" > "$root/fnm-default"
+    else
+      exit 64
+    fi
+    ;;
+  *) exit 64 ;;
+esac
