@@ -42,13 +42,23 @@ run_installer() {
 }
 
 run_bootstrap() {
+  # Only expose the utilities used by bootstrap and its fixtures. Falling back
+  # to /usr/bin or /bin would expose CI's Ansible in the missing-tool case.
+  local utility
+  for utility in bash dirname grep cp chmod; do
+    ln -s "$(command -v "$utility")" "$case_bin/$utility"
+  done
+  bootstrap_ansible_before=$(PATH="$case_bin" command -v ansible-playbook || true)
   set +e
-  PATH="$case_bin:/usr/bin:/bin" HOME="$case_home" OSTYPE=linux-gnu \
+  PATH="$case_bin" HOME="$case_home" OSTYPE=linux-gnu \
     DOTFILES_OS_RELEASE="$case_root/os-release" OMARCHY_PATH="$case_omarchy" \
     DOTFILES_MOCK_ROOT="$case_root" "$repo/bootstrap.sh" "$@" </dev/null \
     > "$case_root/output" 2>&1
   run_rc=$?
   set -e
+  bootstrap_ansible_after=$(PATH="$case_bin" command -v ansible-playbook || true)
+  printf 'Bootstrap Ansible resolution: before=%s after=%s\n' \
+    "${bootstrap_ansible_before:-absent}" "${bootstrap_ansible_after:-absent}"
 }
 
 assert_contains() { grep -Fq -- "$2" "$1" || fail "$1 missing: $2"; }
@@ -64,6 +74,8 @@ new_case bootstrap-missing
 rm "$case_bin/ansible-playbook"
 run_bootstrap
 [[ $run_rc -eq 0 ]] || fail 'bootstrap with missing Ansible failed'
+[[ -z $bootstrap_ansible_before ]] || fail 'missing-Ansible case exposed an executable'
+[[ $bootstrap_ansible_after == "$case_bin/ansible-playbook" ]] || fail 'bootstrap did not resolve installed fixture'
 [[ $(grep -c '^pkg add ansible$' "$case_root/calls") -eq 1 ]] || fail 'bootstrap did not add only Ansible once'
 grep -Fq 'Prerequisites ready. Next: ./install-omarchy.sh' "$case_root/output"
 [[ ! -s "$case_root/ansible-calls" ]] || fail 'Omarchy bootstrap ran setup.yml'
@@ -71,6 +83,8 @@ grep -Fq 'Prerequisites ready. Next: ./install-omarchy.sh' "$case_root/output"
 new_case bootstrap-present
 run_bootstrap
 [[ $run_rc -eq 0 ]] || fail 'bootstrap with present Ansible failed'
+[[ $bootstrap_ansible_before == "$case_bin/ansible-playbook" ]] || fail 'present-Ansible case did not resolve fixture'
+[[ $bootstrap_ansible_after == "$bootstrap_ansible_before" ]] || fail 'present-Ansible resolution changed'
 ! grep -q '^pkg add ' "$case_root/calls" || fail 'bootstrap reinstalled Ansible'
 [[ ! -s "$case_root/ansible-calls" ]] || fail 'Omarchy bootstrap ran setup.yml'
 
