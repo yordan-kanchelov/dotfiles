@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=${DOTFILES_MOCK_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
+state="$root/present"
+calls="$root/calls"
+printf '%s' "$1" >> "$calls"
+for arg in "${@:2}"; do printf ' %s' "$arg" >> "$calls"; done
+printf '\n' >> "$calls"
+
+case ${1-} in
+  pkg)
+    case ${2-} in
+      present)
+        [[ $# -eq 3 ]] || exit 64
+        grep -Fxq -- "$3" "$state" 2>/dev/null
+        ;;
+      add)
+        shift 2
+        [[ $# -gt 0 ]] || exit 64
+        [[ ! -e $root/fail-add ]] || exit 17
+        for package in "$@"; do
+          grep -Fxq -- "$package" "$state" 2>/dev/null || printf '%s\n' "$package" >> "$state"
+          if [[ $package == ansible && -f $root/bin/.ansible-playbook.mock ]]; then
+            cp "$root/bin/.ansible-playbook.mock" "$root/bin/ansible-playbook"
+            chmod +x "$root/bin/ansible-playbook"
+          elif [[ $package == fnm && -f $root/bin/.fnm.mock ]]; then
+            cp "$root/bin/.fnm.mock" "$root/bin/fnm"
+            chmod +x "$root/bin/fnm"
+          fi
+        done
+        ;;
+      *) exit 64 ;;
+    esac
+    ;;
+  install)
+    [[ ${2-} == dev-env && ${3-} == node && $# -eq 3 ]] || exit 64
+    printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$root/mise-node"
+    ;;
+  *) exit 64 ;;
+esac

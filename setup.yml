@@ -1,5 +1,6 @@
 ---
-# Dotfiles setup. First time: ./bootstrap.sh (installs Ansible, then runs this).
+# Dotfiles setup. bootstrap.sh runs this on macOS/Debian; Omarchy calls the
+# explicit config-only adapter from install-omarchy.sh.
 #   ansible-playbook setup.yml -K      # Linux — apt/usermod need sudo
 #   ansible-playbook setup.yml         # macOS
 # Tags:  --skip-tags packages | --tags desktop | --tags symlinks,fonts,tmux,secrets | --skip-tags ollama
@@ -9,12 +10,13 @@
   connection: local
   vars_files:
     - brew_packages.yml # -> formulae (dict), casks (list)
-    - "vars/{{ ansible_os_family }}.yml" # Darwin.yml / Debian.yml, loaded after facts
   vars:
     home: "{{ ansible_env.HOME }}" # not `~`: become tasks would expand it to /root
     dotfiles: "{{ playbook_dir }}"
     backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_date_time.iso8601_basic_short }}"
     node_version: "22"
+    is_omarchy: "{{ (ansible_distribution | lower) == 'omarchy' }}"
+    is_legacy_platform: "{{ ansible_os_family in ['Darwin', 'Debian'] and not is_omarchy }}"
     # For the tasks that call brew/fnm/tmux: on PATH now, not just at next login.
     tool_env:
       PATH: "{{ brew_prefix }}/bin:{{ home }}/.local/bin:{{ ansible_env.PATH }}"
@@ -40,10 +42,27 @@
       - { src: codex/AGENTS.md, dest: .codex/AGENTS.md }
       - { src: codex/instructions.md, dest: .codex/instructions.md }
       - { src: codex/rules, dest: .codex/rules }
+  pre_tasks:
+    - name: Require a supported platform
+      ansible.builtin.assert:
+        that: is_omarchy or ansible_os_family in ['Darwin', 'Debian']
+        fail_msg: Only macOS, Debian-family Linux, and Omarchy are supported
+        quiet: true
+      tags: always
+
+    - name: Load platform variables
+      ansible.builtin.include_vars: "vars/{{ 'Omarchy' if is_omarchy else ansible_os_family }}.yml"
+      tags: always
+
   tasks:
+    - name: Omarchy config adapter
+      ansible.builtin.import_tasks: tasks/omarchy.yml
+      when: is_omarchy
+      tags: [omarchy_config, never]
+
     - name: Debian/Ubuntu packages
       ansible.builtin.import_tasks: tasks/debian.yml
-      when: ansible_os_family == 'Debian'
+      when: ansible_os_family == 'Debian' and not is_omarchy
       tags: packages
 
     - name: Homebrew formulae
@@ -51,6 +70,7 @@
         name: "{{ brew_formulae | reject('search', '/') }}"
         state: present
       environment: "{{ tool_env }}"
+      when: is_legacy_platform
       tags: packages
 
     # Tap-qualified names (cirruslabs/cli/tart) bypass the module: it fails on any stderr from
@@ -66,6 +86,7 @@
         creates: "{{ brew_prefix }}/bin/{{ item | basename }}"
       loop: "{{ brew_formulae | select('search', '/') }}"
       environment: "{{ tool_env }}"
+      when: is_legacy_platform
       tags: packages
 
     - name: Homebrew casks
@@ -73,7 +94,7 @@
         name: "{{ casks }}"
         state: present
       environment: "{{ tool_env }}"
-      when: ansible_os_family == 'Darwin'
+      when: is_legacy_platform and ansible_os_family == 'Darwin'
       tags: packages
 
     # fnm picks its data dir itself (legacy ~/.fnm, XDG_DATA_HOME, per-OS default), so ask it
@@ -92,6 +113,7 @@
       register: node
       changed_when: "'installed' in node.stdout"
       environment: "{{ tool_env }}"
+      when: is_legacy_platform
       tags: packages
 
     # Families live in subdirectories next to licences and READMEs, so recurse
@@ -102,6 +124,7 @@
         patterns: ["*.ttf", "*.otf", "*.ttc"]
         recurse: true
       register: font_faces
+      when: is_legacy_platform
       tags: fonts
 
     # copy does not create parent dirs. No mode: ~/Library/Fonts pre-exists as 0700.
@@ -109,6 +132,7 @@
       ansible.builtin.file:
         path: "{{ fonts_dir }}"
         state: directory
+      when: is_legacy_platform
       tags: fonts
 
     # Copied, not linked: macOS CoreText is unreliable about symlinked faces in ~/Library/Fonts.
@@ -117,15 +141,16 @@
         src: "{{ item }}"
         dest: "{{ fonts_dir }}/{{ item | basename }}"
         mode: "0644"
-      loop: "{{ font_faces.files | map(attribute='path') | sort }}"
+      loop: "{{ (font_faces.files | default([])) | map(attribute='path') | sort }}"
       loop_control:
         label: "{{ item | basename }}"
       register: fonts
+      when: is_legacy_platform
       tags: fonts
 
     - name: Font cache (macOS picks up ~/Library/Fonts on its own)
       ansible.builtin.command: fc-cache -f {{ fonts_dir }}
-      when: ansible_os_family == 'Debian' and fonts.changed
+      when: is_legacy_platform and ansible_os_family == 'Debian' and (fonts.changed | default(false))
       changed_when: true
       tags: fonts
 
@@ -135,6 +160,7 @@
         dest: "{{ home }}/.tmux/plugins/tpm"
         version: master
         update: false
+      when: is_legacy_platform
       tags: tmux
 
     - name: Secrets file (~/.secrets, create-if-absent, sourced by .zprofile)
@@ -154,6 +180,7 @@
           export BRAVE_API_KEY="your-api-key-here"
 
           # Add other secrets below as needed
+      when: is_legacy_platform
       tags: secrets
 
     # copy force:false never touches an existing file, so a pre-existing
@@ -162,12 +189,14 @@
       ansible.builtin.file:
         path: "{{ home }}/.secrets"
         mode: "0600"
+      when: is_legacy_platform
       tags: secrets
 
     - name: Symlinks
       ansible.builtin.import_tasks: tasks/symlinks.yml
       vars:
         links: "{{ dotfile_links }}"
+      when: is_legacy_platform
       tags: symlinks
 
     # Copy-if-absent: codex appends project trust entries at runtime, so this must not be a link.
@@ -177,6 +206,7 @@
         dest: "{{ home }}/.codex/config.toml"
         mode: "0644"
         force: false
+      when: is_legacy_platform
       tags: symlinks
 
     # tpm's installer shells out to tmux, so a configs-only run (--skip-tags
@@ -188,6 +218,7 @@
       register: tpm
       changed_when: "'download success' in tpm.stdout"
       environment: "{{ tool_env }}"
+      when: is_legacy_platform
       tags: tmux
 
     # A launcher and global hotkeys only mean anything in a graphical session. Never
@@ -196,5 +227,5 @@
     # over SSH should fail loudly, not skip every task and report success.)
     - name: Linux desktop
       ansible.builtin.import_tasks: tasks/desktop.yml
-      when: ansible_os_family == 'Debian'
+      when: ansible_os_family == 'Debian' and not is_omarchy
       tags: [desktop, never]

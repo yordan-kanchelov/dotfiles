@@ -1,0 +1,58 @@
+---
+- name: Inspect Omarchy bootstrap marker
+  ansible.builtin.stat:
+    path: "{{ omarchy_path }}/default/hypr/bootstrap.lua"
+  register: omarchy_bootstrap
+  tags: [omarchy_config, never]
+
+- name: Inspect Omarchy command
+  ansible.builtin.stat:
+    path: "{{ omarchy_command | default('/usr/bin/omarchy') }}"
+  register: omarchy_command_stat
+  tags: [omarchy_config, never]
+
+- name: Require a real Omarchy installation
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution | lower == 'omarchy'
+      - omarchy_bootstrap.stat.exists
+      - omarchy_command_stat.stat.exists
+    fail_msg: Omarchy adapter requires Omarchy markers and its public command
+    quiet: true
+  tags: [omarchy_config, never]
+
+- name: Back up changed Omarchy Zsh entry files # noqa: command-instead-of-shell
+  ansible.builtin.shell: |
+    target={{ (home ~ '/' ~ item.dest) | quote }}
+    source={{ (dotfiles ~ '/' ~ item.src) | quote }}
+    if { [ -e "$target" ] || [ -L "$target" ]; } && ! cmp -s "$source" "$target"; then
+      mkdir -p {{ backup_dir | quote }}
+      mv "$target" {{ (backup_dir ~ '/' ~ item.dest | replace('/', '_') ~ '.bak') | quote }}
+      echo backed-up
+    fi
+  args:
+    executable: /bin/bash
+  loop:
+    - { src: omarchy/zsh/.zshrc, dest: .zshrc }
+    - { src: omarchy/zsh/.zprofile, dest: .zprofile }
+  register: omarchy_zsh_backup
+  changed_when: "'backed-up' in omarchy_zsh_backup.stdout"
+  when: omarchy_zsh_enabled | bool
+  tags: [omarchy_config, never]
+
+- name: Copy Omarchy Zsh entry files
+  ansible.builtin.copy:
+    src: "{{ dotfiles }}/{{ item.src }}"
+    dest: "{{ home }}/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: omarchy/zsh/.zshrc, dest: .zshrc }
+    - { src: omarchy/zsh/.zprofile, dest: .zprofile }
+  when: omarchy_zsh_enabled | bool
+  tags: [omarchy_config, never]
+
+- name: Link Omarchy extensions
+  ansible.builtin.import_tasks: symlinks.yml
+  vars:
+    links: "{{ omarchy_links | selectattr('enabled') | list }}"
+  tags: [omarchy_config, never]

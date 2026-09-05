@@ -1,0 +1,14 @@
+---
+omarchy_path: /usr/share/omarchy
+omarchy_zsh_enabled: true
+omarchy_yazi_enabled: true
+omarchy_links:
+  - src: omarchy/zsh/personal.zsh
+    dest: .config/dotfiles/zsh/personal.zsh
+    enabled: "{{ omarchy_zsh_enabled | bool }}"
+  - src: .config/starship.toml
+    dest: .config/dotfiles/starship.toml
+    enabled: "{{ omarchy_zsh_enabled | bool }}"
+  - src: .config/yazi
+    dest: .config/yazi
+    enabled: "{{ omarchy_yazi_enabled | bool }}"

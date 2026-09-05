@@ -1,0 +1,1 @@
+-- Fake Omarchy bootstrap marker for disposable-HOME tests.
