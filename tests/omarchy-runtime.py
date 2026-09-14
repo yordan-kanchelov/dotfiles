@@ -76,8 +76,12 @@ class Child:
 results = []
 with tempfile.TemporaryDirectory(prefix='dotfiles-runtime-') as temporary:
     root = Path(temporary)
-    disabled = root / 'disabled'
-    disabled.write_bytes(b'')
+    # A missing PATH entry is different from a non-executable file (status 126).
+    without_mise = root / 'without-mise'
+    without_mise.mkdir()
+    for executable in Path('/usr/bin').iterdir():
+        if executable.name != 'mise':
+            (without_mise / executable.name).symlink_to(executable)
     for case in ['fnm', 'mise-installed', 'mise-uninstalled', 'mise-unconfigured', 'system', 'mixed']:
         for login in [False, True]:
             observations = []
@@ -132,13 +136,18 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-runtime-') as temporary:
                         '--proc', '/proc', '--dev', '/dev', '--tmpfs', '/tmp', '--dir', '/etc', '--dir', '/run',
                         '--bind', str(home), '/home/test', '--ro-bind', str(REPO / 'omarchy'), str(REPO / 'omarchy'),
                         '--ro-bind', str(FNM), '/tools/fnm', '--clearenv', '--setenv', 'HOME', '/home/test',
-                        '--setenv', 'USER', 'test', '--setenv', 'SHELL', '/bin/bash', '--setenv', 'PATH', '/usr/bin',
+                        '--setenv', 'USER', 'test', '--setenv', 'SHELL', '/bin/bash', '--setenv', 'PATH', '/instrument:/usr/bin',
                         '--setenv', 'TERM', 'xterm-256color', '--setenv', 'LC_ALL', 'C.UTF-8',
                         '--setenv', 'XDG_RUNTIME_DIR', '/tmp/runtime', '--setenv', 'MISE_OFFLINE', '1',
                         '--chdir', '/home/test']
                 if case in ['fnm', 'system']:
-                    # Missing-manager fixture only. Production never masks manager executables.
-                    argv += ['--ro-bind', str(disabled), '/usr/bin/mise']
+                    # Missing-manager fixture only; product never changes runtime visibility.
+                    argv[argv.index('PATH') + 1] = '/tools/without-mise'
+                    argv += ['--ro-bind', str(without_mise), '/tools/without-mise']
+                else:
+                    # env-bootstrap appends ~/.local/bin, so put the forwarding
+                    # observer first explicitly. It always execs the genuine binary.
+                    argv += ['--ro-bind', str(home / '.local/bin/mise'), '/instrument/mise']
                 argv += ['/usr/bin/bash', '-il' if login else '-i']
                 child = Child(argv)
                 values = []
@@ -185,6 +194,12 @@ with tempfile.TemporaryDirectory(prefix='dotfiles-runtime-') as temporary:
                     output_dir.mkdir(parents=True, exist_ok=True)
                     (output_dir / f'{case}-{login}-{candidate}.log').write_bytes(child.transcript)
             assert observations[0] == observations[1], (case, login, observations)
+            expected_calls = '' if case in ['fnm', 'system'] else 'mise activate\n'
+            if case in ['fnm', 'mixed']:
+                expected_calls += 'fnm env\n'
+            assert observations[0]['init_calls'] == expected_calls, (case, observations)
+            if case in ['fnm', 'system']:
+                assert observations[0]['values'][0][1][3] == '@@MISE_STATUS=127', observations
             if case in ['fnm', 'mixed']:
                 assert 'v24.20.0' in str(observations[0]['values'][0]), observations
                 assert 'v26.8.1' in str(observations[0]['values'][1]), observations
