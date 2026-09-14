@@ -47,35 +47,69 @@ and exits without running `setup.yml`. The existing macOS/Debian bootstrap behav
 ./install-omarchy.sh --dry-run
 ./install-omarchy.sh --non-interactive --yes
 ./install-omarchy.sh --non-interactive --yes \
-  --components zsh,yazi \
+  --components bash,yazi \
   --optional-tools shellcheck,git-lfs,glow \
-  --node-manager mise --config yes
+  --config yes
 ```
 
 The guided installer uses Gum and prints a complete plan before confirmation. Deterministic runs accept only
-the documented component, tool, Node-manager, config, backup, confirmation, and dry-run flags; arbitrary
+the documented component, tool, config, backup, confirmation, and dry-run flags; arbitrary
 package names are rejected.
 
 ### Defaults and optional tools
 
-The default plan selects the Zsh overlay, Yazi, and ShellCheck, preserves the active Mise-managed Node, and
-applies config. The fixed optional trusted-repository tools are `git-lfs`, `glow`, `viu`, `act`, and
-`pandoc-cli`. Packages already listed in the local Omarchy base manifest or already installed are skipped.
-All missing selected packages are passed in stable order to one `omarchy pkg add` call.
+The default plan selects **Bash shortcuts + vi**, **Yazi**, and **ShellCheck**, then applies config after
+confirmation. Open a new Bash shell to activate it. Bash adds no shell package. Yazi is package-only:
+its `y` directory-navigation wrapper comes with the Bash component when Yazi is available; selecting Yazi
+without Bash does not change shell startup. Existing Yazi config, keymaps, plugins and appearance remain intact.
 
-The repository Starship file is linked to `~/.config/dotfiles/starship.toml` and selected only in Zsh through
-`STARSHIP_CONFIG`; Omarchy's canonical `~/.config/starship.toml` remains untouched. The official Omarchy
-environment and Zsh loaders run before the personal overlay. Yazi is the only overlapping application config
-directory linked by the adapter.
+ShellCheck statically checks scripts and is default-selected but optional. The only other optional tools are
+`git-lfs` (large Git assets), `glow` (terminal Markdown reader), and `viu` (terminal image viewer).
+Installation does not invoke these tools, initialize Git LFS filters, touch repositories or start services.
+Base-manifest and already-present packages are skipped; a missing base-owned package requires repairing
+Omarchy separately. All other missing selections use at most one `omarchy pkg add` batch.
 
-### Why fnm is not the default
+### Preserve appearance and runtime
 
-Omarchy already owns Node through Mise. The default preserves the active Mise Node instead of replacing it
-with the repository's historical Node 22 choice. `fnm` is visible only as an advanced, mutually exclusive
-selection. The installer refuses fnm while `mise where node` resolves, and refuses the Mise path while fnm is
-present. Switching to fnm is a separate manual boundary: back up Mise config, obtain explicit approval before
-running the printed `mise unuse --global node@VERSION --no-prune` command, start a fresh shell, verify
-`mise where node` fails, and rerun with `--node-manager fnm --fnm-node 22`.
+Runtime policy is unconditional **KEEP**: no Node detection, provisioning, activation or switching, even
+when a configured Mise version is unavailable. Existing fnm/Mise startup stays byte-identical. Zsh switching
+and runtime choices are deferred; legacy macOS/Debian Zsh setup is unchanged.
+
+Why not default to Zsh in this revision? Independent sandbox QA ran genuine Bash/fnm → official Zsh
+activation: initial Node v24.20.0 survived, but entering a project pinned to v26.8.1 left Zsh on v24.20.0
+while Bash switched correctly. That is lost on-cd behavior, not a missing-Zsh-executable problem. It does
+not mean Zsh/fnm can never coexist; a compatible runtime integration needs a separate approved design.
+KEEP preserves existing resolution, status and project switching/failure behavior, not just initial version.
+
+No repository Starship selection or sidecar is created. Current prompt, cursor, colors, theme, fonts,
+Foot, bar, Hyprland/window/tiling/keybindings, tmux config and Yazi appearance remain owned by Omarchy/user.
+This installs selected personal shortcuts, not all legacy helpers or a replacement terminal environment.
+
+### Selected shortcuts and intentional omissions
+
+| Names | Meaning / dependency |
+|---|---|
+| `lg`, `vim`, `sw` | `lazygit`, `nvim`, `sync-worktrees`, only if already available |
+| `l`, `ls` | eza long/all/header/Git/icons listing; explicitly overrides Omarchy's shorter `ls` output and affects aliases using `ls` |
+| `ta`, `tn`, `tls` | tmux attach-session `-t`, new `-s`, list-sessions |
+| `tren`, `tnw`, `th`, `tv` | tmux rename-session `-t`, new-window, split-window `-h` / `-v` |
+| `tk`, `tkill` | **Destructive when explicitly invoked:** kill selected tmux session / entire tmux server (all sessions) |
+| `tkp`, `:q` | Exit this shell; `tkp` is **not** kill-pane |
+| `reload` | `exec bash`; starts a replacement Bash and rereads startup |
+| `y` | Yazi with cd-on-quit; blank selection is a no-op, failures propagate, temporary file cleaned on normal return; caller traps untouched |
+| `fvim` | fzf picker with bat preview, then `nvim -- filename`; cancellation never starts editor; requires all three tools |
+
+The full legacy inventory has 22 aliases and 8 functions. Every omission is deliberate:
+`ghcs` needs independently verified Copilot capability; `cleanc`, `cleanp`, `clean_dev_caches` and
+`clean_project` are unsafe cleaners; `supd` needs the excluded Sheldon; `_init_fzf` duplicates official
+integration; `cat` and `clear` would change native behavior/erase scrollback; `claude` inspects private
+session state. The conflicting `c=claude -c` is omitted so Omarchy's `c` stays authoritative. A user can
+personally opt in to `alias c='claude -c'` after the managed block; this installer never adds it.
+
+Native Bash vi starts in insert mode. Escape switches to command mode (motions, `cw`, `i`, etc.). The
+packaged Omarchy inputrc is loaded into vi-insert to retain TAB/Shift-TAB cycling and prefix Up/Down.
+Official fzf Ctrl-R/Ctrl-T/Alt-C bindings remain; no duplicate fzf initialization. No new cursor/prompt
+sequences, global shortcuts, terminal bindings or tmux key tables are installed.
 
 ### Configuration, receipt, and rollback
 
@@ -87,23 +121,36 @@ ansible-playbook setup.yml --tags omarchy_config
 ```
 
 A confirmed run writes `$backup_dir/omarchy-install.receipt` before mutation. It records selections, package
-planning, Node detection/action, Ansible variables, exact commands, and statuses. `--dry-run` prints the same
+planning, runtime KEEP, Ansible variables, exact commands, and statuses. `--dry-run` prints the same
 plan and receipt content plus the Ansible `--check --diff` command, but writes no receipt and runs no mutating
-command.
+command. It does not actually execute Ansible check mode. Use a fresh backup directory for each installer
+receipt; existing receipts are never overwritten.
 
-Configuration rollback removes only `.zshrc`, `.zprofile`,
-`.config/dotfiles/zsh/personal.zsh`, `.config/dotfiles/starship.toml`, and `.config/yazi`, then restores the
-corresponding `.bak` entries from the receipt's backup directory where a pre-install target existed. There is
-no automated package or Node rollback.
+The Bash component links only `~/.config/dotfiles/bash/personal.bash` and
+`~/.config/dotfiles/shell/aliases.sh`, then appends one guarded block to `.bashrc` after existing user
+content. Everything outside that block is byte-preserved, including a missing final newline. A known
+official env-bootstrap → interactive guard → rc prelude is required; unfamiliar layouts, duplicate/changed
+markers, symlink ancestors and symlink/shared `.bashrc` are refused rather than overwritten. Existing
+sidecar files/links and `.bashrc` are backed up before config changes. No-op runs create no component backup.
 
-Zsh activation remains manual. The installer never runs `omarchy-setup-zsh` or `chsh`; if separately
-approved, back up `.bashrc` and `.inputrc`, run the official setup, then rerun the config-only Ansible tag
-because the official setup replaces `.zshrc`.
+`bash-component.json` and `bash-component/` under the receipt directory record only this component's
+changes. After reviewing that receipt, roll back with:
+
+```bash
+python3 omarchy/config.py rollback --home "$HOME" --repo "$PWD" \
+  --backup "$HOME/.dotfiles_backup/REPLACE_WITH_RECEIPT_DIRECTORY"
+```
+
+Rollback restores `.bashrc` only if its installed hash still matches, and only restores/removes recorded
+repository-owned sidecar links. Later edits cause refusal: review and remove only the managed block manually,
+never overwrite unrelated changes. Empty sidecar directories and backups are retained. Start a new shell
+after rollback; `set -o emacs` alone does not remove aliases. No package removal or runtime rollback is needed
+or automated. Existing files from older Zsh/Yazi adapter versions are not deleted or migrated automatically.
 
 ### Ownership and deferred scope
 
 Omarchy retains Hyprland, tiling and all bindings, shell/bar JSON and Quickshell, the current theme, Foot,
-Ghostty, Neovim/LazyVim, tmux, Atuin, Sheldon, fonts, and the Bash loader. Nothing writes beneath
+Ghostty, Neovim/LazyVim, tmux, Atuin, Sheldon, fonts, and the official Bash loader. Nothing writes beneath
 `/usr/share/omarchy`. The installer does not port Mint, apt, Homebrew/Linuxbrew, font, TPM, broad legacy-link,
 secrets, Ollama, or Cinnamon/X11 behavior.
 
@@ -113,16 +160,42 @@ environments, Atuin/Sheldon, Ghostty config, and package removal.
 Repository validation:
 
 ```bash
-bash tests/omarchy-boundaries.sh
-REQUIRE_ANSIBLE=1 bash tests/omarchy-integration.sh
+python3 tests/omarchy-boundaries.py
+python3 tests/omarchy-config.py
+python3 tests/omarchy-shell.py
+python3 tests/omarchy-pty.py
+python3 tests/omarchy-integration.py
 bash tests/omarchy-installer.sh
 ansible-playbook setup.yml --syntax-check
-zsh -n omarchy/zsh/.zshrc omarchy/zsh/.zprofile omarchy/zsh/personal.zsh
+bash -n omarchy/shell/aliases.sh omarchy/bash/personal.bash
 ```
 
-Tests use fixture Omarchy paths, command mocks, and disposable HOME directories. They do not prove live
+Tests require Ansible and packaged fzf Bash bindings (missing is failure), with real PTY editing and
+fixture Omarchy paths, command stubs, and disposable HOME directories. Login-flag and non-login PTYs load
+fixture startup explicitly, excluding system and live profiles. They do not prove live
 Hyprland/compositor behavior, graphical key dispatch, login/reboot behavior, or compatibility after a future
 Omarchy update.
+
+The supplementary runtime check uses real official Bash loaders, fnm, Mise and two genuine Node binaries
+in a network-isolated rootless Bubblewrap sandbox. It compares baseline/candidate startup, pinned-project
+entry/nested/exit, overlay re-source, manager init counts and hook fingerprints for fnm, installed/uninstalled/
+unconfigured Mise, missing-manager/system Node and mixed ownership, under fresh login and non-login shells.
+Runtime layouts are staged offline; this is not an installer/download test. Only `/usr` and the selected
+product/runtime executable files are exposed read-only; the real HOME, runtime directories, credentials and
+desktop sockets are not mounted. Synthetic consent/rollback results from the earlier Zsh investigation
+were not production acceptance. The current Bash component has separate real config-helper/Ansible tests.
+
+On a compatible Omarchy tooling host (mandatory prerequisites must exist; no unsandboxed fallback):
+
+```bash
+DOTFILES_TEST_FNM=/absolute/path/to/fnm \
+DOTFILES_TEST_NODE24=/absolute/path/to/node-v24.20.0 \
+DOTFILES_RUNTIME_EVIDENCE=/absolute/path/to/disposable-evidence \
+  python3 tests/omarchy-runtime.py
+```
+
+This test requires system Node v26.8.1 and working unprivileged Bubblewrap namespaces. Ordinary Ubuntu CI
+does not provide those real Omarchy dependencies; its fixture tests are not a substitute for this matrix.
 
 ## What's Included
 
@@ -202,7 +275,7 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── vars/
 │   ├── Darwin.yml        # macOS paths
 │   ├── Debian.yml        # Linux paths, apt packages, brew exclusions
-│   └── Omarchy.yml       # Exact config managed-path allowlist
+│   └── Omarchy.yml       # Bash/Yazi component defaults
 ├── brew_packages.yml     # Homebrew formulae & casks
 ├── .github/              # CI workflow, plus the Mint release-resolution play it runs
 ├── .config/              # Modern tool configs
@@ -213,7 +286,7 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   ├── sheldon/          # Zsh plugin manager
 │   └── yazi/             # Terminal file manager
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
-├── omarchy/zsh/          # Official-loader integration and personal overlay
+├── omarchy/              # Bash entry, shared aliases, byte-preserving config helper
 ├── tests/                # Omarchy policy and disposable-HOME checks
 ├── tmux/                 # .tmux.conf
 ├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
@@ -236,7 +309,7 @@ Existing files are backed up to `~/.dotfiles_backup/` with timestamps.
 ansible-playbook setup.yml --syntax-check
 ansible-lint                     # with ansible-core: ansible-galaxy collection install -r requirements.yml first
 shellcheck bootstrap.sh install-omarchy.sh tests/omarchy-*.sh
-bash tests/omarchy-boundaries.sh
+python3 tests/omarchy-boundaries.py
 bash tests/omarchy-installer.sh
 ```
 

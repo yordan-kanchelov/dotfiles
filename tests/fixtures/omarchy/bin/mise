@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=${DOTFILES_MOCK_ROOT:?}
+printf 'mise %s\n' "$*" >> "$root/calls"
 case ${1-} in
   where)
     [[ ${2-} == node && $# -eq 2 ]] || exit 64

@@ -24,18 +24,13 @@ case ${1-} in
           if [[ $package == ansible && -f $root/bin/.ansible-playbook.mock ]]; then
             cp "$root/bin/.ansible-playbook.mock" "$root/bin/ansible-playbook"
             chmod +x "$root/bin/ansible-playbook"
-          elif [[ $package == fnm && -f $root/bin/.fnm.mock ]]; then
-            cp "$root/bin/.fnm.mock" "$root/bin/fnm"
-            chmod +x "$root/bin/fnm"
+
           fi
         done
         ;;
       *) exit 64 ;;
     esac
     ;;
-  install)
-    [[ ${2-} == dev-env && ${3-} == node && $# -eq 3 ]] || exit 64
-    printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$root/mise-node"
-    ;;
+
   *) exit 64 ;;
 esac

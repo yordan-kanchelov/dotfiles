@@ -21,38 +21,20 @@
     quiet: true
   tags: [omarchy_config, never]
 
-- name: Back up changed Omarchy Zsh entry files # noqa: command-instead-of-shell
-  ansible.builtin.shell: |
-    target={{ (home ~ '/' ~ item.dest) | quote }}
-    source={{ (dotfiles ~ '/' ~ item.src) | quote }}
-    if { [ -e "$target" ] || [ -L "$target" ]; } && ! cmp -s "$source" "$target"; then
-      mkdir -p {{ backup_dir | quote }}
-      mv "$target" {{ (backup_dir ~ '/' ~ item.dest | replace('/', '_') ~ '.bak') | quote }}
-      echo backed-up
-    fi
-  args:
-    executable: /bin/bash
-  loop:
-    - { src: omarchy/zsh/.zshrc, dest: .zshrc }
-    - { src: omarchy/zsh/.zprofile, dest: .zprofile }
-  register: omarchy_zsh_backup
-  changed_when: "'backed-up' in omarchy_zsh_backup.stdout"
-  when: omarchy_zsh_enabled | bool
-  tags: [omarchy_config, never]
-
-- name: Copy Omarchy Zsh entry files
-  ansible.builtin.copy:
-    src: "{{ dotfiles }}/{{ item.src }}"
-    dest: "{{ home }}/{{ item.dest }}"
-    mode: "0644"
-  loop:
-    - { src: omarchy/zsh/.zshrc, dest: .zshrc }
-    - { src: omarchy/zsh/.zprofile, dest: .zprofile }
-  when: omarchy_zsh_enabled | bool
-  tags: [omarchy_config, never]
-
-- name: Link Omarchy extensions
-  ansible.builtin.import_tasks: symlinks.yml
-  vars:
-    links: "{{ omarchy_links | selectattr('enabled') | list }}"
+- name: Apply the byte-preserving Bash component
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_playbook_python }}"
+      - "{{ dotfiles }}/omarchy/config.py"
+      - "{{ 'check' if ansible_check_mode else 'apply' }}"
+      - --home
+      - "{{ home }}"
+      - --repo
+      - "{{ dotfiles }}"
+      - --backup
+      - "{{ backup_dir }}"
+  register: omarchy_bash_config
+  changed_when: omarchy_bash_config.stdout == 'changed'
+  check_mode: false
+  when: omarchy_bash_enabled | bool
   tags: [omarchy_config, never]

@@ -20,8 +20,11 @@ new_case() {
   cp "$repo/tests/fixtures/omarchy/bin/ansible-galaxy" "$case_bin/ansible-galaxy"
   cp "$repo/tests/fixtures/omarchy/bin/ansible-playbook.mock" "$case_bin/ansible-playbook"
   cp "$repo/tests/fixtures/omarchy/bin/ansible-playbook.mock" "$case_bin/.ansible-playbook.mock"
-  cp "$repo/tests/fixtures/omarchy/bin/fnm.mock" "$case_bin/.fnm.mock"
-  chmod +x "$case_bin"/* "$case_bin"/.ansible-playbook.mock "$case_bin"/.fnm.mock
+  chmod +x "$case_bin"/* "$case_bin"/.ansible-playbook.mock
+  # CI tools must not leak into prerequisite-availability tests.
+  for utility in bash dirname grep awk realpath date git mkdir cp chmod sed cat tr; do
+    ln -s "$(command -v "$utility")" "$case_bin/$utility"
+  done
   : > "$case_root/present"
   : > "$case_root/calls"
   : > "$case_root/gum-calls"
@@ -33,7 +36,7 @@ new_case() {
 
 run_installer() {
   set +e
-  PATH="$case_bin:/usr/bin:/bin" HOME="$case_home" OSTYPE=linux-gnu \
+  PATH="$case_bin" HOME="$case_home" OSTYPE=linux-gnu \
     DOTFILES_OS_RELEASE="$case_root/os-release" OMARCHY_PATH="$case_omarchy" \
     DOTFILES_GUM="$case_bin/gum" DOTFILES_MOCK_ROOT="$case_root" \
     "$repo/install-omarchy.sh" "$@" </dev/null > "$case_root/output" 2>&1
@@ -46,7 +49,7 @@ run_bootstrap() {
   # to /usr/bin or /bin would expose CI's Ansible in the missing-tool case.
   local utility
   for utility in bash dirname grep cp chmod; do
-    ln -s "$(command -v "$utility")" "$case_bin/$utility"
+    [[ -e $case_bin/$utility ]] || ln -s "$(command -v "$utility")" "$case_bin/$utility"
   done
   bootstrap_ansible_before=$(PATH="$case_bin" command -v ansible-playbook || true)
   set +e
@@ -111,17 +114,17 @@ printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$case_root/mise-node"
 run_installer --non-interactive --yes --backup-dir "$case_backup"
 [[ $run_rc -eq 0 ]] || fail 'default non-interactive install failed'
 [[ $(grep -c '^pkg add ' "$case_root/calls") -eq 1 ]] || fail 'default plan did not use one package batch'
-grep -Fxq 'pkg add omarchy-zsh yazi shellcheck' "$case_root/calls"
+grep -Fxq 'pkg add yazi shellcheck' "$case_root/calls"
 ! grep -q '^install dev-env node$' "$case_root/calls" || fail 'active Mise Node was changed'
 [[ ! -s "$case_root/gum-calls" ]] || fail 'non-interactive run called Gum'
 grep -Fq -- '--tags omarchy_config' "$case_root/ansible-calls"
-grep -Fq 'omarchy_zsh_enabled=true' "$case_root/ansible-calls"
+grep -Fq 'omarchy_bash_enabled=true' "$case_root/ansible-calls"
 grep -Fq 'omarchy_yazi_enabled=true' "$case_root/ansible-calls"
 receipt="$case_backup/omarchy-install.receipt"
 [[ -f $receipt ]] || fail 'default run did not write receipt'
-grep -Fq 'components: zsh,yazi' "$receipt"
+grep -Fq 'components: bash,yazi' "$receipt"
 grep -Fq 'optional-tools: shellcheck' "$receipt"
-grep -Fq 'node-manager: mise' "$receipt"
+grep -Fq 'runtime: KEEP' "$receipt"
 
 : > "$case_root/calls"
 run_installer --non-interactive --yes --backup-dir "$case_home/.dotfiles_backup/run2"
@@ -132,10 +135,10 @@ run_installer --non-interactive --yes --backup-dir "$case_home/.dotfiles_backup/
 new_case optional-order
 printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$case_root/mise-node"
 run_installer --non-interactive --yes --components none \
-  --optional-tools pandoc-cli,act,viu,glow,git-lfs --config no \
+  --optional-tools viu,glow,git-lfs --config no \
   --backup-dir "$case_backup"
 [[ $run_rc -eq 0 ]] || fail 'optional-tool run failed'
-grep -Fxq 'pkg add git-lfs glow viu act pandoc-cli' "$case_root/calls"
+grep -Fxq 'pkg add git-lfs glow viu' "$case_root/calls"
 [[ ! -s "$case_root/ansible-calls" ]] || fail 'config=no ran Ansible'
 
 new_case package-skips
@@ -144,7 +147,7 @@ printf '%s\n' 'yazi' > "$case_omarchy/install/omarchy-base.packages"
 printf '%s\n' yazi shellcheck > "$case_root/present"
 run_installer --non-interactive --yes --backup-dir "$case_backup"
 [[ $run_rc -eq 0 ]] || fail 'base/present skip run failed'
-grep -Fxq 'pkg add omarchy-zsh' "$case_root/calls"
+! grep -q '^pkg add ' "$case_root/calls" || fail 'already-present plan installed packages'
 grep -Fq 'base-owned: yazi' "$case_root/output"
 grep -Fq 'already-present: shellcheck' "$case_root/output"
 
@@ -157,13 +160,6 @@ assert_no_mutation dry-run
 [[ ! -s "$case_root/ansible-calls" ]] || fail 'dry-run executed Ansible'
 grep -Fq -- '--check --diff' "$case_root/output"
 
-new_case fnm-dry-run
-run_installer --non-interactive --dry-run --components none --optional-tools none \
-  --node-manager fnm --fnm-node 22 --config no --backup-dir "$case_backup"
-[[ $run_rc -eq 0 ]] || fail 'fnm dry-run failed'
-assert_no_mutation fnm-dry-run
-assert_contains "$case_root/output" 'fnm install 22'
-assert_contains "$case_root/output" 'fnm default 22'
 
 new_case missing-yes
 printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$case_root/mise-node"
@@ -183,7 +179,7 @@ run_installer --backup-dir "$case_backup"
 [[ $run_rc -ne 0 ]] || fail 'interactive installer accepted missing Gum'
 assert_no_mutation installer-gum-missing
 
-for invalid in '--unknown' '--components zsh,bad' '--optional-tools shellcheck,bad' \
+for invalid in '--unknown' '--components bash,bad' '--components zsh' '--optional-tools shellcheck,bad' \
   '--node-manager bad' '--config maybe' '--backup-dir relative' 'positional'; do
   new_case "invalid-${invalid//[^a-zA-Z0-9]/-}"
   printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$case_root/mise-node"
@@ -194,59 +190,28 @@ for invalid in '--unknown' '--components zsh,bad' '--optional-tools shellcheck,b
   assert_no_mutation "invalid input $invalid"
 done
 
-# Mise/fnm exclusivity and actions.
-new_case mise-install
+# Runtime is KEEP even with no available Mise Node.
+new_case runtime-keep
 run_installer --non-interactive --yes --config no --backup-dir "$case_backup"
-[[ $run_rc -eq 0 ]] || fail 'Mise-without-Node run failed'
-grep -Fxq 'install dev-env node' "$case_root/calls"
-
-new_case fnm-blocked-by-mise
-printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$case_root/mise-node"
-run_installer --non-interactive --yes --components none --optional-tools none \
-  --node-manager fnm --fnm-node 22 --config no --backup-dir "$case_backup"
-[[ $run_rc -ne 0 ]] || fail 'fnm was allowed with active Mise Node'
-assert_no_mutation fnm-blocked-by-mise
-
-new_case mise-blocked-by-fnm
-cp "$repo/tests/fixtures/omarchy/bin/fnm.mock" "$case_bin/fnm"
-chmod +x "$case_bin/fnm"
-printf '%s\n' fnm > "$case_root/present"
-run_installer --non-interactive --yes --config no --backup-dir "$case_backup"
-[[ $run_rc -ne 0 ]] || fail 'Mise was allowed with fnm present'
-assert_no_mutation mise-blocked-by-fnm
-
-new_case fnm-valid
-run_installer --non-interactive --yes --components none --optional-tools none \
-  --node-manager fnm --fnm-node 22 --config no --backup-dir "$case_backup"
-[[ $run_rc -eq 0 ]] || fail 'valid fnm run failed'
-grep -Fxq 'pkg add fnm' "$case_root/calls"
-grep -Fxq 'fnm install 22' "$case_root/calls"
-grep -Fxq 'fnm default 22' "$case_root/calls"
-printf '%s\n' '22.9.1' > "$case_root/fnm-nodes"
-printf '%s\n' 'v22.9.1' > "$case_root/fnm-default"
-: > "$case_root/calls"
-run_installer --non-interactive --yes --components none --optional-tools none \
-  --node-manager fnm --fnm-node 22 --config no --backup-dir "$case_home/.dotfiles_backup/fnm2"
-[[ $run_rc -eq 0 ]] || fail 'second fnm run failed'
-! grep -Eq '^(pkg add|fnm (install|default) 22$)' "$case_root/calls" || fail 'second fnm run changed Node'
+[[ $run_rc -eq 0 ]] || fail 'missing runtime blocked installation'
+! grep -Eq '^(mise|fnm|install dev-env)' "$case_root/calls" || fail 'runtime was probed or changed'
 
 # Interactive accepted defaults and cancellation at every prompt.
 new_case gum-defaults
 printf '%s\n' '/mock/mise/installs/node/26.8.1' > "$case_root/mise-node"
-printf '%s\n' 'Zsh overlay;Yazi' 'ShellCheck' 'Mise — recommended; preserve current Node' yes yes > "$case_root/gum-responses"
+printf '%s\n' 'Bash shortcuts + vi;Yazi' 'ShellCheck' yes yes > "$case_root/gum-responses"
 run_installer --backup-dir "$case_backup"
 [[ $run_rc -eq 0 ]] || { printf '%s\n' '--- interactive output ---' >&2; command cat "$case_root/output" >&2; fail 'interactive defaults failed'; }
-grep -Fxq 'pkg add omarchy-zsh yazi shellcheck' "$case_root/calls"
-[[ $(wc -l < "$case_root/gum-calls") -eq 5 ]] || fail 'interactive defaults used the wrong prompt count'
+grep -Fxq 'pkg add yazi shellcheck' "$case_root/calls"
+[[ $(wc -l < "$case_root/gum-calls") -eq 4 ]] || fail 'interactive defaults used the wrong prompt count'
 assert_contains "$case_root/output" "Target: $case_root/omarchy"
-assert_contains "$case_root/output" 'Active Node owner: Mise ('
+assert_contains "$case_root/output" 'Runtime: KEEP'
 
 cancel_prefixes=(
   '__CANCEL__'
-  'Zsh overlay;Yazi|__CANCEL__'
-  'Zsh overlay;Yazi|ShellCheck|__CANCEL__'
-  'Zsh overlay;Yazi|ShellCheck|Mise — recommended; preserve current Node|__CANCEL__'
-  'Zsh overlay;Yazi|ShellCheck|Mise — recommended; preserve current Node|yes|__CANCEL__'
+  'Bash shortcuts + vi;Yazi|__CANCEL__'
+  'Bash shortcuts + vi;Yazi|ShellCheck|__CANCEL__'
+  'Bash shortcuts + vi;Yazi|ShellCheck|yes|__CANCEL__'
 )
 index=0
 for responses in "${cancel_prefixes[@]}"; do
@@ -259,11 +224,6 @@ for responses in "${cancel_prefixes[@]}"; do
   index=$((index + 1))
 done
 
-new_case gum-fnm-confirm-cancel
-printf '%s\n' 'Zsh overlay' 'ShellCheck' 'fnm — advanced; mutually exclusive' '__CANCEL__' > "$case_root/gum-responses"
-run_installer --backup-dir "$case_backup"
-[[ $run_rc -ne 0 ]] || fail 'Gum fnm confirmation cancel succeeded'
-assert_no_mutation gum-fnm-confirm-cancel
 
 # Ownership mismatches and invalid backup/duplicate options fail before mutation.
 new_case base-missing
@@ -290,5 +250,12 @@ run_installer --non-interactive --yes --backup-dir "$case_home/.dotfiles_backup/
 assert_contains "$case_home/.dotfiles_backup/failure/omarchy-install.receipt" 'status: 17'
 ! grep -q '^install dev-env node$' "$case_root/calls" || fail 'Node ran after package failure'
 [[ ! -s $case_root/ansible-calls ]] || fail 'Ansible ran after package failure'
+
+new_case backup-symlink
+mkdir "$case_root/outside"
+ln -s "$case_root/outside" "$case_home/.dotfiles_backup"
+run_installer --non-interactive --yes
+[[ $run_rc -ne 0 ]] || fail 'symlinked backup root was accepted'
+[[ -z $(find "$case_root/outside" -mindepth 1 -print -quit) ]] || fail 'backup escaped HOME'
 
 printf 'Omarchy installer checks passed\n'
