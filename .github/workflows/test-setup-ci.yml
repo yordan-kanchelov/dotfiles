@@ -93,6 +93,35 @@ jobs:
       - name: Desktop tasks resolve the Ubuntu series, not Mint's
         run: ansible-playbook .github/mint-release.yml
 
+  omarchy:
+    name: Omarchy boundaries and disposable HOME
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible shellcheck fzf
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Static and syntax checks
+        run: |
+          python3 tests/omarchy-boundaries.py
+          bash -n bootstrap.sh install-omarchy.sh tests/omarchy-installer.sh \
+            omarchy/shell/aliases.sh omarchy/bash/personal.bash
+          ansible-playbook setup.yml --syntax-check
+          shellcheck -x bootstrap.sh install-omarchy.sh tests/omarchy-installer.sh \
+            omarchy/shell/aliases.sh omarchy/bash/personal.bash tests/fixtures/omarchy/bin/omarchy
+
+      - name: Disposable-HOME integration
+        run: |
+          python3 tests/omarchy-config.py
+          python3 tests/omarchy-shell.py
+          python3 tests/omarchy-pty.py
+          python3 tests/omarchy-integration.py
+          bash tests/omarchy-installer.sh
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

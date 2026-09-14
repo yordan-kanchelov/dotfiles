@@ -1,0 +1,40 @@
+---
+- name: Inspect Omarchy bootstrap marker
+  ansible.builtin.stat:
+    path: "{{ omarchy_path }}/default/hypr/bootstrap.lua"
+  register: omarchy_bootstrap
+  tags: [omarchy_config, never]
+
+- name: Inspect Omarchy command
+  ansible.builtin.stat:
+    path: "{{ omarchy_command | default('/usr/bin/omarchy') }}"
+  register: omarchy_command_stat
+  tags: [omarchy_config, never]
+
+- name: Require a real Omarchy installation
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution | lower == 'omarchy'
+      - omarchy_bootstrap.stat.exists
+      - omarchy_command_stat.stat.exists
+    fail_msg: Omarchy adapter requires Omarchy markers and its public command
+    quiet: true
+  tags: [omarchy_config, never]
+
+- name: Apply the byte-preserving Bash component
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_playbook_python }}"
+      - "{{ dotfiles }}/omarchy/config.py"
+      - "{{ 'check' if ansible_check_mode else 'apply' }}"
+      - --home
+      - "{{ home }}"
+      - --repo
+      - "{{ dotfiles }}"
+      - --backup
+      - "{{ backup_dir }}"
+  register: omarchy_bash_config
+  changed_when: omarchy_bash_config.stdout == 'changed'
+  check_mode: false
+  when: omarchy_bash_enabled | bool
+  tags: [omarchy_config, never]

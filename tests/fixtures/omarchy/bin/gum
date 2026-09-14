@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=${DOTFILES_MOCK_ROOT:?}
+printf 'gum' >> "$root/gum-calls"
+for arg in "$@"; do printf ' %s' "$arg" >> "$root/gum-calls"; done
+printf '\n' >> "$root/gum-calls"
+mapfile -t responses < "$root/gum-responses"
+((${#responses[@]})) || exit 1
+response=${responses[0]}
+printf '%s\n' "${responses[@]:1}" > "$root/gum-responses"
+[[ $response != __CANCEL__ ]] || exit 1
+case ${1-} in
+  choose)
+    multi=false
+    for arg in "$@"; do [[ $arg == --no-limit ]] && multi=true; done
+    if $multi; then
+      tr ';' '\n' <<< "$response"
+    else
+      printf '%s\n' "$response"
+    fi
+    ;;
+  confirm) [[ $response == yes ]] ;;
+  *) exit 64 ;;
+esac

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=${DOTFILES_MOCK_ROOT:?}
+printf 'ansible-playbook' >> "$root/ansible-calls"
+for arg in "$@"; do printf ' %s' "$arg" >> "$root/ansible-calls"; done
+printf '\n' >> "$root/ansible-calls"
