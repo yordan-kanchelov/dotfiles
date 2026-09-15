@@ -22,6 +22,7 @@ formulae:
     - fd             # Fast find alternative
     - fzf
     - glow           # Terminal markdown renderer
+    - herdr          # Agent multiplexer
     - htop
     - ncdu           # Disk usage analyzer with ncurses UI
     - ripgrep

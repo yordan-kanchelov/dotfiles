@@ -27,6 +27,7 @@
       - { src: .config/sheldon, dest: .config/sheldon }
       - { src: .config/yazi, dest: .config/yazi }
       - { src: .config/nvim, dest: .config/nvim }
+      - { src: .config/herdr/config.toml, dest: .config/herdr/config.toml }
       - { src: zsh/.zprofile, dest: .zprofile }
       - { src: zsh/.zshrc, dest: .zshrc }
       - { src: zsh/.zshrc.core, dest: .zshrc.core }

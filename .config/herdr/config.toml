@@ -1,0 +1,7 @@
+onboarding = false
+
+[keys]
+prefix = "ctrl+space"
+
+[ui.toast]
+delivery = "herdr"
