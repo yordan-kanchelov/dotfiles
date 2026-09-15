@@ -40,7 +40,7 @@ Verify = run the playbook again and expect `changed=0`.
   .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
   restart. Tagged `[desktop, never]`.
 - `brew_packages.yml` — `formulae:` grouped by category plus `casks:`; used on both OSes.
-- `.config/` (nvim, ghostty, atuin, sheldon, yazi, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `claude/`,
+- `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `claude/`,
   `codex/`, `fonts/` — the linked/copied content.
 
 ## Key Implementation Details
