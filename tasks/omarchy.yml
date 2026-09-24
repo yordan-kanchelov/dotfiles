@@ -1,40 +1,69 @@
 ---
-- name: Inspect Omarchy bootstrap marker
-  ansible.builtin.stat:
-    path: "{{ omarchy_path }}/default/hypr/bootstrap.lua"
-  register: omarchy_bootstrap
-  tags: [omarchy_config, never]
+# Omarchy: keep its Bash, prompt, theme and tmux defaults, and layer personal
+# config on top. Each layer is a repo file linked under ~/.config/dotfiles and
+# sourced from a marked block at the end of the Omarchy-owned file, so Omarchy
+# updates to those files keep working and removing the block undoes the layer.
+- name: Omarchy packages
+  community.general.pacman:
+    name: [tmux, atuin, bash-preexec]
+    state: present
+  become: true
+  tags: packages
 
-- name: Inspect Omarchy command
-  ansible.builtin.stat:
-    path: "{{ omarchy_command | default('/usr/bin/omarchy') }}"
-  register: omarchy_command_stat
-  tags: [omarchy_config, never]
+- name: Omarchy links
+  ansible.builtin.import_tasks: symlinks.yml
+  vars:
+    links: "{{ omarchy_links }}"
+  tags: symlinks
 
-- name: Require a real Omarchy installation
-  ansible.builtin.assert:
-    that:
-      - ansible_distribution | lower == 'omarchy'
-      - omarchy_bootstrap.stat.exists
-      - omarchy_command_stat.stat.exists
-    fail_msg: Omarchy adapter requires Omarchy markers and its public command
-    quiet: true
-  tags: [omarchy_config, never]
+- name: Source the personal Bash layer from ~/.bashrc
+  ansible.builtin.blockinfile:
+    path: "{{ home }}/.bashrc"
+    marker: "# {mark} dotfiles personal layer"
+    block: |
+      [[ -r ~/.config/dotfiles/bash/personal.bash ]] && source ~/.config/dotfiles/bash/personal.bash
+    insertafter: EOF
+    backup: true
+  tags: symlinks
 
-- name: Apply the byte-preserving Bash component
-  ansible.builtin.command:
-    argv:
-      - "{{ ansible_playbook_python }}"
-      - "{{ dotfiles }}/omarchy/config.py"
-      - "{{ 'check' if ansible_check_mode else 'apply' }}"
-      - --home
-      - "{{ home }}"
-      - --repo
-      - "{{ dotfiles }}"
-      - --backup
-      - "{{ backup_dir }}"
-  register: omarchy_bash_config
-  changed_when: omarchy_bash_config.stdout == 'changed'
-  check_mode: false
-  when: omarchy_bash_enabled | bool
-  tags: [omarchy_config, never]
+# Omarchy seeds ~/.config/tmux/tmux.conf on install; restore it if it went missing.
+- name: Omarchy tmux config
+  ansible.builtin.copy:
+    src: "{{ omarchy_path }}/config/tmux/tmux.conf"
+    dest: "{{ home }}/.config/tmux/tmux.conf"
+    mode: "0644"
+    force: false
+  tags: tmux
+
+- name: Source the personal tmux layer from Omarchy's tmux config
+  ansible.builtin.blockinfile:
+    path: "{{ home }}/.config/tmux/tmux.conf"
+    marker: "# {mark} dotfiles personal layer"
+    block: |
+      source-file -q ~/.config/dotfiles/tmux/tmux.conf
+    insertafter: EOF
+    backup: true
+  tags: tmux
+
+- name: Tmux plugin manager
+  ansible.builtin.git:
+    repo: https://github.com/tmux-plugins/tpm
+    dest: "{{ home }}/.config/tmux/plugins/tpm"
+    version: master
+    update: false
+  tags: tmux
+
+# install_plugins asks the tmux server where plugins go, so give it a private
+# server that loads the config fresh instead of the one the user is working in.
+- name: Tmux plugins
+  ansible.builtin.shell: |
+    set -e
+    export TMUX_TMPDIR="$(mktemp -d /tmp/dotfiles-tpm.XXXXXX)"  # short: socket paths max ~100 chars
+    unset TMUX
+    trap 'tmux kill-server 2>/dev/null || true; rm -rf "$TMUX_TMPDIR"' EXIT
+    {{ home }}/.config/tmux/plugins/tpm/bin/install_plugins
+  args:
+    executable: /bin/bash
+  register: tpm
+  changed_when: "'download success' in tpm.stdout"
+  tags: tmux

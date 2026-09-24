@@ -1,7 +1,6 @@
 ---
-# Dotfiles setup. bootstrap.sh runs this on macOS/Debian; Omarchy calls the
-# explicit config-only adapter from install-omarchy.sh.
-#   ansible-playbook setup.yml -K      # Linux — apt/usermod need sudo
+# Dotfiles setup. bootstrap.sh runs this on macOS, Debian and Omarchy.
+#   ansible-playbook setup.yml -K      # Linux — apt/pacman/usermod need sudo
 #   ansible-playbook setup.yml         # macOS
 # Tags:  --skip-tags packages | --tags desktop | --tags symlinks,fonts,tmux,secrets | --skip-tags ollama
 # Verify: run it again and expect changed=0, or --check --diff.
@@ -15,7 +14,10 @@
     dotfiles: "{{ playbook_dir }}"
     backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_date_time.iso8601_basic_short }}"
     node_version: "22"
-    is_omarchy: "{{ (ansible_distribution | lower) == 'omarchy' }}"
+    # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
+    is_omarchy: >-
+      {{ ansible_os_family == 'Archlinux'
+         and lookup('ansible.builtin.file', '/etc/os-release', errors='ignore') is search('(?m)^ID="?omarchy"?$') }}
     is_legacy_platform: "{{ ansible_os_family in ['Darwin', 'Debian'] and not is_omarchy }}"
     # For the tasks that call brew/fnm/tmux: on PATH now, not just at next login.
     tool_env:
@@ -55,10 +57,9 @@
       tags: always
 
   tasks:
-    - name: Omarchy config adapter
+    - name: Omarchy personal layer
       ansible.builtin.import_tasks: tasks/omarchy.yml
       when: is_omarchy
-      tags: [omarchy_config, never]
 
     - name: Debian/Ubuntu packages
       ansible.builtin.import_tasks: tasks/debian.yml
@@ -163,7 +164,7 @@
       when: is_legacy_platform
       tags: tmux
 
-    - name: Secrets file (~/.secrets, create-if-absent, sourced by .zprofile)
+    - name: Secrets file (~/.secrets, create-if-absent, sourced by .zprofile / personal.bash)
       ansible.builtin.copy:
         dest: "{{ home }}/.secrets"
         mode: "0600"
@@ -180,7 +181,6 @@
           export BRAVE_API_KEY="your-api-key-here"
 
           # Add other secrets below as needed
-      when: is_legacy_platform
       tags: secrets
 
     # copy force:false never touches an existing file, so a pre-existing
@@ -189,7 +189,6 @@
       ansible.builtin.file:
         path: "{{ home }}/.secrets"
         mode: "0600"
-      when: is_legacy_platform
       tags: secrets
 
     - name: Symlinks
