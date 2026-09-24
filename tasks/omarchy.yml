@@ -23,7 +23,6 @@
     block: |
       [[ -r ~/.config/dotfiles/bash/personal.bash ]] && source ~/.config/dotfiles/bash/personal.bash
     insertafter: EOF
-    backup: true
   tags: symlinks
 
 # Omarchy seeds ~/.config/tmux/tmux.conf on install; restore it if it went missing.
@@ -42,7 +41,6 @@
     block: |
       source-file -q ~/.config/dotfiles/tmux/tmux.conf
     insertafter: EOF
-    backup: true
   tags: tmux
 
 - name: Tmux plugin manager
