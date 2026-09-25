@@ -1,6 +1,6 @@
 # Dotfiles
 
-Terminal setup for macOS and Debian/Ubuntu (incl. Linux Mint), installed and kept in sync by one Ansible playbook.
+Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installed and kept in sync by one Ansible playbook.
 
 ## Features
 
@@ -20,7 +20,7 @@ git clone https://github.com/yordan-kanchelov/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 # Installs Ansible (and Homebrew on macOS), then runs setup.yml.
-# On Linux it asks for your sudo password (apt, login shell).
+# On Linux it asks for your sudo password (apt/pacman, login shell).
 ./bootstrap.sh
 ```
 
@@ -34,6 +34,30 @@ ansible-playbook setup.yml       # macOS
 The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
 sources on login — fill in the ones you use. It is written only when missing, so re-runs never
 overwrite it.
+
+## Omarchy
+
+Omarchy keeps its own Bash, prompt, theme, Neovim, terminal and tmux defaults. The playbook only layers
+personal config on top, so Omarchy updates keep working:
+
+- **Bash** — `omarchy/bash/personal.bash`, linked to `~/.config/dotfiles/bash/` and sourced from a marked
+  block at the end of `~/.bashrc`: vi mode (with Omarchy's inputrc re-bound for it), the tmux aliases
+  (`ta tn tls tk tkill tren tnw th tv tkp`), `l`, `lg`, `vim`, `sw`, `:q`, `reload`, `y`, `fvim`, `cat`
+  (bat/glow/viu), `clear` (also drops tmux scrollback), the `claude` session-id wrapper tmux-resurrect relies
+  on, `cleanc`/`cleanp`, `PNPM_HOME`, `~/.secrets`, and Atuin on Ctrl-R and Up (via `bash-preexec`).
+  Omarchy's `ls`, `c` and prompt are left alone.
+- **tmux** — `omarchy/tmux/tmux.conf`, linked to `~/.config/dotfiles/tmux/` and sourced from a marked block
+  at the end of Omarchy's `~/.config/tmux/tmux.conf`. It adds the plugins (TPM in
+  `~/.config/tmux/plugins`: sensible, yank, open, vim-tmux-navigator, thumbs, fzf, fzf-url, floax,
+  resurrect, continuum) and the personal bindings (prefix `h/j/k/l` panes, `H/J/K/L` resize, `| - " %`
+  splits, `Tab`, `S`, `X`, `o`, `e`) without touching the status bar or theme. Omarchy's own bindings (`v`,
+  `x`, `q`, `r`, `?`, the Alt keys) still work; its prefix `h`/`k` are replaced by pane navigation.
+- **Atuin** — `.config/atuin` is linked; `atuin` and `bash-preexec` are installed with pacman.
+
+`./bootstrap.sh` detects `ID=omarchy`, installs Ansible with `omarchy pkg add` if needed, and runs the same
+playbook (`-K` for pacman). Open a new shell afterwards. Omarchy's *Update → Config → Tmux* resets
+`~/.config/tmux/tmux.conf`; re-run `ansible-playbook setup.yml --tags tmux` to put the block back.
+To undo a layer, delete its marked block.
 
 ## What's Included
 
@@ -104,10 +128,12 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── tasks/
 │   ├── symlinks.yml      # Backup-then-link
 │   ├── debian.yml        # apt, zsh login shell, Homebrew on Linux, ollama
+│   ├── omarchy.yml       # Omarchy: pacman packages, Bash/tmux layers, TPM
 │   └── desktop.yml       # Linux desktop apps and Cinnamon settings (--tags desktop)
 ├── vars/
 │   ├── Darwin.yml        # macOS paths
-│   └── Debian.yml        # Linux paths, apt packages, brew exclusions
+│   ├── Debian.yml        # Linux paths, apt packages, brew exclusions
+│   └── Omarchy.yml       # Omarchy links
 ├── brew_packages.yml     # Homebrew formulae & casks
 ├── .github/              # CI workflow, plus the Mint release-resolution play it runs
 ├── .config/              # Modern tool configs
@@ -118,6 +144,7 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   ├── sheldon/          # Zsh plugin manager
 │   └── yazi/             # Terminal file manager
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
+├── omarchy/              # Bash and tmux layers on top of Omarchy's defaults
 ├── tmux/                 # .tmux.conf
 ├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
 ├── codex/                # Linked into ~/.codex: AGENTS.md, instructions, rules, keybindings
@@ -130,7 +157,7 @@ Existing files are backed up to `~/.dotfiles_backup/` with timestamps.
 
 ## Requirements
 
-- macOS, or a Debian/Ubuntu-based Linux (apt); sudo on Linux
+- macOS, a Debian/Ubuntu-based Linux (apt), or Omarchy; sudo on Linux
 - Internet connection for package downloads
 
 ## Development

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-Dotfiles for macOS and Debian/Ubuntu-based Linux (incl. Linux Mint). Setup is an
+Dotfiles for macOS, Debian/Ubuntu-based Linux (incl. Linux Mint) and Omarchy. Setup is an
 Ansible playbook run against localhost; `bootstrap.sh` installs Ansible (and
 Homebrew on macOS) and then runs it.
 
@@ -29,13 +29,18 @@ Verify = run the playbook again and expect `changed=0`.
 
 - `setup.yml` — the play. Holds the symlink allowlist (`dotfile_links`), the backup dir, the per-task
   `tool_env` (brew/fnm/tmux on PATH within the run), and the ordered tasks with their tags. Per-OS values come
-  from `vars/{{ ansible_os_family }}.yml` via `vars_files`.
+  from `vars/{{ ansible_os_family }}.yml` (or `vars/Omarchy.yml`) via an `include_vars` pre_task.
 - `vars/Darwin.yml`, `vars/Debian.yml` — brew prefix, fonts dir, the flattened formula list. Debian
   also holds the apt package list and the formulae brew must not install on Linux.
 - `tasks/symlinks.yml` — `stat` → move anything in the way to `~/.dotfiles_backup/<timestamp>/` → `file state=link`.
   Parametrised on `links`; imported from `setup.yml` and again from `tasks/desktop.yml` for the xbindkeys files.
 - `tasks/debian.yml` — apt, zsh as login shell, Homebrew on Linux (the prefix is pre-created user-owned so the
   installer never calls sudo), ollama upstream build + systemd user unit (tag `ollama`).
+- `tasks/omarchy.yml` — Omarchy only (detected from `ID=omarchy` in `/etc/os-release`; Ansible itself reports
+  Archlinux). Keeps Omarchy's Bash/prompt/theme/nvim/tmux defaults and layers on top: pacman `atuin` +
+  `bash-preexec`, links `omarchy/bash/personal.bash` and `omarchy/tmux/tmux.conf` under `~/.config/dotfiles/`,
+  and sources them from `blockinfile` blocks at the end of `~/.bashrc` and `~/.config/tmux/tmux.conf`. TPM
+  lives in `~/.config/tmux/plugins`. The legacy tasks are gated on `is_legacy_platform`.
 - `tasks/desktop.yml` — Ulauncher (PPA), Ghostty (apt or community .deb), Bitwarden and draw.io (upstream
   .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
   restart. Tagged `[desktop, never]`.

@@ -1,0 +1,6 @@
+---
+omarchy_path: /usr/share/omarchy
+omarchy_links:
+  - { src: omarchy/bash/personal.bash, dest: .config/dotfiles/bash/personal.bash }
+  - { src: omarchy/tmux/tmux.conf, dest: .config/dotfiles/tmux/tmux.conf }
+  - { src: .config/atuin, dest: .config/atuin }
