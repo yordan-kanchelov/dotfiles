@@ -3,9 +3,14 @@
 # ============================================
 # ZSH CONFIGURATION
 # This file sources core config and contains tool-generated additions
-# Environment setup is in .zprofile (runs at login)
+# Tool PATH is shared with .zprofile; login-only settings stay there.
 # Personal configurations are in .zshrc.core
 # ============================================
+
+# Initialize tools before plugins, even without an inherited login PATH.
+if [[ -f ~/.zshrc.tools ]]; then
+  source ~/.zshrc.tools
+fi
 
 # Source personal/core configuration
 if [ -f ~/.zshrc.core ]; then

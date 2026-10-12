@@ -1,0 +1,60 @@
+---
+# Nonmutating regression checks: ansible-playbook .github/tool-policy.yml
+- name: Developer tool ownership policy
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../brew_packages.yml
+  vars:
+    requested: "{{ (formulae | dict2items | map(attribute='value') | flatten) + macos_formulae }}"
+    setup: "{{ lookup('ansible.builtin.file', '../setup.yml') | from_yaml | first }}"
+  tasks:
+    - name: Requested packages are unique and exclude private or suspended tools
+      ansible.builtin.assert:
+        that:
+          - requested | length == requested | unique | length
+          - casks | length == casks | unique | length
+          - requested | intersect(['node', 'nvm', 'rustup', 'hermes-agent', 'pi-coding-agent', 'agent-browser', 'devcontainer']) | length == 0
+          - casks | intersect(['claude', 'claude-code', 'hermes-desktop', 'docker-desktop', 'virtualbox', 'orbstack']) | length == 0
+          - "['fnm', 'git', 'ccusage', 'bitwarden-cli', 'uv', 'kubernetes-cli', 'cloudflare-wrangler'] | difference(requested) | length == 0"
+          - "'codex' in casks"
+          - "'bun' in macos_formulae"
+          - setup.vars.node_version | int >= 24
+          - "'is_legacy_platform' in (setup.tasks | selectattr('name', 'equalto', 'Node via fnm') | first).when"
+          - "'Darwin' in (setup.tasks | selectattr('name', 'equalto', 'Homebrew casks') | first).when"
+          - "'macos_formulae' not in lookup('ansible.builtin.file', '../vars/Debian.yml')"
+          - "'optional_' not in lookup('ansible.builtin.file', '../setup.yml')"
+          - "'zsh/.zshrc.tools' in (setup.vars.dotfile_links | map(attribute='src') | list)"
+    - name: Both shell entrypoints initialize the shared tools
+      ansible.builtin.assert:
+        that:
+          - "'source ~/.zshrc.tools' in lookup('ansible.builtin.file', '../zsh/.zprofile')"
+          - "'source ~/.zshrc.tools' in lookup('ansible.builtin.file', '../zsh/.zshrc')"
+          - "'fnm env --shell zsh' in lookup('ansible.builtin.file', '../zsh/.zshrc.tools')"
+
+    - name: Installed shell configs keep fnm ownership stable
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/env
+          - -i
+          - "HOME={{ lookup('ansible.builtin.env', 'HOME') }}"
+          - "USER={{ lookup('ansible.builtin.env', 'USER') }}"
+          - "LOGNAME={{ lookup('ansible.builtin.env', 'USER') }}"
+          - SHELL=/bin/zsh
+          - TERM=xterm-256color
+          - PATH=/usr/bin:/bin:/usr/sbin:/sbin
+          - /bin/zsh
+          - "{{ item }}"
+        stdin: |
+          for tool in node npm npx; do
+            [[ $(whence -p "$tool") == "$FNM_MULTISHELL_PATH/bin/$tool" ]] || exit 1
+          done
+          [[ $(node --version) == v{{ setup.vars.node_version }}.* ]] || exit 2
+          before=$FNM_MULTISHELL_PATH
+          source ~/.zshrc.tools
+          source ~/.zshrc.tools
+          [[ $before == $FNM_MULTISHELL_PATH ]] || exit 3
+          exit 0
+      loop: [-li, -i]
+      changed_when: false

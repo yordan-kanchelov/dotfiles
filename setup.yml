@@ -13,7 +13,8 @@
     home: "{{ ansible_env.HOME }}" # not `~`: become tasks would expand it to /root
     dotfiles: "{{ playbook_dir }}"
     backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_date_time.iso8601_basic_short }}"
-    node_version: "22"
+    # Node 26: reuse the installed current line; sync-worktrees needs >=24.
+    node_version: "26"
     # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
     is_omarchy: >-
       {{ ansible_os_family == 'Archlinux'
@@ -34,6 +35,7 @@
       - { src: .config/herdr/config.toml, dest: .config/herdr/config.toml }
       - { src: zsh/.zprofile, dest: .zprofile }
       - { src: zsh/.zshrc, dest: .zshrc }
+      - { src: zsh/.zshrc.tools, dest: .zshrc.tools }
       - { src: zsh/.zshrc.core, dest: .zshrc.core }
       - { src: tmux/.tmux.conf, dest: .tmux.conf }
       - { src: claude/CLAUDE.md, dest: .claude/CLAUDE.md }
@@ -105,15 +107,18 @@
     # default` runs unconditionally so a drifted default gets repaired, not just fresh installs.
     - name: Node via fnm
       ansible.builtin.shell: |
-        set -o pipefail
+        set -e -o pipefail
+        before=$(fnm ls | grep default || true)
         if ! fnm ls | grep " v{{ node_version }}\." >/dev/null; then
           fnm install {{ node_version }} && echo installed
         fi
         fnm default {{ node_version }}
+        after=$(fnm ls | grep default || true)
+        if [ "$before" != "$after" ]; then echo default-changed; fi
       args:
         executable: /bin/bash
       register: node
-      changed_when: "'installed' in node.stdout"
+      changed_when: "'installed' in node.stdout or 'default-changed' in node.stdout"
       environment: "{{ tool_env }}"
       when: is_legacy_platform
       tags: packages

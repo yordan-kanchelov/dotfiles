@@ -117,7 +117,40 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ### Adding New Packages
 - `brew_packages.yml` — Homebrew `formulae:` (grouped by category) and `casks:`. Used on both macOS and Linux
   (casks are macOS-only; the GUI apps that have a Linux build are installed from upstream .debs by `tasks/desktop.yml`).
+- `macos_formulae:` is added only on Darwin. `optional_formulae:` and `optional_casks:` document host-specific
+  choices and are never installed by the playbook. Existing unmanaged apps can conflict with casks: adopt
+  only provably identical artifacts using `brew install --cask --adopt`, never force replacement.
 - `vars/Debian.yml` — the apt package list, plus the formulae brew must not install on Linux.
+
+### Developer tool ownership
+
+- fnm owns user-shell Node/npm/npx. The default policy is Node 26 (the cleanup reused installed 26.5.1,
+  rather than upgrading); local sync-worktrees 7.2.0 needs Node >=24. Older fnm project versions remain.
+  `.zshrc.tools` initializes Brew/PATH/fnm once per shell, before interactive plugins, including non-login
+  shells. It does not modify inherited assistant/service environments or Hermes's private runtimes.
+  Brew `node` may remain as Wrangler's dependency, but is not a requested standalone runtime; nvm is not requested.
+- Brew owns general Git, Bun (macOS), bw, ccusage, Codex CLI, OpenCode, Ollama, AWS, Kubernetes/Helm/Minikube,
+  Wrangler/cloudflared, gws and the macOS Google Cloud SDK. Package installation does not start services.
+  Apple Git, vendor AWS installations and OrbStack's Docker/kubectl integrations are not deleted.
+- Python's requested language version is Brew 3.13, with uv and pipx for environments/CLI isolation.
+  Brew's unversioned `python3` can follow dependency versions; other Brew Pythons and uv-managed 3.11 are
+  separate intentional owners. Legacy Python 2.7 is a later audit, not an automatic removal.
+  Brew Rust remains primary; standalone rustup/project toolchains are preserved pending a usage audit.
+- `sync-worktrees`, `ntn` and `stremio-addon-sdk` remain local npm-managed exceptions under `~/.local`.
+  Changing the fnm default does not reinstall or move them. pnpm/yarn/corepack are not automatically added.
+- Hermes CLI/desktop, private bundled Node/browser tools, custom Jarvis launchers and CuaDriver retain
+  their current owners. `hermes-agent`, `hermes-desktop`, `agent-browser` and `pi-coding-agent` are alternatives,
+  not default migrations. Standalone Bun can remain where managed runtime discovery may use `~/.bun/bin`.
+  VS Code's Dev Containers CLI stays extension-owned rather than adding a second `devcontainer` formula.
+- Claude Code and desktop remain suspended and unchanged; their casks are documented only as future choices.
+  Gemini CLI, Aider, Cursor, Zed and extra package managers are not installed merely because available.
+- VS Code, Codex desktop and Termius are optional existing-app adoption candidates. Bitwarden desktop is
+  already a default cask; no vault data is migrated. OrbStack is the preferred host-specific container
+  platform; Docker Desktop is an optional alternative. VirtualBox/Home Assistant requires a privileged
+  installer and is deliberately outside automatic setup. Xcode remains Apple-managed.
+- Duplicate user entrypoints should be quarantined only after replacement validation, preserving packages,
+  sessions and state. Broken CodeWhisperer links are eligible individually; functional/custom wrappers are not.
+  Host cleanup is a separate explicitly authorized operation, never part of bootstrap.
 
 ### Directory Structure
 ```
@@ -164,6 +197,7 @@ Existing files are backed up to `~/.dotfiles_backup/` with timestamps.
 
 ```bash
 ansible-playbook setup.yml --syntax-check
+ansible-playbook .github/tool-policy.yml # Nonmutating ownership/package regression checks
 ansible-lint                     # with ansible-core: ansible-galaxy collection install -r requirements.yml first
 shellcheck bootstrap.sh
 ```
