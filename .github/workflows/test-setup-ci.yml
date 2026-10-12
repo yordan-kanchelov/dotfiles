@@ -31,6 +31,9 @@ jobs:
       - name: Bootstrap and run the playbook
         run: ./bootstrap.sh --skip-tags ollama
 
+      - name: Developer tool ownership policy
+        run: ansible-playbook .github/tool-policy.yml
+
       - name: Second run is a no-op
         run: |
           ansible-playbook setup.yml --skip-tags ollama | tee run2.log

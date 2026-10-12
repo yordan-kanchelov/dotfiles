@@ -1,5 +1,6 @@
 formulae:
   languages:
+    # Node itself is fnm-owned; Brew node may remain a CLI dependency.
     - fnm            # Fast Node.js version manager
     - go
     - gopls          # Go language server
@@ -7,6 +8,7 @@ formulae:
     - pipx           # Install Python CLI tools in isolated envs
     - python@3.13
     - rust
+    - uv             # Python environments; keep Hermes's private runtime separate
 
   shell:
     - atuin          # Shell history sync & search
@@ -34,7 +36,10 @@ formulae:
     - yazi           # Terminal file manager
 
   development:
+    - bitwarden-cli  # General bw CLI, not desktop/vault migration
+    - ccusage
     - gh
+    - git            # Apple git is retained, not removed
     - git-lfs
     - hadolint       # Dockerfile linter
     - lazygit
@@ -53,6 +58,12 @@ formulae:
   devops:
     - act            # Run GitHub Actions locally
     - awscli
+    - cloudflare-wrangler
+    - cloudflared    # Package only; setup does not start tunnels
+    - googleworkspace-cli # gws
+    - helm
+    - kubernetes-cli
+    - minikube
     - cirruslabs/cli/tart  # macOS VM runner (Apple Silicon); tap formula, see setup.yml
     - telnet
 
@@ -60,11 +71,37 @@ formulae:
     - ffmpeg
     - pandoc
 
+# Explicit macOS-only formulae; Debian does not flatten this list.
+macos_formulae:
+  - bun
+
 casks:
   - bitwarden
   - cap            # Screen recording
+  - codex          # CLI only; preserve ~/.codex state
   - drawio
   - ghostty
+  - gcloud-cli
   - oracle-jdk
   - postman
   - xquartz        # X11 server for macOS
+
+# Host-specific apps: never consumed by setup.yml. Existing unmanaged apps
+# require identical-artifact --adopt, otherwise defer; never --force.
+optional_casks:
+  - visual-studio-code
+  - codex-app
+  - termius
+  - orbstack       # Preferred container platform, not universal host setup
+  - docker-desktop # Alternative, not automatically installed alongside OrbStack
+  - virtualbox    # Privileged installer / Home Assistant host: manual only
+  - claude        # Suspended; no automatic install or execution
+  - claude-code   # Suspended future migration alternative
+  - hermes-desktop # Preserve the current private runtime
+
+# Optional formulae, also never consumed by setup.yml. Do not install absent AI
+# products or replace Hermes-managed agent-browser merely because Brew has them.
+optional_formulae:
+  - hermes-agent
+  - pi-coding-agent
+  - agent-browser

@@ -6,36 +6,10 @@
 # Contains: Environment variables, PATH, SSH agent
 # ============================================
 
-# Deduplicate PATH entries (installers love re-appending)
-typeset -U path PATH
-
-# ============================================
-# HOMEBREW
-# ============================================
-# Apple Silicon, Intel Mac, then Linuxbrew.
-if [ -f "/opt/homebrew/bin/brew" ]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [ -f "/usr/local/bin/brew" ]; then
-  eval "$(/usr/local/bin/brew shellenv)"
-elif [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
-  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+# Shared tool PATH also covers interactive non-login shells.
+if [[ -f ~/.zshrc.tools ]]; then
+  source ~/.zshrc.tools
 fi
-
-# ============================================
-# PNPM
-# ============================================
-# pnpm's own default differs per platform; hardcoding the macOS one put a
-# nonexistent ~/Library path on Linux's PATH.
-if [[ "$OSTYPE" == darwin* ]]; then
-  export PNPM_HOME="$HOME/Library/pnpm"
-else
-  export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
-fi
-
-# ============================================
-# PATH MODIFICATIONS
-# ============================================
-export PATH="$PNPM_HOME:$HOME/.local/bin:$PATH"
 
 # ============================================
 # ENVIRONMENT VARIABLES
@@ -46,12 +20,6 @@ export EDITOR="nvim"
 # export JAVA_HOME=/path/to/java
 # export ANDROID_HOME=$HOME/Library/Android/sdk
 
-# ============================================
-# NODE VERSION MANAGER (fnm)
-# ============================================
-if command -v fnm &> /dev/null; then
-  eval "$(fnm env --shell zsh)"
-fi
 
 # ============================================
 # SECRETS

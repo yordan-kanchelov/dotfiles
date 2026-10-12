@@ -2,4 +2,4 @@
 # macOS values, loaded by setup.yml from ansible_os_family.
 brew_prefix: "{{ '/opt/homebrew' if ansible_architecture == 'arm64' else '/usr/local' }}"
 fonts_dir: "{{ ansible_env.HOME }}/Library/Fonts"
-brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten }}"
+brew_formulae: "{{ (formulae | dict2items | map(attribute='value') | flatten) + macos_formulae }}"
