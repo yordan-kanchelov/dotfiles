@@ -13,7 +13,7 @@ try {
         RestartAttempt = [int]$saved.RestartAttempt
         Resume = $true
     }
-    Write-Host 'Resuming dotfiles setup. Ubuntu may ask you to create your Linux user, then type exit to continue.'
+    Write-Host 'Resuming dotfiles setup. If an Ubuntu account-creation window opens, finish it there; setup continues automatically.'
     $resumeStatus = $null
     & (Join-Path $PSScriptRoot 'setup-wsl.ps1') @options | ForEach-Object {
         if ($_.PSObject.Properties['ResumeStatus']) { $resumeStatus = $_.ResumeStatus } else { $_ | Out-Host }

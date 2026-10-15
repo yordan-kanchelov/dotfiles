@@ -93,11 +93,21 @@ if ($linuxUser -eq 'root') {
     if (-not $Resume) {
         throw "Open $Distribution once and create your normal Linux username/password, then rerun this command. Ansible must not install the user tools as root."
     }
-    Write-Host 'Finish Ubuntu first-run account creation below. Once its shell opens, type exit so setup can continue.'
-    & $wslExe --distribution $Distribution
-    if ($LASTEXITCODE -ne 0) { throw 'Ubuntu first-run initialization did not finish.' }
-    $linuxUser = ((& $wslExe --distribution $Distribution --exec id -un) -join '').Trim()
-    if ($LASTEXITCODE -ne 0 -or $linuxUser -eq 'root') { throw 'Ubuntu still has no normal default user. Finish account creation and rerun the saved resume command.' }
+    Write-Host 'Create your Linux account in the Ubuntu window opening now. Setup will continue automatically when it is ready.'
+    # This is intentionally visible: Ubuntu asks the user for their username/password.
+    # Do not wait for that shell to exit after OOBE has already created the account.
+    $quotedDistribution = '"' + $Distribution.Replace('"', '') + '"'
+    Start-Process -FilePath $wslExe -ArgumentList @('--distribution', $quotedDistribution) -WindowStyle Normal | Out-Null
+    $deadline = (Get-Date).AddMinutes(15)
+    do {
+        Start-Sleep -Seconds 2
+        $response = Invoke-WslCapture -Arguments @('--distribution', $Distribution, '--exec', 'id', '-un')
+        if ($response.ExitCode -eq 0 -and $response.Text -and $response.Text -ne 'root') {
+            $linuxUser = $response.Text
+            break
+        }
+    } while ((Get-Date) -lt $deadline)
+    if ($linuxUser -eq 'root') { throw 'Ubuntu still has no normal default user. Finish account creation and rerun the saved resume command.' }
 }
 if (-not $PSCmdlet.ShouldProcess("$Distribution ($linuxUser)", 'Run the Ubuntu Ansible dotfiles setup')) { return }
 

@@ -105,8 +105,9 @@ Windows may require a restart after enabling WSL. Rerun the same command afterwa
 `-RestartAndResume` saves these options under `%LOCALAPPDATA%\dotfiles`, registers one
 per-user RunOnce action, and restarts without forcibly closing applications. After login,
 a visible PowerShell console resumes setup. It permits at most two automatic restarts.
-Ubuntu account creation and sudo passwords remain interactive; type `exit` after first-run
-Ubuntu account creation to let the resumed setup continue. No passwords are stored.
+Ubuntu account creation and sudo passwords remain interactive. Account creation opens in
+a separate Ubuntu window; setup detects the normal user and continues automatically.
+No passwords are stored.
 Open Ubuntu once to create your normal Linux username and password if requested, then rerun.
 The launcher clones the repo into Ubuntu's own `~/dotfiles` filesystem (not `/mnt/c`),
 and calls `bootstrap.sh`, which installs Ansible and runs `setup.yml`. Existing clean
