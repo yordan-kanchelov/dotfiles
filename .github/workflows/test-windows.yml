@@ -5,6 +5,37 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
+  agents:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native coding-agent CLIs
+        shell: powershell
+        run: ./windows/install-agents.ps1
+      - name: Install Tailscale without tailnet authentication
+        shell: powershell
+        run: ./windows/install-tailscale.ps1
+      - name: Verify persistent Windows Tailscale PATH
+        shell: powershell
+        run: ./windows/install-tailscale.ps1 -VerifyOnly
+      - name: Verify fresh Windows PATH and repeatability
+        shell: powershell
+        run: ./windows/test-agents.ps1
+      - name: Verify PowerShell 7 agent results
+        shell: pwsh
+        run: ./windows/test-agents.ps1
+  ansible-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+      - name: Check Linux and Windows playbooks
+        run: |
+          ansible-playbook setup.yml --syntax-check
+          ansible-playbook windows.yml --syntax-check
   configs:
     runs-on: windows-latest
     steps:
@@ -12,10 +43,10 @@ jobs:
       - name: Parse PowerShell scripts
         shell: pwsh
         run: |
-          $files = @('bootstrap.ps1', 'windows/profile.ps1', 'windows/test-setup.ps1', 'windows/test-profile.ps1', 'windows/test-fonts.ps1')
+          $files = @('bootstrap.ps1') + @(Get-ChildItem windows/*.ps1 | ForEach-Object { $_.FullName })
           foreach ($file in $files) {
             $errors = $null
-            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $file), [ref]$null, [ref]$errors) | Out-Null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $file).Path, [ref]$null, [ref]$errors) | Out-Null
             if ($errors) { throw ($errors | Out-String) }
           }
           Get-Content windows/packages.json -Raw | ConvertFrom-Json | Out-Null
@@ -26,6 +57,12 @@ jobs:
       - name: Verify PowerShell 7 config installation
         shell: pwsh
         run: ./windows/test-setup.ps1
+      - name: Verify restart-resume persistence without restarting
+        shell: powershell
+        run: ./windows/test-wsl-resume.ps1
+      - name: Verify restart-resume persistence on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-wsl-resume.ps1
       - name: Verify font registration preserves existing values
         shell: powershell
         run: ./windows/test-fonts.ps1

@@ -14,6 +14,7 @@
     dotfiles: "{{ playbook_dir }}"
     backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_date_time.iso8601_basic_short }}"
     node_version: "22"
+    is_wsl: "{{ ansible_system == 'Linux' and 'microsoft' in (ansible_kernel | lower) }}"
     # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
     is_omarchy: >-
       {{ ansible_os_family == 'Archlinux'
@@ -58,6 +59,11 @@
       tags: always
 
   tasks:
+    - name: WSL Ubuntu configuration
+      ansible.builtin.import_tasks: tasks/wsl.yml
+      when: is_wsl
+      tags: wsl
+
     - name: Omarchy personal layer
       ansible.builtin.import_tasks: tasks/omarchy.yml
       when: is_omarchy

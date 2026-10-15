@@ -92,6 +92,7 @@ if (-not $SkipPackages) {
             Update-SessionPath
         }
     }
+    & (Join-Path $repo 'windows\install-agents.ps1') -WhatIf:$WhatIfPreference
 }
 
 if (-not $SkipNode) {

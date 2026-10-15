@@ -89,6 +89,63 @@ ansible-playbook setup.yml -K    # Linux
 ansible-playbook setup.yml       # macOS
 ```
 
+### Ubuntu on WSL 2
+
+From Windows PowerShell, use the launcher to install WSL/Ubuntu and run the Linux
+Ansible playbook, followed by native Windows agent provisioning through `windows.yml`:
+
+```powershell
+.\windows\setup-wsl.ps1 -WhatIf
+.\windows\setup-wsl.ps1
+# Optional: restart automatically when required and continue after Windows login
+.\windows\setup-wsl.ps1 -RestartAndResume
+```
+
+Windows may require a restart after enabling WSL. Rerun the same command afterwards.
+`-RestartAndResume` saves these options under `%LOCALAPPDATA%\dotfiles`, registers one
+per-user RunOnce action, and restarts without forcibly closing applications. After login,
+a visible PowerShell console resumes setup. It permits at most two automatic restarts.
+Ubuntu account creation and sudo passwords remain interactive; type `exit` after first-run
+Ubuntu account creation to let the resumed setup continue. No passwords are stored.
+Open Ubuntu once to create your normal Linux username and password if requested, then rerun.
+The launcher clones the repo into Ubuntu's own `~/dotfiles` filesystem (not `/mnt/c`),
+and calls `bootstrap.sh`, which installs Ansible and runs `setup.yml`. Existing clean
+checkouts are fast-forwarded; local changes or another branch are never discarded.
+Use `-Ref feat/windows-setup` to test this PR before it is merged.
+
+Ansible detects WSL, preserves existing `/etc/wsl.conf` settings while enabling systemd
+and setting the default Linux user, and installs the Ubuntu Zsh/tmux/Atuin stack.
+If WSL settings change, close Ubuntu after setup and run `wsl --terminate Ubuntu` to apply them.
+The launcher skips the large Ollama download by default; use `-IncludeOllama` to include it.
+Linux desktop applications remain opt-in via the existing `--tags desktop` workflow.
+
+### Native Windows coding-agent CLIs
+
+Codex, Claude Code and herdr are installed **on Windows**, using their upstream Windows
+installers. Existing working native installations are preserved. The installer repairs
+the user's persistent Windows PATH and checks each command from a fresh Windows PowerShell
+process. It does not install Linux agents, npm globals or bubblewrap.
+
+```powershell
+.\windows\install-agents.ps1 -WhatIf
+.\windows\install-agents.ps1
+```
+
+Ansible can manage the same Windows tools from Ubuntu/WSL without configuring WinRM:
+
+```bash
+ansible-playbook windows.yml          # installs/verifies native Windows tools via powershell.exe
+ansible-playbook windows.yml --check  # previews changes
+```
+
+This uses WSL interop to run the Windows installer as your Windows user; Ansible itself
+runs inside Ubuntu. It requires Windows interop to be enabled in WSL. Linux terminal tools
+remain managed by `setup.yml`. Sign in to each CLI separately; no credentials are copied.
+
+**Tailscale** is included by default in the native Windows package list and `windows.yml`.
+Installation verifies `tailscale.exe` on the persistent Windows PATH. Sign in to your tailnet
+separately; setup does not automatically authenticate or change tailnet preferences.
+
 The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
 sources on login — fill in the ones you use. It is written only when missing, so re-runs never
 overwrite it.
