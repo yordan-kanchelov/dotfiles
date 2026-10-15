@@ -23,5 +23,6 @@
 
 - name: WSL configuration notice
   ansible.builtin.debug:
-    msg: WSL settings changed. After setup finishes, close Ubuntu and run wsl --terminate Ubuntu from Windows to apply them.
-  when: wsl_config.changed
+    msg: >-
+      {{ 'WSL settings changed. After setup finishes, close Ubuntu and run wsl --terminate Ubuntu from Windows to apply them.'
+         if wsl_config.changed else 'WSL systemd and default user are already configured.' }}
