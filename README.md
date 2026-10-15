@@ -14,6 +14,64 @@ Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installe
 
 ## Quick Start
 
+### Native Windows
+
+Clone into your user folder, then run from Windows PowerShell or PowerShell 7:
+
+```powershell
+git clone https://github.com/yordan-kanchelov/dotfiles.git "$HOME\dotfiles"
+cd "$HOME\dotfiles"
+.\bootstrap.ps1 -WhatIf   # preview without installing or writing files
+.\bootstrap.ps1
+```
+
+The Windows installer uses WinGet (Microsoft App Installer), installs the core tools in
+`windows/packages.json`, and adds a managed block to PowerShell 7's current-user, all-hosts
+profile. Existing profile content is preserved. Conflicting configs are backed up under
+`~/.dotfiles_backup/windows-<timestamp>/`. Re-running keeps existing packages and unchanged configs.
+If script execution is disabled, invoke the trusted local script using
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1`; this applies only to that process.
+The Dotfiles Terminal profile (and Yazi's PowerShell shell) uses process-only `RemoteSigned`,
+so local profile scripts can load even when the Windows default is `Restricted`.
+This does not change the machine or user execution policy; downloaded unsigned scripts remain restricted.
+For other PowerShell launchers, use `pwsh -ExecutionPolicy RemoteSigned`, or explicitly choose
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` if you want that policy for all your shells.
+
+Open a new Windows Terminal tab using **Dotfiles PowerShell**. Select that profile as the default
+in Terminal Settings if desired. Its per-user JSON fragment supplies Catppuccin Macchiato,
+0xProto Nerd Font, 14pt text, block cursor, padding and 90% opacity. Fully restart Terminal
+if the new fonts/profile do not appear immediately.
+
+PowerShell includes vi editing, local history suggestions, Starship, zoxide (`z`), fnm,
+`lg`, `vim`, `l`, `fvim` and the `y` directory-changing Yazi wrapper. PowerShell's existing
+`ls` and `cat` commands are preserved. Starship reads the shared config directly; directory
+junctions connect `%LOCALAPPDATA%\nvim` and `%APPDATA%\yazi\config` to the repository, without
+requiring Developer Mode. Keep this checkout in place. Yazi Git-root navigation works on both
+Windows and Unix; `!` opens PowerShell on Windows.
+
+Node 22 is installed through fnm to match the Unix setup, but an existing default version is
+preserved. Use `fnm use 22` or `fnm default 22` explicitly if wanted. Use `-SkipPackages`,
+`-SkipNode`, `-SkipFonts`, or `-SkipTerminal` to omit individual steps. A configs-only run is
+`.\bootstrap.ps1 -SkipPackages -SkipNode`.
+
+The core packages include tree-sitter CLI and WinLibs GCC for Neovim's native parsers.
+Language-specific toolchains, advanced Yazi preview dependencies,
+Ollama and GUI applications are separate choices. Run `:checkhealth` in Neovim to see the
+requirements for enabled plugins. Zsh, Sheldon, tmux, Atuin and Linux desktop customizations
+remain in the Unix/WSL setup. The Windows installer does not modify Claude/Codex configuration,
+secrets, cleanup commands or WSL installations.
+
+Validate Windows config installation with `powershell.exe -NoProfile -File .\windows\test-setup.ps1`.
+This checks dry runs, backup preservation, junctions and repeated installation in temporary folders.
+`windows/test-fonts.ps1` checks font registration in an isolated HKCU key, preserving unrelated
+values across repeated runs. After installing, run
+`pwsh -ExecutionPolicy RemoteSigned -File .\windows\test-profile.ps1` for the installed-tool and shell smoke test.
+The path override parameters are independent: `HomeDirectory` sets the backup location;
+use `ProfilePath`, `LocalAppDataDirectory`, `RoamingAppDataDirectory` and `FontRegistryPath`
+explicitly to isolate a test installation.
+
+### macOS and Linux
+
 ```bash
 # Clone the repository
 git clone https://github.com/yordan-kanchelov/dotfiles.git ~/dotfiles

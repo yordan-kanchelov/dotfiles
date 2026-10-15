@@ -1,0 +1,34 @@
+name: Windows dotfiles
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  configs:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $files = @('bootstrap.ps1', 'windows/profile.ps1', 'windows/test-setup.ps1', 'windows/test-profile.ps1', 'windows/test-fonts.ps1')
+          foreach ($file in $files) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $file), [ref]$null, [ref]$errors) | Out-Null
+            if ($errors) { throw ($errors | Out-String) }
+          }
+          Get-Content windows/packages.json -Raw | ConvertFrom-Json | Out-Null
+          Get-Content windows/terminal.json -Raw | ConvertFrom-Json | Out-Null
+      - name: Verify dry run, backup and repeated config installation
+        shell: powershell
+        run: ./windows/test-setup.ps1
+      - name: Verify PowerShell 7 config installation
+        shell: pwsh
+        run: ./windows/test-setup.ps1
+      - name: Verify font registration preserves existing values
+        shell: powershell
+        run: ./windows/test-fonts.ps1
+      - name: Verify font registration on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-fonts.ps1
