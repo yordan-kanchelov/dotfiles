@@ -135,10 +135,6 @@ Write-ManagedFile $ProfilePath $newProfile
 if (-not $SkipTerminal) {
     $fragment = Join-Path $LocalAppDataDirectory 'Microsoft\Windows Terminal\Fragments\dotfiles\terminal.json'
     Write-ManagedFile $fragment ([IO.File]::ReadAllText((Join-Path $repo 'windows\terminal.json')))
-    Write-ManagedFile (Join-Path $LocalAppDataDirectory 'noctty\config.ghostty') ([IO.File]::ReadAllText((Join-Path $repo 'windows\noctty.ghostty')))
-    if (-not $SkipPackages) {
-        & (Join-Path $repo 'windows\install-noctty.ps1') -WhatIf:$WhatIfPreference
-    }
 }
 if (-not $SkipFonts) {
     $fontDestination = Join-Path $LocalAppDataDirectory 'Microsoft\Windows\Fonts'
