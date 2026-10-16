@@ -124,6 +124,12 @@ If WSL settings change, close Ubuntu after setup and run `wsl --terminate Ubuntu
 The launcher skips the large Ollama download by default; use `-IncludeOllama` to include it.
 Linux desktop applications remain opt-in via the existing `--tags desktop` workflow.
 
+Herdr is also installed natively inside Ubuntu/WSL by `setup.yml`, through the
+`herdr` Homebrew formula in `brew_packages.yml`. The Zsh login configuration adds
+Linuxbrew to PATH, so run `herdr` directly in Ubuntu. Its shared configuration is
+linked at `~/.config/herdr/config.toml`. Update this Linux installation with
+`brew upgrade herdr`.
+
 ### Native Windows coding-agent CLIs
 
 Codex, Claude Code and herdr are installed **on Windows**, using their upstream Windows
