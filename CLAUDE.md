@@ -45,6 +45,7 @@ Verify = run the playbook again and expect `changed=0`.
   .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
   restart. Tagged `[desktop, never]`.
 - `brew_packages.yml` — `formulae:` grouped by category plus `casks:`; used on both OSes.
+- `scripts/install-herdr.sh` and `windows/install-herdr.ps1` — release-matched Herdr skills and integrations for Claude/Codex. Linux setup detects installed harnesses; Windows agent setup includes both.
 - `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `claude/`,
   `codex/`, `fonts/` — the linked/copied content.
 
@@ -63,6 +64,9 @@ symlink is left alone, so a no-op run creates no backup directory. Parent direct
 ### Copy-if-absent Files
 `~/.secrets` (mode 600, sourced by `.zprofile`) and `~/.codex/config.toml` (codex appends project trust
 entries at runtime) are copied only when missing, never overwritten.
+Claude `settings.json` is also copied only when missing, allowing Herdr to merge local hooks.
+Claude skills are copied individually rather than linking the entire directory. Herdr setup migrates
+older settings/skills links to local copies before installing integrations.
 
 ### Sudo
 Play default is `become: false`. Only the apt, login-shell and Linuxbrew-prefix tasks (and the desktop apt

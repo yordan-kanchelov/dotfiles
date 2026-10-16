@@ -153,6 +153,36 @@ This uses WSL interop to run the Windows installer as your Windows user; Ansible
 runs inside Ubuntu. It requires Windows interop to be enabled in WSL. Linux terminal tools
 remain managed by `setup.yml`. Sign in to each CLI separately; no credentials are copied.
 
+Agent setup also installs Herdr's bundled, release-matched `herdr` skill and the
+Claude Code and Codex integrations. It preserves existing configuration while letting
+Herdr merge its hooks. Claude settings are now seeded only when absent; existing
+settings links and whole-directory skills links are converted to local copies when
+the integrations are installed, so machine-specific hooks do not modify this checkout.
+Re-running setup skips current integrations and refreshes outdated integrations and skills.
+
+On macOS and Debian/Ubuntu (including WSL), `setup.yml` configures only harnesses
+available on the Linux/macOS PATH. It does not install Linux agents. To run just this
+step, or explicitly select harnesses:
+
+```bash
+ansible-playbook setup.yml --tags herdr
+bash scripts/install-herdr.sh --check claude codex
+bash scripts/install-herdr.sh claude codex
+```
+
+For native Windows, `install-agents.ps1` includes this step automatically. It can also
+be run separately, with optional `-Targets claude` or `-Targets codex`:
+
+```powershell
+.\windows\install-herdr.ps1 -WhatIf
+.\windows\install-herdr.ps1
+```
+
+Start new agent sessions inside Herdr after installation. The skill requires
+`HERDR_ENV=1`, which Herdr sets in its managed panes. See the upstream
+[skill](https://herdr.dev/docs/agent-skill/) and
+[integration](https://herdr.dev/docs/integrations/) documentation.
+
 **Windows Terminal** is installed by `bootstrap.ps1` and selected as the current user's
 default terminal by `windows.yml`. Its Dotfiles PowerShell profile uses the installed
 Nerd Font and shared theme. Use `-SkipTerminal` with `bootstrap.ps1` to omit its configuration.

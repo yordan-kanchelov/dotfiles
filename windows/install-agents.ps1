@@ -71,6 +71,12 @@ foreach ($agent in @(
     }
     $tools += [pscustomobject]@{ name = $agent.name; path = $command.Source; version = $version }
 }
+$herdrCommand = Get-Command herdr.exe -CommandType Application -ErrorAction SilentlyContinue
+if ($herdrCommand) {
+    $integration = & (Join-Path $PSScriptRoot 'install-herdr.ps1') -WhatIf:$WhatIfPreference -OutputJson | Select-Object -Last 1 | ConvertFrom-Json
+    $changed = $changed -or $integration.changed
+    $planned += @($integration.planned)
+}
 if (-not $WhatIfPreference) {
     $verification = & $windowsPowerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-agents.ps1') -OutputJson
     if ($LASTEXITCODE -ne 0) { throw 'Fresh Windows PATH verification failed.' }

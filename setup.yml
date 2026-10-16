@@ -39,9 +39,7 @@
       - { src: tmux/.tmux.conf, dest: .tmux.conf }
       - { src: claude/CLAUDE.md, dest: .claude/CLAUDE.md }
       - { src: claude/AGENTS.md, dest: .claude/AGENTS.md }
-      - { src: claude/settings.json, dest: .claude/settings.json }
       - { src: claude/commands, dest: .claude/commands }
-      - { src: claude/skills, dest: .claude/skills }
       - { src: codex/keybindings.json, dest: .codex/keybindings.json }
       - { src: codex/AGENTS.md, dest: .codex/AGENTS.md }
       - { src: codex/instructions.md, dest: .codex/instructions.md }
@@ -218,6 +216,33 @@
         force: false
       when: is_legacy_platform
       tags: symlinks
+
+    - name: Claude settings (local copy so integrations can merge hooks)
+      ansible.builtin.copy:
+        src: "{{ dotfiles }}/claude/settings.json"
+        dest: "{{ home }}/.claude/settings.json"
+        mode: "0600"
+        force: false
+      when: is_legacy_platform
+      tags: symlinks
+
+    - name: Claude bundled skills
+      ansible.builtin.copy:
+        src: "{{ dotfiles }}/claude/skills/"
+        dest: "{{ home }}/.claude/skills/"
+        mode: preserve
+      when: is_legacy_platform
+      tags: symlinks
+
+    - name: Herdr skills and integrations for installed harnesses
+      ansible.builtin.command:
+        argv: "{{ ['/bin/bash', dotfiles ~ '/scripts/install-herdr.sh'] + (['--check'] if ansible_check_mode else []) }}"
+      environment: "{{ tool_env }}"
+      register: herdr_integrations
+      changed_when: "'changed:' in herdr_integrations.stdout"
+      check_mode: false
+      when: is_legacy_platform
+      tags: herdr
 
     # tpm's installer shells out to tmux, so a configs-only run (--skip-tags
     # packages) on a box without tmux must skip, not fail.

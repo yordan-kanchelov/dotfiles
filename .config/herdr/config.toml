@@ -5,3 +5,13 @@ prefix = "ctrl+space"
 
 [ui.toast]
 delivery = "herdr"
+
+# Layout, pane directories, and focus are saved/restored automatically by Herdr.
+# Resume each supported agent's exact conversation via its Herdr integration.
+[session]
+resume_agents_on_restore = true
+
+# Match tmux-resurrect's capture-pane-contents behavior after a server restart.
+# Ordinary commands (dev servers, SSH, Neovim, etc.) still need manual restart.
+[experimental]
+pane_history = true

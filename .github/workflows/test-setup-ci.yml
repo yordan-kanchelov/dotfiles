@@ -27,6 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Herdr installer regression checks
+        run: bash scripts/test-herdr.sh
+
       # ollama: a 1.4 GB download and a user systemd the runner does not have.
       - name: Bootstrap and run the playbook
         run: ./bootstrap.sh --skip-tags ollama
