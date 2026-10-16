@@ -1,7 +1,7 @@
 ---
 # Controller: Ubuntu/WSL. Target: this machine's native Windows user via WSL interop.
 # No WinRM listener, Windows SSH server or Linux coding-agent install is needed.
-- name: Native Windows coding agents and Tailscale
+- name: Native Windows coding agents, Tailscale and Noctty
   hosts: localhost
   connection: local
   gather_facts: true
@@ -32,7 +32,7 @@
         (windows_agents.stdout_lines | last | from_json).changed or
         ((windows_agents.stdout_lines | last | from_json).planned | length > 0 and ansible_check_mode)
       check_mode: false
-      loop: [install-agents.ps1, install-tailscale.ps1]
+      loop: [install-agents.ps1, install-tailscale.ps1, install-noctty.ps1]
 
     - name: Windows CLI versions and paths
       ansible.builtin.debug:

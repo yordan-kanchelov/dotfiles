@@ -147,6 +147,12 @@ This uses WSL interop to run the Windows installer as your Windows user; Ansible
 runs inside Ubuntu. It requires Windows interop to be enabled in WSL. Linux terminal tools
 remain managed by `setup.yml`. Sign in to each CLI separately; no credentials are copied.
 
+**Noctty** is installed by default by `bootstrap.ps1` and `windows.yml`, with its directory
+added to the Windows user PATH. Its configuration uses 0xProto Nerd Font, Catppuccin Macchiato,
+and PowerShell 7; Ubuntu is available from the profile picker (`Ctrl+Shift+P`).
+Configuration is backed up before replacement. Windows Terminal remains available.
+Use `-SkipTerminal` with `bootstrap.ps1` to omit terminal configuration and Noctty installation.
+
 **Tailscale** is included by default in the native Windows package list and `windows.yml`.
 Installation verifies `tailscale.exe` on the persistent Windows PATH. Sign in to your tailnet
 separately; setup does not automatically authenticate or change tailnet preferences.
