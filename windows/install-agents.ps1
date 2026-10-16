@@ -76,6 +76,11 @@ if ($herdrCommand) {
     $integration = & (Join-Path $PSScriptRoot 'install-herdr.ps1') -WhatIf:$WhatIfPreference -OutputJson | Select-Object -Last 1 | ConvertFrom-Json
     $changed = $changed -or $integration.changed
     $planned += @($integration.planned)
+    if (Get-Command wt.exe -CommandType Application -ErrorAction SilentlyContinue) {
+        $autostart = & (Join-Path $PSScriptRoot 'set-herdr-autostart.ps1') -WhatIf:$WhatIfPreference -OutputJson | Select-Object -Last 1 | ConvertFrom-Json
+        $changed = $changed -or $autostart.changed
+        $planned += @($autostart.planned)
+    }
 }
 if (-not $WhatIfPreference) {
     $verification = & $windowsPowerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-agents.ps1') -OutputJson

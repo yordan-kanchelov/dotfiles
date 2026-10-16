@@ -183,6 +183,11 @@ Start new agent sessions inside Herdr after installation. The skill requires
 [skill](https://herdr.dev/docs/agent-skill/) and
 [integration](https://herdr.dev/docs/integrations/) documentation.
 
+Windows agent setup also adds `Herdr.lnk` to your user Startup folder when Windows
+Terminal is installed. At sign-in it opens Herdr's default session in a new terminal
+window. Configure it separately with `./windows/set-herdr-autostart.ps1` (supports
+`-WhatIf`); remove the shortcut from `shell:startup` to disable it.
+
 **Windows Terminal** is installed by `bootstrap.ps1` and selected as the current user's
 default terminal by `windows.yml`. Its Dotfiles PowerShell profile uses the installed
 Nerd Font and shared theme. Use `-SkipTerminal` with `bootstrap.ps1` to omit its configuration.
