@@ -25,13 +25,15 @@ else
 fi
 cd "$checkout"
 # Ansible logs persist across console closure/restarts, without storing passwords.
-umask 077
 state_dir="$HOME/.local/state/dotfiles"
-mkdir -p "$state_dir"
-chmod 700 "$state_dir"
 export ANSIBLE_LOG_PATH="$state_dir/ansible-setup.log"
-touch "$ANSIBLE_LOG_PATH"
-chmod 600 "$ANSIBLE_LOG_PATH"
+(
+  umask 077
+  mkdir -p "$state_dir"
+  chmod 700 "$state_dir"
+  touch "$ANSIBLE_LOG_PATH"
+  chmod 600 "$ANSIBLE_LOG_PATH"
+)
 printf 'Ansible log: %s\n' "$ANSIBLE_LOG_PATH"
 bash ./bootstrap.sh "$@"
 exec ansible-playbook windows.yml
