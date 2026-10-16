@@ -32,7 +32,7 @@
         (windows_agents.stdout_lines | last | from_json).changed or
         ((windows_agents.stdout_lines | last | from_json).planned | length > 0 and ansible_check_mode)
       check_mode: false
-      loop: [install-agents.ps1, install-tailscale.ps1, install-noctty.ps1]
+      loop: [install-agents.ps1, install-tailscale.ps1, install-noctty.ps1, set-noctty-default.ps1]
 
     - name: Windows CLI versions and paths
       ansible.builtin.debug:

@@ -151,6 +151,10 @@ remain managed by `setup.yml`. Sign in to each CLI separately; no credentials ar
 added to the Windows user PATH. Its configuration uses 0xProto Nerd Font, Catppuccin Macchiato,
 and PowerShell 7; Ubuntu is available from the profile picker (`Ctrl+Shift+P`).
 Configuration is backed up before replacement. Windows Terminal remains available.
+`windows.yml` also selects Noctty as the current user's default terminal using its
+experimental handoff registration (Windows Terminal 1.24+ remains installed for OpenConsole).
+The original selection is saved to `%LOCALAPPDATA%\dotfiles\terminal-before-noctty.json`.
+Run `noctty.com +unregister-default-terminal` to restore the preceding terminal registration.
 Use `-SkipTerminal` with `bootstrap.ps1` to omit terminal configuration and Noctty installation.
 
 **Tailscale** is included by default in the native Windows package list and `windows.yml`.
