@@ -5,6 +5,21 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
+  ubuntu-sudo-compat:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Install Ansible and a password-protected fixture user
+        run: |
+          apt-get update
+          apt-get install -y ansible sudo sudo-rs git ca-certificates
+          useradd --create-home --groups sudo fixture
+          echo 'fixture:ci-fixture-only' | chpasswd
+      - uses: actions/checkout@v4
+      - name: Verify actual privileged Ansible tasks with Ubuntu 26.04 sudo
+        env:
+          ANSIBLE_BECOME_PASS: ci-fixture-only
+        run: runuser -u fixture -- ansible-playbook .github/sudo-compat.yml
   agents:
     runs-on: windows-latest
     steps:

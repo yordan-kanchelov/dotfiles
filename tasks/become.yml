@@ -1,0 +1,18 @@
+---
+# Ubuntu 26.04 defaults to sudo-rs, whose PAM prompt is not recognized by some
+# packaged Ansible versions. Select the classic binary for Ansible only; leave
+# update-alternatives and the user's normal sudo command untouched.
+- name: Find classic sudo compatibility binary
+  ansible.builtin.stat:
+    path: /usr/bin/sudo.ws
+  register: classic_sudo
+  when: ansible_os_family == 'Debian'
+
+- name: Use classic sudo for Ansible when available
+  ansible.builtin.set_fact:
+    ansible_become_exe: /usr/bin/sudo.ws
+  when:
+    - ansible_os_family == 'Debian'
+    - classic_sudo.stat.exists
+    - classic_sudo.stat.executable
+    - ansible_become_exe is not defined

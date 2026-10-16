@@ -47,6 +47,10 @@
       - { src: codex/instructions.md, dest: .codex/instructions.md }
       - { src: codex/rules, dest: .codex/rules }
   pre_tasks:
+    - name: Configure privilege escalation compatibility
+      ansible.builtin.import_tasks: tasks/become.yml
+      tags: always
+
     - name: Require a supported platform
       ansible.builtin.assert:
         that: is_omarchy or ansible_os_family in ['Darwin', 'Debian']

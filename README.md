@@ -108,6 +108,10 @@ a visible PowerShell console resumes setup. It permits at most two automatic res
 Ubuntu account creation and sudo passwords remain interactive. Account creation opens in
 a separate Ubuntu window; setup detects the normal user and continues automatically.
 No passwords are stored.
+On Ubuntu 26.04, Ansible uses `/usr/bin/sudo.ws` when available to avoid the
+`sudo-rs` password-prompt incompatibility; the system sudo default is preserved.
+Provisioning logs are kept at `~/.local/state/dotfiles/ansible-setup.log` inside Ubuntu,
+so a failed task can be inspected even after the setup console closes.
 Open Ubuntu once to create your normal Linux username and password if requested, then rerun.
 The launcher clones the repo into Ubuntu's own `~/dotfiles` filesystem (not `/mnt/c`),
 and calls `bootstrap.sh`, which installs Ansible and runs `setup.yml`. Existing clean

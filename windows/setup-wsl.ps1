@@ -120,7 +120,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or -not $linuxScript) { throw 'Cannot map bootstrap script into Ubuntu.' }
     $ansibleArguments = if ($IncludeOllama) { @() } else { @('--skip-tags', 'ollama') }
     & $wslExe --distribution $Distribution --exec bash $linuxScript $Repository $Ref @ansibleArguments
-    if ($LASTEXITCODE -ne 0) { throw "Ubuntu Ansible setup failed: $LASTEXITCODE" }
+    if ($LASTEXITCODE -ne 0) { throw "Ubuntu Ansible setup failed: $LASTEXITCODE. See ~/.local/state/dotfiles/ansible-setup.log inside $Distribution for the failed task." }
 } finally {
     Remove-Item -LiteralPath $tempScript -Force -ErrorAction SilentlyContinue
 }
