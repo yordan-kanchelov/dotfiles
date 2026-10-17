@@ -11,7 +11,7 @@
 # inert until the login shell itself changes. usermod does not consult /etc/shells.
 - name: Zsh as login shell
   ansible.builtin.user:
-    name: "{{ ansible_user_id }}"
+    name: "{{ ansible_facts['user_id'] }}"
     shell: "{{ zsh_path }}"
   become: true
 
@@ -22,8 +22,8 @@
   ansible.builtin.file:
     path: "{{ brew_prefix }}"
     state: directory
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ ansible_facts['user_id'] }}"
+    group: "{{ ansible_facts['user_gid'] }}"
     mode: "0755"
   become: true
 
@@ -97,5 +97,5 @@
     enabled: true
     state: "{{ 'restarted' if ollama_unit.changed else 'started' }}"
     daemon_reload: true
-  when: ansible_service_mgr == 'systemd' and ansible_env.XDG_RUNTIME_DIR is defined
+  when: ansible_facts['service_mgr'] == 'systemd' and ansible_facts['env']['XDG_RUNTIME_DIR'] is defined
   tags: ollama

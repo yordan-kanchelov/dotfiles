@@ -9,8 +9,8 @@
     - name: Require a WSL controller
       ansible.builtin.assert:
         that:
-          - ansible_system == 'Linux'
-          - "'microsoft' in (ansible_kernel | lower)"
+          - ansible_facts['system'] == 'Linux'
+          - "'microsoft' in (ansible_facts['kernel'] | lower)"
         fail_msg: Run windows.yml inside Ubuntu/WSL, or use windows/install-agents.ps1 directly on Windows
 
     - name: Resolve installer directory for Windows PowerShell

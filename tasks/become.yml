@@ -6,13 +6,13 @@
   ansible.builtin.stat:
     path: /usr/bin/sudo.ws
   register: classic_sudo
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Use classic sudo for Ansible when available
   ansible.builtin.set_fact:
     ansible_become_exe: /usr/bin/sudo.ws
   when:
-    - ansible_os_family == 'Debian'
+    - ansible_facts['os_family'] == 'Debian'
     - classic_sudo.stat.exists
     - classic_sudo.stat.executable
     - ansible_become_exe is not defined

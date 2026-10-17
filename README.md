@@ -144,8 +144,11 @@ the original Windows user and their normal Ubuntu account, not the elevated help
 Ubuntu account creation and sudo passwords remain interactive. Account creation opens in
 a separate Ubuntu window; setup detects the normal user and continues automatically.
 No passwords are stored.
-On Ubuntu 26.04, Ansible uses `/usr/bin/sudo.ws` when available to avoid the
+On Ubuntu 26.04, setup selects `/usr/bin/sudo.ws` when available to avoid the
 `sudo-rs` password-prompt incompatibility; the system sudo default is preserved.
+Bootstrap checks whether that same sudo implementation is genuinely passwordless,
+ignoring temporary cached credentials, so Ansible requests your password when required.
+Enter it only in the local setup terminal; setup never saves it.
 Provisioning logs are kept at `~/.local/state/dotfiles/ansible-setup.log` inside Ubuntu,
 so a failed task can be inspected even after the setup console closes.
 Open Ubuntu once to create your normal Linux username and password if requested, then rerun.

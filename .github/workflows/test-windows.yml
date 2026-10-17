@@ -49,12 +49,19 @@ jobs:
         env:
           TMPDIR: ${{ runner.temp }}
         run: bash scripts/test-wsl-bootstrap.sh
+      - name: Verify bootstrap sudo prompting without cached credentials
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: bash scripts/test-bootstrap-sudo.sh
       - name: Install Ansible
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible
       - name: Check Linux and Windows playbooks
+        env:
+          ANSIBLE_INJECT_FACT_VARS: "false"
         run: |
+          python3 scripts/test-ansible-facts.py
           ansible-playbook setup.yml --syntax-check
           ansible-playbook windows.yml --syntax-check
       - name: Verify setup preserves Claude and Codex configuration
