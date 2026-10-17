@@ -2,6 +2,8 @@ onboarding = false
 
 [keys]
 prefix = "ctrl+space"
+toggle_sidebar = "prefix+p"
+previous_tab = "prefix+b"
 # tmux muscle memory: tab ≈ window, workspace ≈ session.
 rename_tab = "prefix+,"
 close_tab = "prefix+&"
