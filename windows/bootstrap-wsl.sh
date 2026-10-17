@@ -19,9 +19,15 @@ else
   [[ -d "$checkout/.git" ]] || { echo "$checkout is not a Git checkout" >&2; exit 1; }
   [[ -z $(git -C "$checkout" status --porcelain) ]] || { echo "$checkout has local changes; commit or stash them before rerunning" >&2; exit 1; }
   [[ $(git -C "$checkout" remote get-url origin) == "$repository" ]] || { echo "$checkout uses a different origin; inspect it before rerunning" >&2; exit 1; }
-  [[ $(git -C "$checkout" branch --show-current) == "$ref" ]] || { echo "$checkout is on another branch; select $ref before rerunning" >&2; exit 1; }
+  branch=$(git -C "$checkout" branch --show-current)
+  [[ -z "$branch" || "$branch" == "$ref" ]] || { echo "$checkout is on another branch; select $ref before rerunning" >&2; exit 1; }
   git -C "$checkout" fetch origin "$ref"
-  git -C "$checkout" merge --ff-only FETCH_HEAD
+  if [[ -z "$branch" ]]; then
+    # Tag clones detach HEAD. Only rerun at the fetched commit; never move it.
+    [[ $(git -C "$checkout" rev-parse HEAD) == $(git -C "$checkout" rev-parse 'FETCH_HEAD^{commit}') ]] || { echo "$checkout is detached at another commit; check out $ref before rerunning" >&2; exit 1; }
+  else
+    git -C "$checkout" merge --ff-only FETCH_HEAD
+  fi
 fi
 cd "$checkout"
 # Ansible logs persist across console closure/restarts, without storing passwords.

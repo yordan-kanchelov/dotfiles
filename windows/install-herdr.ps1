@@ -15,11 +15,15 @@ foreach ($target in $Targets) {
     if ((Test-Path -LiteralPath $skillsDirectory) -and (Get-Item -LiteralPath $skillsDirectory).LinkType) {
         $planned += "Make $target skills a local directory"
         if ($PSCmdlet.ShouldProcess($skillsDirectory, 'Replace directory link with a local copy')) {
-            $temporary = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N'))
-            Copy-Item -LiteralPath $skillsDirectory -Destination $temporary -Recurse
+            # Directory moves in Windows PowerShell 5.1 must stay on the profile drive.
+            $temporary = Join-Path $env:USERPROFILE ('.dotfiles-skills-' + [guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $temporary | Out-Null
+            $stagedSkills = Join-Path $temporary 'skills'
+            Copy-Item -LiteralPath $skillsDirectory -Destination $stagedSkills -Recurse
             # Directory.Delete removes the link itself, without traversing its target.
             [IO.Directory]::Delete($skillsDirectory)
-            Move-Item -LiteralPath $temporary -Destination $skillsDirectory
+            Move-Item -LiteralPath $stagedSkills -Destination $skillsDirectory
+            Remove-Item -LiteralPath $temporary
             $changed = $true
         }
     }

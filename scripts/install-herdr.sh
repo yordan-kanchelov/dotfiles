@@ -12,7 +12,8 @@ if (( ${#targets[@]} == 0 )); then
 fi
 skill=$(herdr --skill)
 status=$(herdr integration status)
-for target in "${targets[@]}"; do
+# Bash 3.2 (macOS) treats an empty array as unset under nounset.
+for target in ${targets[@]+"${targets[@]}"}; do
   case "$target" in claude|codex) ;; *) echo "Unsupported dotfiles harness: $target" >&2; exit 1 ;; esac
   directory="$HOME/.$target/skills"
   if [[ -L "$directory" ]]; then

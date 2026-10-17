@@ -4,6 +4,8 @@ on:
     branches: [main, master]
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   ubuntu-sudo-compat:
     runs-on: ubuntu-latest
@@ -43,6 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify WSL checkout safety and tag reruns
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: bash scripts/test-wsl-bootstrap.sh
       - name: Install Ansible
         run: |
           sudo apt-get update
@@ -66,12 +72,30 @@ jobs:
           }
           Get-Content windows/packages.json -Raw | ConvertFrom-Json | Out-Null
           Get-Content windows/terminal.json -Raw | ConvertFrom-Json | Out-Null
+      - name: Verify profile-local skills migration
+        shell: powershell
+        run: ./windows/test-herdr-migration.ps1
+      - name: Verify profile-local skills migration on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-herdr-migration.ps1
       - name: Verify dry run, backup and repeated config installation
         shell: powershell
         run: ./windows/test-setup.ps1
       - name: Verify PowerShell 7 config installation
         shell: pwsh
         run: ./windows/test-setup.ps1
+      - name: Verify default Windows and WSL orchestration
+        shell: powershell
+        run: |
+          ./windows/test-bootstrap-wsl.ps1
+          ./windows/test-wsl-platform.ps1
+          ./windows/test-wsl-launcher.ps1
+      - name: Verify default Windows and WSL orchestration on PowerShell 7
+        shell: pwsh
+        run: |
+          ./windows/test-bootstrap-wsl.ps1
+          ./windows/test-wsl-platform.ps1
+          ./windows/test-wsl-launcher.ps1
       - name: Verify restart-resume persistence without restarting
         shell: powershell
         run: ./windows/test-wsl-resume.ps1

@@ -12,21 +12,26 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'wsl-resume-state.ps1')
 function Request-WslRestart {
-    if (-not $RestartAndResume) {
-        Write-Host 'Windows needs a restart. Restart and rerun, or use -RestartAndResume to automate the next login.'
-        return [pscustomobject]@{ ResumeStatus = 'RestartRequired' }
-    }
-    if ($RestartAttempt -ge 2) { throw 'Automatic restart limit reached. Check WSL and restart Windows manually before retrying.' }
-    if ($PSCmdlet.ShouldProcess('Windows', 'Save setup options, restart, and resume at next login')) {
-        Register-WslResume -Options @{
+    if ($RestartAndResume -and $RestartAttempt -ge 2) { throw 'Automatic restart limit reached. Check WSL and restart Windows manually before retrying.' }
+    $action = if ($RestartAndResume) { 'Save setup options and restart Windows' } else { 'Save setup options for the next Windows sign-in; do not restart now' }
+    if ($PSCmdlet.ShouldProcess('Windows', $action)) {
+        $stateFile = Register-WslResume -Options @{
             Distribution = $Distribution; Repository = $Repository; Ref = $Ref
-            IncludeOllama = [bool]$IncludeOllama; RestartAttempt = $RestartAttempt + 1
-        } | Out-Null
-        Write-Host 'Setup will resume in a PowerShell console after your next login. Restarting Windows now.'
-        # No -Force: do not forcibly close applications with unsaved work.
-        Restart-Computer -ErrorAction Stop
+            IncludeOllama = [bool]$IncludeOllama
+            RestartAndResume = [bool]$RestartAndResume
+            RestartAttempt = $RestartAttempt + [int][bool]$RestartAndResume
+        }
+        $resumeScript = Join-Path $PSScriptRoot 'resume-wsl.ps1'
+        Write-Host ('Manual resume command: powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -NoExit -File "' + $resumeScript + '" -StateFile "' + $stateFile + '"')
+        if ($RestartAndResume) {
+            Write-Host 'Setup will resume in a PowerShell console after your next login. Restarting Windows now.'
+            # No -Force: do not forcibly close applications with unsaved work.
+            Restart-Computer -ErrorAction Stop
+            return [pscustomobject]@{ ResumeStatus = 'RestartScheduled' }
+        }
+        Write-Host 'Windows needs a restart. Save your work and restart when ready; Ubuntu setup will resume at your next sign-in.'
     }
-    return [pscustomobject]@{ ResumeStatus = 'RestartScheduled' }
+    return [pscustomobject]@{ ResumeStatus = 'RestartRequired' }
 }
 function Invoke-WslCapture([string[]]$Arguments) {
     # Treat native stderr as data, including under Windows PowerShell 5.
@@ -42,29 +47,47 @@ function Resolve-WslFailure($Response, [string]$Context) {
     }
     throw "$Context (exit $($Response.ExitCode)): $($Response.Text)"
 }
-$wslExe = Join-Path $env:ProgramFiles 'WSL\wsl.exe'
-if (-not (Test-Path -LiteralPath $wslExe)) {
-    if ($PSCmdlet.ShouldProcess('Microsoft.WSL', 'Install WSL through WinGet')) {
-        & winget install --id Microsoft.WSL --exact --source winget --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
-        if ($LASTEXITCODE -notin @(0, 3010)) { throw "WSL installation failed: $LASTEXITCODE" }
-        if ($LASTEXITCODE -eq 3010) {
-            Request-WslRestart
-            return
-        }
-    }
-}
+# System32 dispatches both MSIX/Store and MSI WSL installations. Do not pin
+# the old Program Files layout: current Microsoft.WSL packages use MSIX.
+$wslExe = Join-Path $env:WINDIR 'System32\wsl.exe'
+$version = Invoke-WslCapture -Arguments @('--version')
+$installPackage = $version.ExitCode -ne 0
 if ($WhatIfPreference) {
+    if ($installPackage) { Write-Host 'Would request approval to install Microsoft.WSL and enable its Windows platform without rebooting.' }
     Write-Host "Would install/start $Distribution, then run the Linux Ansible bootstrap from $Repository ($Ref)."
+    Write-Host 'If a restart is needed, setup saves its options and resumes after your next Windows sign-in.'
     if ($RestartAndResume) { Write-Host 'Would save options, restart Windows if needed, and resume at next login.' }
     return
 }
-$isAdministrator = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if ($isAdministrator) {
-    $feature = Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform
-    if ($feature.State -eq 'EnablePending') {
-        Request-WslRestart
-        return
+# Installing the WSL MSI alone does not enable the WSL 2 Windows feature.
+# CIM can inspect it without admin rights, so working reruns do not ask for UAC.
+$platform = Get-CimInstance -ClassName Win32_OptionalFeature | Where-Object Name -eq 'VirtualMachinePlatform'
+if (-not $platform) { throw 'This Windows installation does not expose the VirtualMachinePlatform feature required by WSL 2.' }
+if ($installPackage -or $platform.InstallState -ne 1) {
+    if (-not $PSCmdlet.ShouldProcess('WSL 2', 'Request elevation to install WSL and enable its platform without restarting')) { return }
+    $resultPath = [IO.Path]::GetTempFileName()
+    try {
+        $helper = Join-Path $PSScriptRoot 'enable-wsl-platform.ps1'
+        $windowsPowerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $helperArguments = @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $helper + '"'), '-ResultPath', ('"' + $resultPath + '"')
+        )
+        if ($installPackage) { $helperArguments += '-InstallPackage' }
+        $process = Start-Process -FilePath $windowsPowerShell -Verb RunAs -Wait -PassThru -ArgumentList $helperArguments
+        if ($process.ExitCode -ne 0) { throw "WSL platform enablement failed (exit $($process.ExitCode)). Approve the UAC prompt and retry." }
+        $platformResult = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+        if (-not $platformResult.PSObject.Properties['RestartRequired']) { throw 'WSL platform enablement returned no usable result.' }
+        if ($platformResult.RestartRequired) {
+            Request-WslRestart
+            return
+        }
+    } finally {
+        Remove-Item -LiteralPath $resultPath -Force -ErrorAction SilentlyContinue
     }
+}
+if ($installPackage) {
+    $version = Invoke-WslCapture -Arguments @('--version')
+    if ($version.ExitCode -ne 0) { throw "WSL installation did not provide a working version command: $($version.Text)" }
 }
 $response = Invoke-WslCapture -Arguments @('--list', '--quiet')
 if ($response.ExitCode -ne 0) { Resolve-WslFailure $response 'WSL cannot list distributions'; return }

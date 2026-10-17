@@ -8,7 +8,7 @@ $testLocal = Join-Path $testRoot 'local'
 $testRoaming = Join-Path $testRoot 'roaming'
 $testProfile = Join-Path $testHome 'PowerShell\profile.ps1'
 $arguments = @{
-    SkipPackages = $true; SkipNode = $true; SkipFonts = $true
+    SkipPackages = $true; SkipNode = $true; SkipFonts = $true; SkipWsl = $true
     HomeDirectory = $testHome; LocalAppDataDirectory = $testLocal
     RoamingAppDataDirectory = $testRoaming; ProfilePath = $testProfile
 }

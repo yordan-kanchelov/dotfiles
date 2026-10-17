@@ -5,6 +5,12 @@ param(
     [switch]$SkipNode,
     [switch]$SkipFonts,
     [switch]$SkipTerminal,
+    [switch]$SkipWsl,
+    [string]$WslDistribution = 'Ubuntu',
+    [string]$WslRepository = 'https://github.com/yordan-kanchelov/dotfiles.git',
+    [string]$WslRef = 'main',
+    [switch]$RestartAndResume,
+    [switch]$IncludeOllama,
     [string]$HomeDirectory = $env:USERPROFILE,
     [string]$LocalAppDataDirectory = $env:LOCALAPPDATA,
     [string]$RoamingAppDataDirectory = $env:APPDATA,
@@ -174,8 +180,36 @@ namespace Dotfiles {
         foreach ($newFont in $newFonts) { [Dotfiles.Fonts]::AddFontResourceW($newFont) | Out-Null }
     }
 }
+if (-not $SkipWsl) {
+    $wslOptions = @{
+        Distribution = $WslDistribution; Repository = $WslRepository; Ref = $WslRef
+        RestartAndResume = [bool]$RestartAndResume; IncludeOllama = [bool]$IncludeOllama
+        WhatIf = [bool]$WhatIfPreference
+    }
+    $wslResult = $null
+    $wslStatusCount = 0
+    # Native/Ansible progress shares the success pipeline with the final status.
+    & (Join-Path $repo 'windows\setup-wsl.ps1') @wslOptions | ForEach-Object {
+        if ($null -ne $_ -and $_.PSObject.Properties['ResumeStatus']) {
+            $wslResult = $_
+            $wslStatusCount++
+        } else {
+            Write-Output $_
+        }
+    }
+    if (-not $WhatIfPreference -and ($wslStatusCount -ne 1 -or
+        $wslResult.ResumeStatus -notin @('Complete', 'RestartRequired', 'RestartScheduled'))) {
+        throw 'WSL setup did not return exactly one recognized ResumeStatus (Complete, RestartRequired, RestartScheduled). Native Windows configuration finished, but WSL setup could not be verified.'
+    }
+}
 if ($WhatIfPreference) {
     Write-Host 'Preview complete. No packages or configuration files were changed.'
+} elseif ($SkipWsl) {
+    Write-Host 'Native Windows setup complete. WSL was skipped. Open a new Dotfiles PowerShell terminal tab.'
+} elseif ($wslResult.ResumeStatus -eq 'RestartRequired') {
+    Write-Host 'Native Windows configuration complete. WSL status: RestartRequired. Restart Windows manually when ready; setup will resume at next login, or use the saved resume command printed above. WSL setup is not complete.'
+} elseif ($wslResult.ResumeStatus -eq 'RestartScheduled') {
+    Write-Host 'Native Windows configuration complete. WSL status: RestartScheduled. Setup will resume after Windows restart and login; WSL setup is not complete.'
 } else {
     Write-Host 'Setup complete. Open a new PowerShell 7 tab using the Dotfiles PowerShell terminal profile.'
 }

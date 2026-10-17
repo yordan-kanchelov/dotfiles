@@ -14,7 +14,7 @@ Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installe
 
 ## Quick Start
 
-### Native Windows
+### Windows (native tools + Ubuntu/WSL by default)
 
 Clone into your user folder, then run from Windows PowerShell or PowerShell 7:
 
@@ -22,13 +22,21 @@ Clone into your user folder, then run from Windows PowerShell or PowerShell 7:
 git clone https://github.com/yordan-kanchelov/dotfiles.git "$HOME\dotfiles"
 cd "$HOME\dotfiles"
 .\bootstrap.ps1 -WhatIf   # preview without installing or writing files
-.\bootstrap.ps1
+.\bootstrap.ps1           # default WSL ref: main (after this PR is merged)
+# Before merge, run this INSTEAD to select the published Windows setup branch in Ubuntu:
+.\bootstrap.ps1 -WslRef feat/windows-setup
 ```
 
 The Windows installer uses WinGet (Microsoft App Installer), installs the core tools in
 `windows/packages.json`, and adds a managed block to PowerShell 7's current-user, all-hosts
 profile. Existing profile content is preserved. Conflicting configs are backed up under
 `~/.dotfiles_backup/windows-<timestamp>/`. Re-running keeps existing packages and unchanged configs.
+After native configuration it runs `windows/setup-wsl.ps1` by default to install/configure
+Ubuntu on WSL 2 and run the Linux playbook. It does **not** automatically reboot Windows.
+If a restart is required, setup saves its options, prints a manual resume command and
+registers a one-time continuation after your next Windows login; restart manually when ready.
+Only `-RestartAndResume` opts into an immediate restart when needed. See the WSL section below
+for account creation, UAC and restart details. Use `-SkipWsl` for native Windows only.
 If script execution is disabled, invoke the trusted local script using
 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1`; this applies only to that process.
 The Dotfiles Terminal profile (and Yazi's PowerShell shell) uses process-only `RemoteSigned`,
@@ -51,20 +59,34 @@ Windows and Unix; `!` opens PowerShell on Windows.
 
 Node 22 is installed through fnm to match the Unix setup, but an existing default version is
 preserved. Use `fnm use 22` or `fnm default 22` explicitly if wanted. Use `-SkipPackages`,
-`-SkipNode`, `-SkipFonts`, or `-SkipTerminal` to omit individual steps. A configs-only run is
-`.\bootstrap.ps1 -SkipPackages -SkipNode`.
+`-SkipNode`, `-SkipFonts`, `-SkipTerminal`, or `-SkipWsl` to omit individual steps. A native configs-only run is
+`.\bootstrap.ps1 -SkipPackages -SkipNode -SkipWsl` (including font registration);
+also add `-SkipFonts` to omit font installation. Native path overrides do not sandbox WSL;
+always use `-SkipWsl` when testing only native configuration.
+
+WSL defaults are `-WslDistribution Ubuntu`,
+`-WslRepository https://github.com/yordan-kanchelov/dotfiles.git` and `-WslRef main`.
+These are forwarded as the launcher's `-Distribution`, `-Repository` and `-Ref` options;
+`-IncludeOllama`, `-RestartAndResume` and `-WhatIf` are forwarded too. Ollama and immediate
+restarts are opt-in. Before merge, use `-WslRef feat/windows-setup`; the local
+`fix/pr-14` branch is unpublished and the default `main` does not yet include this PR.
 
 The core packages include tree-sitter CLI and WinLibs GCC for Neovim's native parsers.
 Language-specific toolchains, advanced Yazi preview dependencies,
 Ollama and GUI applications are separate choices. Run `:checkhealth` in Neovim to see the
 requirements for enabled plugins. Zsh, Sheldon, tmux, Atuin and Linux desktop customizations
-remain in the Unix/WSL setup. The Windows installer does not modify Claude/Codex configuration,
-secrets, cleanup commands or WSL installations.
+remain in the Unix/WSL setup. Native configuration does not manage secrets or cleanup commands;
+WSL provisioning runs the Linux playbook, while the coding-agent installers manage their
+own integrations below.
 
 Validate Windows config installation with `powershell.exe -NoProfile -File .\windows\test-setup.ps1`.
-This checks dry runs, backup preservation, junctions and repeated installation in temporary folders.
+This checks dry runs, backup preservation, junctions and repeated installation in temporary folders,
+explicitly using `-SkipWsl` to avoid WSL/OS changes.
 `windows/test-fonts.ps1` checks font registration in an isolated HKCU key, preserving unrelated
-values across repeated runs. After installing, run
+values across repeated runs, also with `-SkipWsl`. Run
+`powershell.exe -NoProfile -File .\windows\test-bootstrap-wsl.ps1` (or use `pwsh` instead)
+to check bootstrap orchestration in a copied, minimal repository with a harmless WSL stub;
+it does not invoke real WSL, install packages or restart Windows. After installing, run
 `pwsh -ExecutionPolicy RemoteSigned -File .\windows\test-profile.ps1` for the installed-tool and shell smoke test.
 The path override parameters are independent: `HomeDirectory` sets the backup location;
 use `ProfilePath`, `LocalAppDataDirectory`, `RoamingAppDataDirectory` and `FontRegistryPath`
@@ -89,9 +111,14 @@ ansible-playbook setup.yml -K    # Linux
 ansible-playbook setup.yml       # macOS
 ```
 
+The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
+sources on login — fill in the ones you use. It is written only when missing, so re-runs never
+overwrite it.
+
 ### Ubuntu on WSL 2
 
-From Windows PowerShell, use the launcher to install WSL/Ubuntu and run the Linux
+The root `bootstrap.ps1` includes this step after native Windows configuration by default.
+To run only the WSL launcher from Windows PowerShell, install WSL/Ubuntu and run the Linux
 Ansible playbook, followed by native Windows agent provisioning through `windows.yml`:
 
 ```powershell
@@ -101,10 +128,17 @@ Ansible playbook, followed by native Windows agent provisioning through `windows
 .\windows\setup-wsl.ps1 -RestartAndResume
 ```
 
-Windows may require a restart after enabling WSL. Rerun the same command afterwards.
-`-RestartAndResume` saves these options under `%LOCALAPPDATA%\dotfiles`, registers one
-per-user RunOnce action, and restarts without forcibly closing applications. After login,
-a visible PowerShell console resumes setup. It permits at most two automatic restarts.
+Windows may require a restart after enabling WSL. By default the launcher saves its options
+under `%LOCALAPPDATA%\dotfiles`, registers one per-user RunOnce continuation and prints the
+manual resume command, **without restarting Windows**. Restart manually when convenient;
+after login, a visible PowerShell console resumes with the saved distribution, repository,
+ref and Ollama choice. The saved default does not grant permission for later automatic restarts.
+`-RestartAndResume` explicitly opts into immediate restart when required, without forcibly
+closing applications; it permits at most two automatic restarts. Root bootstrap reports
+`RestartRequired`/`RestartScheduled` as unfinished WSL setup, never as full setup completion.
+Installing Microsoft.WSL or enabling the Windows VirtualMachinePlatform feature may open a UAC
+prompt for a narrow elevated package-and-feature helper, which does not restart Windows. Linux provisioning stays under
+the original Windows user and their normal Ubuntu account, not the elevated helper.
 Ubuntu account creation and sudo passwords remain interactive. Account creation opens in
 a separate Ubuntu window; setup detects the normal user and continues automatically.
 No passwords are stored.
@@ -195,10 +229,6 @@ Nerd Font and shared theme. Use `-SkipTerminal` with `bootstrap.ps1` to omit its
 **Tailscale** is included by default in the native Windows package list and `windows.yml`.
 Installation verifies `tailscale.exe` on the persistent Windows PATH. Sign in to your tailnet
 separately; setup does not automatically authenticate or change tailnet preferences.
-
-The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
-sources on login — fill in the ones you use. It is written only when missing, so re-runs never
-overwrite it.
 
 ## Omarchy
 

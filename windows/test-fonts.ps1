@@ -6,7 +6,7 @@ $id = [guid]::NewGuid().ToString('N')
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-fonts-' + $id)
 $registryPath = 'HKCU:\Software\DotfilesFontTest-' + $id
 $arguments = @{
-    SkipPackages = $true; SkipNode = $true; SkipTerminal = $true
+    SkipPackages = $true; SkipNode = $true; SkipTerminal = $true; SkipWsl = $true
     HomeDirectory = (Join-Path $fixtureRoot 'home')
     LocalAppDataDirectory = (Join-Path $fixtureRoot 'local')
     RoamingAppDataDirectory = (Join-Path $fixtureRoot 'roaming')
