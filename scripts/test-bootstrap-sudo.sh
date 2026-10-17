@@ -74,7 +74,9 @@ STUB
 printf 'apt-get must only be passed to the sudo stub\n' >&2
 exit 99
 STUB
-  chmod +x "$bin/"* "$case_dir/playbook-stub"
+  # chmod follows command-line symlinks; never touch the system tools linked above.
+  chmod +x "$bin/sudo" "$bin/ansible-playbook" "$bin/ansible-galaxy" \
+    "$bin/apt-get" "$case_dir/playbook-stub"
   default_policy=cached
   classic_policy=cached
   os_type=linux-gnu
