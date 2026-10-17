@@ -20,6 +20,7 @@ jobs:
         shell: bash # -eo pipefail: a failed playbook behind `| tee` must fail the step
     env:
       CI: "true"
+      ANSIBLE_INJECT_FACT_VARS: "false"
       HOMEBREW_NO_ANALYTICS: "1"
       # The playbook's tool_env sets this for its own tasks, but bootstrap.sh's
       # `brew install ansible` runs before that and would trigger a full update.

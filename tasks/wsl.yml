@@ -2,8 +2,8 @@
 - name: Require a normal Ubuntu user for WSL setup
   ansible.builtin.assert:
     that:
-      - ansible_distribution == 'Ubuntu'
-      - ansible_user_id != 'root'
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['user_id'] != 'root'
     fail_msg: Launch Ubuntu and finish creating your normal Linux user before running bootstrap.sh
 
 # Preserve automount/network/interop settings rather than replacing wsl.conf.
@@ -17,7 +17,7 @@
     mode: "0644"
   loop:
     - { section: boot, option: systemd, value: "true" }
-    - { section: user, option: default, value: "{{ ansible_user_id }}" }
+    - { section: user, option: default, value: "{{ ansible_facts['user_id'] }}" }
   become: true
   register: wsl_config
 

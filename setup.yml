@@ -10,19 +10,19 @@
   vars_files:
     - brew_packages.yml # -> formulae (dict), casks (list)
   vars:
-    home: "{{ ansible_env.HOME }}" # not `~`: become tasks would expand it to /root
+    home: "{{ ansible_facts['env']['HOME'] }}" # not `~`: become tasks would expand it to /root
     dotfiles: "{{ playbook_dir }}"
-    backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_date_time.iso8601_basic_short }}"
+    backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_facts['date_time']['iso8601_basic_short'] }}"
     node_version: "22"
-    is_wsl: "{{ ansible_system == 'Linux' and 'microsoft' in (ansible_kernel | lower) }}"
+    is_wsl: "{{ ansible_facts['system'] == 'Linux' and 'microsoft' in (ansible_facts['kernel'] | lower) }}"
     # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
     is_omarchy: >-
-      {{ ansible_os_family == 'Archlinux'
+      {{ ansible_facts['os_family'] == 'Archlinux'
          and lookup('ansible.builtin.file', '/etc/os-release', errors='ignore') is search('(?m)^ID="?omarchy"?$') }}
-    is_legacy_platform: "{{ ansible_os_family in ['Darwin', 'Debian'] and not is_omarchy }}"
+    is_legacy_platform: "{{ ansible_facts['os_family'] in ['Darwin', 'Debian'] and not is_omarchy }}"
     # For the tasks that call brew/fnm/tmux: on PATH now, not just at next login.
     tool_env:
-      PATH: "{{ brew_prefix }}/bin:{{ home }}/.local/bin:{{ ansible_env.PATH }}"
+      PATH: "{{ brew_prefix }}/bin:{{ home }}/.local/bin:{{ ansible_facts['env']['PATH'] }}"
       HOMEBREW_NO_AUTO_UPDATE: "1"
     # Explicit allowlist — never glob ~/.claude or ~/.codex (machine state, caches, credentials).
     dotfile_links:
@@ -51,13 +51,13 @@
 
     - name: Require a supported platform
       ansible.builtin.assert:
-        that: is_omarchy or ansible_os_family in ['Darwin', 'Debian']
+        that: is_omarchy or ansible_facts['os_family'] in ['Darwin', 'Debian']
         fail_msg: Only macOS, Debian-family Linux, and Omarchy are supported
         quiet: true
       tags: always
 
     - name: Load platform variables
-      ansible.builtin.include_vars: "vars/{{ 'Omarchy' if is_omarchy else ansible_os_family }}.yml"
+      ansible.builtin.include_vars: "vars/{{ 'Omarchy' if is_omarchy else ansible_facts['os_family'] }}.yml"
       tags: always
 
   tasks:
@@ -72,7 +72,7 @@
 
     - name: Debian/Ubuntu packages
       ansible.builtin.import_tasks: tasks/debian.yml
-      when: ansible_os_family == 'Debian' and not is_omarchy
+      when: ansible_facts['os_family'] == 'Debian' and not is_omarchy
       tags: packages
 
     - name: Homebrew formulae
@@ -104,7 +104,7 @@
         name: "{{ casks }}"
         state: present
       environment: "{{ tool_env }}"
-      when: is_legacy_platform and ansible_os_family == 'Darwin'
+      when: is_legacy_platform and ansible_facts['os_family'] == 'Darwin'
       tags: packages
 
     # fnm picks its data dir itself (legacy ~/.fnm, XDG_DATA_HOME, per-OS default), so ask it
@@ -160,7 +160,7 @@
 
     - name: Font cache (macOS picks up ~/Library/Fonts on its own)
       ansible.builtin.command: fc-cache -f {{ fonts_dir }}
-      when: is_legacy_platform and ansible_os_family == 'Debian' and (fonts.changed | default(false))
+      when: is_legacy_platform and ansible_facts['os_family'] == 'Debian' and (fonts.changed | default(false))
       changed_when: true
       tags: fonts
 
@@ -262,5 +262,5 @@
     # over SSH should fail loudly, not skip every task and report success.)
     - name: Linux desktop
       ansible.builtin.import_tasks: tasks/desktop.yml
-      when: ansible_os_family == 'Debian' and not is_omarchy
+      when: ansible_facts['os_family'] == 'Debian' and not is_omarchy
       tags: [desktop, never]
