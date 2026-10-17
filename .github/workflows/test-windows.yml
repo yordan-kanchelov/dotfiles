@@ -81,6 +81,12 @@ jobs:
           }
           Get-Content windows/packages.json -Raw | ConvertFrom-Json | Out-Null
           Get-Content windows/terminal.json -Raw | ConvertFrom-Json | Out-Null
+      - name: Verify Herdr shell shortcuts on Windows PowerShell
+        shell: powershell
+        run: ./windows/test-herdr-aliases.ps1
+      - name: Verify Herdr shell shortcuts on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-herdr-aliases.ps1
       - name: Verify profile-local skills migration
         shell: powershell
         run: ./windows/test-herdr-migration.ps1

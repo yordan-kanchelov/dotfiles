@@ -33,6 +33,47 @@ if ($interactiveTerminal -and (Get-Command starship -ErrorAction SilentlyContinu
     starship init powershell | Out-String | Invoke-Expression
 }
 
+# Familiar tmux shortcuts, backed by native Herdr on Windows.
+function global:tn {
+    param([Parameter(Mandatory, Position = 0)][ValidateNotNullOrEmpty()][string]$Name)
+    & herdr --session $Name
+}
+
+function global:ta {
+    param([Parameter(Mandatory, Position = 0)][ValidateNotNullOrEmpty()][string]$Name)
+    & herdr session attach $Name
+}
+function global:tls { & herdr session list }
+function global:tk {
+    param([Parameter(Mandatory, Position = 0)][ValidateNotNullOrEmpty()][string]$Name)
+    & herdr session stop $Name
+}
+function global:tkill {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param()
+    if ($PSCmdlet.ShouldProcess('Current Herdr server and its pane processes', 'Stop')) {
+        & herdr server stop
+    }
+}
+function global:tren {
+    throw 'Herdr does not support session renaming in this version. Use tn <new-name> for a new session.'
+}
+function global:tnw {
+    if ($env:HERDR_ENV -ne '1' -or -not $env:HERDR_WORKSPACE_ID) {
+        throw 'Run tnw inside Herdr to target your current workspace.'
+    }
+    & herdr tab create --workspace $env:HERDR_WORKSPACE_ID --cwd (Get-Location).Path --focus
+}
+function global:th {
+    if ($env:HERDR_ENV -ne '1') { throw 'Run th inside Herdr to split your current pane.' }
+    & herdr pane split --current --direction right --cwd (Get-Location).Path --focus
+}
+function global:tv {
+    if ($env:HERDR_ENV -ne '1') { throw 'Run tv inside Herdr to split your current pane.' }
+    & herdr pane split --current --direction down --cwd (Get-Location).Path --focus
+}
+function global:tkp { exit }
+
 function global:lg { & lazygit @args }
 function global:vim { & nvim @args }
 function global:l { & eza -l -b --all --header --git --icons --group-directories-first @args }

@@ -237,6 +237,24 @@ window. Configure it separately with `./windows/set-herdr-autostart.ps1` (suppor
 default terminal by `windows.yml`. Its Dotfiles PowerShell profile uses the installed
 Nerd Font and shared theme. Use `-SkipTerminal` with `bootstrap.ps1` to omit its configuration.
 
+The Windows PowerShell profile includes tmux-style shortcuts backed by Herdr:
+
+| Shortcut | Windows behavior |
+| --- | --- |
+| `tn <name>` | Create or attach to a named Herdr session |
+| `ta <name>` | Attach to an existing session |
+| `tls` | List sessions |
+| `tk <name>` | Stop a named session (does not delete its saved state) |
+| `tkill` | Stop the current Herdr server and its pane processes, with confirmation |
+| `tren` | Explain that this Herdr version cannot rename sessions |
+| `tnw` | Create and focus a tab in the caller's workspace |
+| `th` / `tv` | Split the caller's pane left/right or top/bottom, focusing the new pane |
+| `tkp` | Exit the current shell, just like the Linux alias |
+
+`tnw`, `th`, and `tv` must run inside Herdr and preserve the shell's current directory.
+Run `reload` in an existing PowerShell session, or open a new PowerShell terminal,
+to load profile changes. These shortcuts do not replace the Linux tmux aliases.
+
 **Tailscale** is included by default in the native Windows package list and `windows.yml`.
 Installation verifies `tailscale.exe` on the persistent Windows PATH. Sign in to your tailnet
 separately; setup does not automatically authenticate or change tailnet preferences.
