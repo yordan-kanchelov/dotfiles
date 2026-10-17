@@ -10,18 +10,19 @@
   vars_files:
     - brew_packages.yml # -> formulae (dict), casks (list)
   vars:
-    home: "{{ ansible_env.HOME }}" # not `~`: become tasks would expand it to /root
+    home: "{{ ansible_facts['env']['HOME'] }}" # not `~`: become tasks would expand it to /root
     dotfiles: "{{ playbook_dir }}"
-    backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_date_time.iso8601_basic_short }}"
+    backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_facts['date_time']['iso8601_basic_short'] }}"
     node_version: "22"
+    is_wsl: "{{ ansible_facts['system'] == 'Linux' and 'microsoft' in (ansible_facts['kernel'] | lower) }}"
     # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
     is_omarchy: >-
-      {{ ansible_os_family == 'Archlinux'
+      {{ ansible_facts['os_family'] == 'Archlinux'
          and lookup('ansible.builtin.file', '/etc/os-release', errors='ignore') is search('(?m)^ID="?omarchy"?$') }}
-    is_legacy_platform: "{{ ansible_os_family in ['Darwin', 'Debian'] and not is_omarchy }}"
+    is_legacy_platform: "{{ ansible_facts['os_family'] in ['Darwin', 'Debian'] and not is_omarchy }}"
     # For the tasks that call brew/fnm/tmux: on PATH now, not just at next login.
     tool_env:
-      PATH: "{{ brew_prefix }}/bin:{{ home }}/.local/bin:{{ ansible_env.PATH }}"
+      PATH: "{{ brew_prefix }}/bin:{{ home }}/.local/bin:{{ ansible_facts['env']['PATH'] }}"
       HOMEBREW_NO_AUTO_UPDATE: "1"
     # Explicit allowlist — never glob ~/.claude or ~/.codex (machine state, caches, credentials).
     dotfile_links:
@@ -36,35 +37,35 @@
       - { src: zsh/.zshrc, dest: .zshrc }
       - { src: zsh/.zshrc.core, dest: .zshrc.core }
       - { src: tmux/.tmux.conf, dest: .tmux.conf }
-      - { src: claude/CLAUDE.md, dest: .claude/CLAUDE.md }
-      - { src: claude/AGENTS.md, dest: .claude/AGENTS.md }
-      - { src: claude/settings.json, dest: .claude/settings.json }
-      - { src: claude/commands, dest: .claude/commands }
-      - { src: claude/skills, dest: .claude/skills }
-      - { src: codex/keybindings.json, dest: .codex/keybindings.json }
-      - { src: codex/AGENTS.md, dest: .codex/AGENTS.md }
-      - { src: codex/instructions.md, dest: .codex/instructions.md }
-      - { src: codex/rules, dest: .codex/rules }
   pre_tasks:
+    - name: Configure privilege escalation compatibility
+      ansible.builtin.import_tasks: tasks/become.yml
+      tags: always
+
     - name: Require a supported platform
       ansible.builtin.assert:
-        that: is_omarchy or ansible_os_family in ['Darwin', 'Debian']
+        that: is_omarchy or ansible_facts['os_family'] in ['Darwin', 'Debian']
         fail_msg: Only macOS, Debian-family Linux, and Omarchy are supported
         quiet: true
       tags: always
 
     - name: Load platform variables
-      ansible.builtin.include_vars: "vars/{{ 'Omarchy' if is_omarchy else ansible_os_family }}.yml"
+      ansible.builtin.include_vars: "vars/{{ 'Omarchy' if is_omarchy else ansible_facts['os_family'] }}.yml"
       tags: always
 
   tasks:
+    - name: WSL Ubuntu configuration
+      ansible.builtin.import_tasks: tasks/wsl.yml
+      when: is_wsl
+      tags: wsl
+
     - name: Omarchy personal layer
       ansible.builtin.import_tasks: tasks/omarchy.yml
       when: is_omarchy
 
     - name: Debian/Ubuntu packages
       ansible.builtin.import_tasks: tasks/debian.yml
-      when: ansible_os_family == 'Debian' and not is_omarchy
+      when: ansible_facts['os_family'] == 'Debian' and not is_omarchy
       tags: packages
 
     - name: Homebrew formulae
@@ -96,7 +97,7 @@
         name: "{{ casks }}"
         state: present
       environment: "{{ tool_env }}"
-      when: is_legacy_platform and ansible_os_family == 'Darwin'
+      when: is_legacy_platform and ansible_facts['os_family'] == 'Darwin'
       tags: packages
 
     # fnm picks its data dir itself (legacy ~/.fnm, XDG_DATA_HOME, per-OS default), so ask it
@@ -152,7 +153,7 @@
 
     - name: Font cache (macOS picks up ~/Library/Fonts on its own)
       ansible.builtin.command: fc-cache -f {{ fonts_dir }}
-      when: is_legacy_platform and ansible_os_family == 'Debian' and (fonts.changed | default(false))
+      when: is_legacy_platform and ansible_facts['os_family'] == 'Debian' and (fonts.changed | default(false))
       changed_when: true
       tags: fonts
 
@@ -178,8 +179,6 @@
           export BITBUCKET_USERNAME="your.username"
           export BITBUCKET_TOKEN="your-token-here"
           export OPENAI_API_KEY="your-api-key-here"
-          # Used by the codex brave-search MCP wrapper (see codex/config.example.toml)
-          export BRAVE_API_KEY="your-api-key-here"
 
           # Add other secrets below as needed
       tags: secrets
@@ -199,15 +198,15 @@
       when: is_legacy_platform
       tags: symlinks
 
-    # Copy-if-absent: codex appends project trust entries at runtime, so this must not be a link.
-    - name: Codex config.toml
-      ansible.builtin.copy:
-        src: "{{ dotfiles }}/codex/config.example.toml"
-        dest: "{{ home }}/.codex/config.toml"
-        mode: "0644"
-        force: false
+    - name: Herdr skills and integrations for installed harnesses
+      ansible.builtin.command:
+        argv: "{{ ['/bin/bash', dotfiles ~ '/scripts/install-herdr.sh'] + (['--check'] if ansible_check_mode else []) }}"
+      environment: "{{ tool_env }}"
+      register: herdr_integrations
+      changed_when: "'changed:' in herdr_integrations.stdout"
+      check_mode: false
       when: is_legacy_platform
-      tags: symlinks
+      tags: herdr
 
     # tpm's installer shells out to tmux, so a configs-only run (--skip-tags
     # packages) on a box without tmux must skip, not fail.
@@ -227,5 +226,5 @@
     # over SSH should fail loudly, not skip every task and report success.)
     - name: Linux desktop
       ansible.builtin.import_tasks: tasks/desktop.yml
-      when: ansible_os_family == 'Debian' and not is_omarchy
+      when: ansible_facts['os_family'] == 'Debian' and not is_omarchy
       tags: [desktop, never]

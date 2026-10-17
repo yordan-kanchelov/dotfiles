@@ -22,21 +22,24 @@ case "$OSTYPE" in
     command -v ansible-playbook >/dev/null || brew install ansible
     ;;
   linux-gnu*)
+    bootstrap_sudo=sudo
     case " $os_id $os_like " in
       *" omarchy "*)
         command -v ansible-playbook >/dev/null || omarchy pkg add ansible
         ;;
       *debian*|*ubuntu*|*linuxmint*)
+        # Match tasks/become.yml without changing the system's default sudo.
+        if [[ -x /usr/bin/sudo.ws ]]; then bootstrap_sudo=/usr/bin/sudo.ws; fi
         command -v apt-get >/dev/null || { echo "Debian/Ubuntu only" >&2; exit 1; }
         if ! command -v ansible-playbook >/dev/null; then
-          sudo apt-get update -y && sudo apt-get install -y ansible
+          "$bootstrap_sudo" apt-get update -y && "$bootstrap_sudo" apt-get install -y ansible
         fi
         ;;
       *) echo "Debian/Ubuntu or Omarchy only" >&2; exit 1 ;;
     esac
-    # apt, pacman and usermod need sudo. Probe for it instead of keying on $CI: -K only
-    # when sudo actually needs a password (CI runners and cached tickets don't).
-    sudo -n true 2>/dev/null || set -- -K "$@"
+    # Ignore cached credentials: Ansible may run outside the bootstrap sudo session.
+    # Only genuinely passwordless sudo can safely skip asking for a become password.
+    "$bootstrap_sudo" -n -k true 2>/dev/null || set -- -K "$@"
     ;;
   *)
     echo "Unsupported OS: $OSTYPE" >&2

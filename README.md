@@ -2,6 +2,8 @@
 
 Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installed and kept in sync by one Ansible playbook.
 
+For a reference-only audit and future recreation guide for Codex and Claude Code plugins and skills, start at [agent-setup/README.md](agent-setup/README.md). That folder is documentation only: it is not deployed or linked into agent profiles.
+
 ## Features
 
 - 🚀 **One-command setup** - `./bootstrap.sh` installs Ansible and runs the playbook
@@ -13,6 +15,86 @@ Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installe
 - 📝 **LazyVim IDE** - Full-featured Neovim setup with LSP, debugging, and more
 
 ## Quick Start
+
+### Windows (native tools + Ubuntu/WSL by default)
+
+Clone into your user folder, then run from Windows PowerShell or PowerShell 7:
+
+```powershell
+git clone https://github.com/yordan-kanchelov/dotfiles.git "$HOME\dotfiles"
+cd "$HOME\dotfiles"
+.\bootstrap.ps1 -WhatIf   # preview without installing or writing files
+.\bootstrap.ps1           # default WSL ref: main (after this PR is merged)
+# Before merge, run this INSTEAD to select the published Windows setup branch in Ubuntu:
+.\bootstrap.ps1 -WslRef feat/windows-setup
+```
+
+The Windows installer uses WinGet (Microsoft App Installer), installs the core tools in
+`windows/packages.json`, and adds a managed block to PowerShell 7's current-user, all-hosts
+profile. Existing profile content is preserved. Conflicting configs are backed up under
+`~/.dotfiles_backup/windows-<timestamp>/`. Re-running keeps existing packages and unchanged configs.
+After native configuration it runs `windows/setup-wsl.ps1` by default to install/configure
+Ubuntu on WSL 2 and run the Linux playbook. It does **not** automatically reboot Windows.
+If a restart is required, setup saves its options, prints a manual resume command and
+registers a one-time continuation after your next Windows login; restart manually when ready.
+Only `-RestartAndResume` opts into an immediate restart when needed. See the WSL section below
+for account creation, UAC and restart details. Use `-SkipWsl` for native Windows only.
+If script execution is disabled, invoke the trusted local script using
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1`; this applies only to that process.
+The Dotfiles Terminal profile (and Yazi's PowerShell shell) uses process-only `RemoteSigned`,
+so local profile scripts can load even when the Windows default is `Restricted`.
+This does not change the machine or user execution policy; downloaded unsigned scripts remain restricted.
+For other PowerShell launchers, use `pwsh -ExecutionPolicy RemoteSigned`, or explicitly choose
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` if you want that policy for all your shells.
+
+Open a new Windows Terminal tab using **Dotfiles PowerShell**. Select that profile as the default
+in Terminal Settings if desired. Its per-user JSON fragment supplies Catppuccin Macchiato,
+0xProto Nerd Font, 14pt text, block cursor, padding and 90% opacity. Fully restart Terminal
+if the new fonts/profile do not appear immediately.
+
+PowerShell includes vi editing, local history suggestions, Starship, zoxide (`z`), fnm,
+`lg`, `vim`, `l`, `fvim` and the `y` directory-changing Yazi wrapper. PowerShell's existing
+`ls` and `cat` commands are preserved. Starship reads the shared config directly; directory
+junctions connect `%LOCALAPPDATA%\nvim` and `%APPDATA%\yazi\config` to the repository, without
+requiring Developer Mode. Keep this checkout in place. Yazi Git-root navigation works on both
+Windows and Unix; `!` opens PowerShell on Windows.
+
+Node 22 is installed through fnm to match the Unix setup, but an existing default version is
+preserved. Use `fnm use 22` or `fnm default 22` explicitly if wanted. Use `-SkipPackages`,
+`-SkipNode`, `-SkipFonts`, `-SkipTerminal`, or `-SkipWsl` to omit individual steps. A native configs-only run is
+`.\bootstrap.ps1 -SkipPackages -SkipNode -SkipWsl` (including font registration);
+also add `-SkipFonts` to omit font installation. Native path overrides do not sandbox WSL;
+always use `-SkipWsl` when testing only native configuration.
+
+WSL defaults are `-WslDistribution Ubuntu`,
+`-WslRepository https://github.com/yordan-kanchelov/dotfiles.git` and `-WslRef main`.
+These are forwarded as the launcher's `-Distribution`, `-Repository` and `-Ref` options;
+`-IncludeOllama`, `-RestartAndResume` and `-WhatIf` are forwarded too. Ollama and immediate
+restarts are opt-in. Before merge, use `-WslRef feat/windows-setup`; the local
+`fix/pr-14` branch is unpublished and the default `main` does not yet include this PR.
+
+The core packages include tree-sitter CLI and WinLibs GCC for Neovim's native parsers.
+Language-specific toolchains, advanced Yazi preview dependencies,
+Ollama and GUI applications are separate choices. Run `:checkhealth` in Neovim to see the
+requirements for enabled plugins. Zsh, Sheldon, tmux, Atuin and Linux desktop customizations
+remain in the Unix/WSL setup. Native configuration does not manage secrets or cleanup commands;
+WSL provisioning runs the Linux playbook, while the coding-agent installers manage their
+own integrations below.
+
+Validate Windows config installation with `powershell.exe -NoProfile -File .\windows\test-setup.ps1`.
+This checks dry runs, backup preservation, junctions and repeated installation in temporary folders,
+explicitly using `-SkipWsl` to avoid WSL/OS changes.
+`windows/test-fonts.ps1` checks font registration in an isolated HKCU key, preserving unrelated
+values across repeated runs, also with `-SkipWsl`. Run
+`powershell.exe -NoProfile -File .\windows\test-bootstrap-wsl.ps1` (or use `pwsh` instead)
+to check bootstrap orchestration in a copied, minimal repository with a harmless WSL stub;
+it does not invoke real WSL, install packages or restart Windows. After installing, run
+`pwsh -ExecutionPolicy RemoteSigned -File .\windows\test-profile.ps1` for the installed-tool and shell smoke test.
+The path override parameters are independent: `HomeDirectory` sets the backup location;
+use `ProfilePath`, `LocalAppDataDirectory`, `RoamingAppDataDirectory` and `FontRegistryPath`
+explicitly to isolate a test installation.
+
+### macOS and Linux
 
 ```bash
 # Clone the repository
@@ -34,6 +116,148 @@ ansible-playbook setup.yml       # macOS
 The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
 sources on login — fill in the ones you use. It is written only when missing, so re-runs never
 overwrite it.
+
+### Ubuntu on WSL 2
+
+The root `bootstrap.ps1` includes this step after native Windows configuration by default.
+To run only the WSL launcher from Windows PowerShell, install WSL/Ubuntu and run the Linux
+Ansible playbook, followed by native Windows agent provisioning through `windows.yml`:
+
+```powershell
+.\windows\setup-wsl.ps1 -WhatIf
+.\windows\setup-wsl.ps1
+# Optional: restart automatically when required and continue after Windows login
+.\windows\setup-wsl.ps1 -RestartAndResume
+```
+
+Windows may require a restart after enabling WSL. By default the launcher saves its options
+under `%LOCALAPPDATA%\dotfiles`, registers one per-user RunOnce continuation and prints the
+manual resume command, **without restarting Windows**. Restart manually when convenient;
+after login, a visible PowerShell console resumes with the saved distribution, repository,
+ref and Ollama choice. The saved default does not grant permission for later automatic restarts.
+`-RestartAndResume` explicitly opts into immediate restart when required, without forcibly
+closing applications; it permits at most two automatic restarts. Root bootstrap reports
+`RestartRequired`/`RestartScheduled` as unfinished WSL setup, never as full setup completion.
+Installing Microsoft.WSL or enabling the Windows VirtualMachinePlatform feature may open a UAC
+prompt for a narrow elevated package-and-feature helper, which does not restart Windows. Linux provisioning stays under
+the original Windows user and their normal Ubuntu account, not the elevated helper.
+Ubuntu account creation and sudo passwords remain interactive. Account creation opens in
+a separate Ubuntu window; setup detects the normal user and continues automatically.
+No passwords are stored.
+On Ubuntu 26.04, setup selects `/usr/bin/sudo.ws` when available to avoid the
+`sudo-rs` password-prompt incompatibility; the system sudo default is preserved.
+Bootstrap checks whether that same sudo implementation is genuinely passwordless,
+ignoring temporary cached credentials, so Ansible requests your password when required.
+Enter it only in the local setup terminal; setup never saves it.
+Provisioning logs are kept at `~/.local/state/dotfiles/ansible-setup.log` inside Ubuntu,
+so a failed task can be inspected even after the setup console closes.
+Open Ubuntu once to create your normal Linux username and password if requested, then rerun.
+The launcher clones the repo into Ubuntu's own `~/dotfiles` filesystem (not `/mnt/c`),
+and calls `bootstrap.sh`, which installs Ansible and runs `setup.yml`. Existing clean
+checkouts are fast-forwarded; local changes or another branch are never discarded.
+Use `-Ref feat/windows-setup` to test this PR before it is merged.
+
+Ansible detects WSL, preserves existing `/etc/wsl.conf` settings while enabling systemd
+and setting the default Linux user, and installs the Ubuntu Zsh/tmux/Atuin stack.
+If WSL settings change, close Ubuntu after setup and run `wsl --terminate Ubuntu` to apply them.
+The launcher skips the large Ollama download by default; use `-IncludeOllama` to include it.
+Linux desktop applications remain opt-in via the existing `--tags desktop` workflow.
+
+Herdr is also installed natively inside Ubuntu/WSL by `setup.yml`, through the
+`herdr` Homebrew formula in `brew_packages.yml`. The Zsh login configuration adds
+Linuxbrew to PATH, so run `herdr` directly in Ubuntu. Its shared configuration is
+linked at `~/.config/herdr/config.toml`. Update this Linux installation with
+`brew upgrade herdr`.
+
+### Native Windows coding-agent CLIs
+
+Codex, Claude Code and herdr are installed **on Windows**, using their upstream Windows
+installers. Existing working native installations are preserved. The installer repairs
+the user's persistent Windows PATH and checks each command from a fresh Windows PowerShell
+process. It does not install Linux agents, npm globals or bubblewrap.
+
+```powershell
+.\windows\install-agents.ps1 -WhatIf
+.\windows\install-agents.ps1
+```
+
+Ansible can manage the same Windows tools from Ubuntu/WSL without configuring WinRM:
+
+```bash
+ansible-playbook windows.yml          # installs/verifies native Windows tools via powershell.exe
+ansible-playbook windows.yml --check  # previews changes
+```
+
+This uses WSL interop to run the Windows installer as your Windows user; Ansible itself
+runs inside Ubuntu. It requires Windows interop to be enabled in WSL. Linux terminal tools
+remain managed by `setup.yml`. Sign in to each CLI separately; no credentials are copied.
+
+The repository no longer ships or deploys Claude/Codex instructions, configuration,
+commands, rules, or skills. Separately, agent setup installs Herdr's bundled,
+release-matched `herdr` skill and the Claude Code and Codex integrations. It preserves
+existing configuration while letting Herdr merge its hooks. Herdr setup converts
+whole-directory skills links to local copies and, when installing integrations,
+converts linked settings/config files to local copies so machine-specific hooks do
+not modify their source files. Re-running setup skips current integrations and
+refreshes outdated integrations and skills.
+
+Removing the repository bundles does not automatically delete or migrate old profile
+links to them. Back up and replace those links separately. Herdr's migration requires
+readable link targets and does not repair dangling links to removed bundles.
+
+On macOS and Debian/Ubuntu (including WSL), `setup.yml` configures only harnesses
+available on the Linux/macOS PATH. It does not install Linux agents. To run just this
+step, or explicitly select harnesses:
+
+```bash
+ansible-playbook setup.yml --tags herdr
+bash scripts/install-herdr.sh --check claude codex
+bash scripts/install-herdr.sh claude codex
+```
+
+For native Windows, `install-agents.ps1` includes this step automatically. It can also
+be run separately, with optional `-Targets claude` or `-Targets codex`:
+
+```powershell
+.\windows\install-herdr.ps1 -WhatIf
+.\windows\install-herdr.ps1
+```
+
+Start new agent sessions inside Herdr after installation. The skill requires
+`HERDR_ENV=1`, which Herdr sets in its managed panes. See the upstream
+[skill](https://herdr.dev/docs/agent-skill/) and
+[integration](https://herdr.dev/docs/integrations/) documentation.
+
+Windows agent setup also adds `Herdr.lnk` to your user Startup folder when Windows
+Terminal is installed. At sign-in it opens Herdr's default session in a new terminal
+window. Configure it separately with `./windows/set-herdr-autostart.ps1` (supports
+`-WhatIf`); remove the shortcut from `shell:startup` to disable it.
+
+**Windows Terminal** is installed by `bootstrap.ps1` and selected as the current user's
+default terminal by `windows.yml`. Its Dotfiles PowerShell profile uses the installed
+Nerd Font and shared theme. Use `-SkipTerminal` with `bootstrap.ps1` to omit its configuration.
+
+The Windows PowerShell profile includes tmux-style shortcuts backed by Herdr:
+
+| Shortcut | Windows behavior |
+| --- | --- |
+| `tn <name>` | Create or attach to a named Herdr session |
+| `ta <name>` | Attach to an existing session |
+| `tls` | List sessions |
+| `tk <name>` | Stop a named session (does not delete its saved state) |
+| `tkill` | Stop the current Herdr server and its pane processes, with confirmation |
+| `tren` | Explain that this Herdr version cannot rename sessions |
+| `tnw` | Create and focus a tab in the caller's workspace |
+| `th` / `tv` | Split the caller's pane left/right or top/bottom, focusing the new pane |
+| `tkp` | Exit the current shell, just like the Linux alias |
+
+`tnw`, `th`, and `tv` must run inside Herdr and preserve the shell's current directory.
+Run `reload` in an existing PowerShell session, or open a new PowerShell terminal,
+to load profile changes. These shortcuts do not replace the Linux tmux aliases.
+
+**Tailscale** is included by default in the native Windows package list and `windows.yml`.
+Installation verifies `tailscale.exe` on the persistent Windows PATH. Sign in to your tailnet
+separately; setup does not automatically authenticate or change tailnet preferences.
 
 ## Omarchy
 
@@ -146,8 +370,6 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
 ├── omarchy/              # Bash and tmux layers on top of Omarchy's defaults
 ├── tmux/                 # .tmux.conf
-├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
-├── codex/                # Linked into ~/.codex: AGENTS.md, instructions, rules, keybindings
 ├── xbindkeys/            # Linux mouse-button / tiling bindings
 └── fonts/                # Nerd Font collections
 ```

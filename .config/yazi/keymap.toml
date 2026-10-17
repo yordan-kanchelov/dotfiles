@@ -5,8 +5,14 @@ run  = 'shell "$SHELL" --block'
 desc = "Open shell here"
 
 [[mgr.prepend_keymap]]
+on   = "!"
+for  = "windows"
+run  = 'shell --block -- pwsh -NoLogo -ExecutionPolicy RemoteSigned'
+desc = "Open PowerShell here"
+
+[[mgr.prepend_keymap]]
 on   = [ "g", "r" ]
-run  = 'shell -- root="$(git rev-parse --show-toplevel 2>/dev/null)" && ya emit cd "$root"'
+run  = 'plugin git-root'
 desc = "Go to Git root"
 
 [[mgr.prepend_keymap]]

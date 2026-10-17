@@ -1,0 +1,39 @@
+---
+# Controller: Ubuntu/WSL. Target: this machine's native Windows user via WSL interop.
+# No WinRM listener, Windows SSH server or Linux coding-agent install is needed.
+- name: Native Windows coding agents, Tailscale and Windows Terminal
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Require a WSL controller
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['system'] == 'Linux'
+          - "'microsoft' in (ansible_facts['kernel'] | lower)"
+        fail_msg: Run windows.yml inside Ubuntu/WSL, or use windows/install-agents.ps1 directly on Windows
+
+    - name: Resolve installer directory for Windows PowerShell
+      ansible.builtin.command:
+        argv: [wslpath, -w, "{{ playbook_dir }}/windows"]
+      register: windows_agent_script
+      changed_when: false
+      check_mode: false
+
+    - name: Provision native Windows CLIs and persistent PATH
+      ansible.builtin.command:
+        argv: >-
+          {{ ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+              (windows_agent_script.stdout | trim) ~ '\\' ~ item, '-OutputJson']
+             + (['-WhatIf'] if ansible_check_mode else []) }}
+      register: windows_agents
+      # ShouldProcess writes human-readable preview lines before the final compact JSON.
+      changed_when: >-
+        (windows_agents.stdout_lines | last | from_json).changed or
+        ((windows_agents.stdout_lines | last | from_json).planned | length > 0 and ansible_check_mode)
+      check_mode: false
+      loop: [install-agents.ps1, install-tailscale.ps1, set-terminal-default.ps1]
+
+    - name: Windows CLI versions and paths
+      ansible.builtin.debug:
+        var: windows_agents.results | map(attribute='stdout') | list

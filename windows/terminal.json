@@ -1,0 +1,31 @@
+{
+  "profiles": [
+    {
+      "guid": "{703878f8-e3ea-4ec6-b0a2-3a838ef669f9}",
+      "name": "Dotfiles PowerShell",
+      "commandline": "pwsh.exe -NoLogo -ExecutionPolicy RemoteSigned",
+      "startingDirectory": "%USERPROFILE%",
+      "font": { "face": "0xProto Nerd Font", "size": 14 },
+      "colorScheme": "Dotfiles Catppuccin Macchiato",
+      "cursorShape": "filledBox",
+      "opacity": 90,
+      "useAcrylic": true,
+      "padding": "8",
+      "hidden": false
+    }
+  ],
+  "schemes": [
+    {
+      "name": "Dotfiles Catppuccin Macchiato",
+      "background": "#24273A", "foreground": "#CAD3F5",
+      "cursorColor": "#F4DBD6", "selectionBackground": "#5B6078",
+      "black": "#494D64", "red": "#ED8796", "green": "#A6DA95",
+      "yellow": "#EED49F", "blue": "#8AADF4", "purple": "#F5BDE6",
+      "cyan": "#8BD5CA", "white": "#B8C0E0",
+      "brightBlack": "#5B6078", "brightRed": "#ED8796",
+      "brightGreen": "#A6DA95", "brightYellow": "#EED49F",
+      "brightBlue": "#8AADF4", "brightPurple": "#F5BDE6",
+      "brightCyan": "#8BD5CA", "brightWhite": "#A5ADCB"
+    }
+  ]
+}
