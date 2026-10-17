@@ -23,6 +23,7 @@ if (Test-Path -LiteralPath $testRoaming) { throw 'Dry run created configuration.
 
 & (Join-Path $repo 'bootstrap.ps1') @arguments
 if ((Get-Item -LiteralPath (Join-Path $testLocal 'nvim')).LinkType -ne 'Junction') { throw 'Missing junction.' }
+if ([IO.File]::ReadAllText((Join-Path $testRoaming 'herdr\config.toml')) -cne [IO.File]::ReadAllText((Join-Path $repo '.config\herdr\config.toml'))) { throw 'Herdr config not deployed.' }
 $profileOnce = [IO.File]::ReadAllText($testProfile)
 if (-not $profileOnce.StartsWith('# personal profile')) { throw 'Personal profile lost.' }
 $backups = @(Get-ChildItem -LiteralPath (Join-Path $testHome '.dotfiles_backup') -Recurse -File)

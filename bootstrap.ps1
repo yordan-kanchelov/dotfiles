@@ -120,6 +120,8 @@ if (-not $SkipNode) {
 
 Set-ConfigJunction (Join-Path $repo '.config\nvim') (Join-Path $LocalAppDataDirectory 'nvim')
 Set-ConfigJunction (Join-Path $repo '.config\yazi') (Join-Path $RoamingAppDataDirectory 'yazi\config')
+# A file, not a directory, so it cannot be a junction; copy it like the profile block.
+Write-ManagedFile (Join-Path $RoamingAppDataDirectory 'herdr\config.toml') ([IO.File]::ReadAllText((Join-Path $repo '.config\herdr\config.toml')))
 
 $start = '# >>> dotfiles Windows >>>'
 $end = '# <<< dotfiles Windows <<<'

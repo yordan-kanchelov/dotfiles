@@ -2,6 +2,18 @@ onboarding = false
 
 [keys]
 prefix = "ctrl+space"
+# tmux muscle memory: tab ≈ window, workspace ≈ session.
+rename_tab = "prefix+,"
+close_tab = "prefix+&"
+split_vertical = ["prefix+v", "prefix+%"]
+split_horizontal = ["prefix+minus", "prefix+\""]
+rename_workspace = "prefix+$"
+detach = "prefix+d"
+last_pane = "prefix+;"
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
+goto = "prefix+s"
+settings = "prefix+shift+s"
 
 [ui.toast]
 delivery = "herdr"
