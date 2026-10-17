@@ -2,6 +2,8 @@
 
 Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installed and kept in sync by one Ansible playbook.
 
+For a reference-only audit and future recreation guide for Codex and Claude Code plugins and skills, start at [agent-setup/README.md](agent-setup/README.md). That folder is documentation only: it is not deployed or linked into agent profiles.
+
 ## Features
 
 - 🚀 **One-command setup** - `./bootstrap.sh` installs Ansible and runs the playbook
@@ -187,12 +189,18 @@ This uses WSL interop to run the Windows installer as your Windows user; Ansible
 runs inside Ubuntu. It requires Windows interop to be enabled in WSL. Linux terminal tools
 remain managed by `setup.yml`. Sign in to each CLI separately; no credentials are copied.
 
-Agent setup also installs Herdr's bundled, release-matched `herdr` skill and the
-Claude Code and Codex integrations. It preserves existing configuration while letting
-Herdr merge its hooks. Claude settings are now seeded only when absent; existing
-settings links and whole-directory skills links are converted to local copies when
-the integrations are installed, so machine-specific hooks do not modify this checkout.
-Re-running setup skips current integrations and refreshes outdated integrations and skills.
+The repository no longer ships or deploys Claude/Codex instructions, configuration,
+commands, rules, or skills. Separately, agent setup installs Herdr's bundled,
+release-matched `herdr` skill and the Claude Code and Codex integrations. It preserves
+existing configuration while letting Herdr merge its hooks. Herdr setup converts
+whole-directory skills links to local copies and, when installing integrations,
+converts linked settings/config files to local copies so machine-specific hooks do
+not modify their source files. Re-running setup skips current integrations and
+refreshes outdated integrations and skills.
+
+Removing the repository bundles does not automatically delete or migrate old profile
+links to them. Back up and replace those links separately. Herdr's migration requires
+readable link targets and does not repair dangling links to removed bundles.
 
 On macOS and Debian/Ubuntu (including WSL), `setup.yml` configures only harnesses
 available on the Linux/macOS PATH. It does not install Linux agents. To run just this
@@ -341,8 +349,6 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
 ├── omarchy/              # Bash and tmux layers on top of Omarchy's defaults
 ├── tmux/                 # .tmux.conf
-├── claude/               # Linked into ~/.claude: CLAUDE.md, AGENTS.md, settings, commands, skills
-├── codex/                # Linked into ~/.codex: AGENTS.md, instructions, rules, keybindings
 ├── xbindkeys/            # Linux mouse-button / tiling bindings
 └── fonts/                # Nerd Font collections
 ```

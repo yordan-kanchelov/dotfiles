@@ -41,8 +41,7 @@ jobs:
 
       - name: Smoke-test linked configs
         run: |
-          ls -la ~/.zshrc ~/.zprofile ~/.zshrc.core ~/.tmux.conf ~/.config/nvim \
-            ~/.claude/CLAUDE.md ~/.claude/commands ~/.codex/rules ~/.codex/config.toml
+          ls -la ~/.zshrc ~/.zprofile ~/.zshrc.core ~/.tmux.conf ~/.config/nvim
           # .zshrc.core is pulled in by a runtime `source`, so parsing .zshrc alone proves nothing about it
           zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
           # First start bootstraps every LazyVim plugin (+ Mason, treesitter); bound it, don't fail on it.

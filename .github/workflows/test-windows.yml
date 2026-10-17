@@ -57,6 +57,8 @@ jobs:
         run: |
           ansible-playbook setup.yml --syntax-check
           ansible-playbook windows.yml --syntax-check
+      - name: Verify setup preserves Claude and Codex configuration
+        run: bash scripts/test-agent-config.sh
   configs:
     runs-on: windows-latest
     steps:

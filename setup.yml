@@ -37,13 +37,6 @@
       - { src: zsh/.zshrc, dest: .zshrc }
       - { src: zsh/.zshrc.core, dest: .zshrc.core }
       - { src: tmux/.tmux.conf, dest: .tmux.conf }
-      - { src: claude/CLAUDE.md, dest: .claude/CLAUDE.md }
-      - { src: claude/AGENTS.md, dest: .claude/AGENTS.md }
-      - { src: claude/commands, dest: .claude/commands }
-      - { src: codex/keybindings.json, dest: .codex/keybindings.json }
-      - { src: codex/AGENTS.md, dest: .codex/AGENTS.md }
-      - { src: codex/instructions.md, dest: .codex/instructions.md }
-      - { src: codex/rules, dest: .codex/rules }
   pre_tasks:
     - name: Configure privilege escalation compatibility
       ansible.builtin.import_tasks: tasks/become.yml
@@ -186,8 +179,6 @@
           export BITBUCKET_USERNAME="your.username"
           export BITBUCKET_TOKEN="your-token-here"
           export OPENAI_API_KEY="your-api-key-here"
-          # Used by the codex brave-search MCP wrapper (see codex/config.example.toml)
-          export BRAVE_API_KEY="your-api-key-here"
 
           # Add other secrets below as needed
       tags: secrets
@@ -204,33 +195,6 @@
       ansible.builtin.import_tasks: tasks/symlinks.yml
       vars:
         links: "{{ dotfile_links }}"
-      when: is_legacy_platform
-      tags: symlinks
-
-    # Copy-if-absent: codex appends project trust entries at runtime, so this must not be a link.
-    - name: Codex config.toml
-      ansible.builtin.copy:
-        src: "{{ dotfiles }}/codex/config.example.toml"
-        dest: "{{ home }}/.codex/config.toml"
-        mode: "0644"
-        force: false
-      when: is_legacy_platform
-      tags: symlinks
-
-    - name: Claude settings (local copy so integrations can merge hooks)
-      ansible.builtin.copy:
-        src: "{{ dotfiles }}/claude/settings.json"
-        dest: "{{ home }}/.claude/settings.json"
-        mode: "0600"
-        force: false
-      when: is_legacy_platform
-      tags: symlinks
-
-    - name: Claude bundled skills
-      ansible.builtin.copy:
-        src: "{{ dotfiles }}/claude/skills/"
-        dest: "{{ home }}/.claude/skills/"
-        mode: preserve
       when: is_legacy_platform
       tags: symlinks
 
