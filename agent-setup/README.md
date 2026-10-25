@@ -26,6 +26,7 @@ Main findings:
 
 - Shared engineering tooling includes Matt Pocock skills, pstack, and Ponytail. Codex additionally has a local Matt extras adapter and seven account-backed OpenAI plugin entries. Claude additionally has Chrome DevTools and the native Epic Unreal plugin.
 - The local Codex pstack/Matt extras adaptations lack complete pinned upstream-and-patch reconstruction recipes. Treat this as a reproduction gap, not a reason to replace them silently with upstream packages.
+- **Desired pstack source:** recreate pstack from [Open Pstack](https://github.com/ericlitman/open-pstack) (`pstack@open-pstack`) in both harnesses, replacing the observed `pstack@cursor-plugins` (Claude) and local `pstack@engineering-adaptations` (Codex). It is a public, versioned package with one skill tree for Claude Code and Codex, so it closes the Codex pstack reproduction gap. Install only one pstack per harness: both packages use the `pstack:` prefix. Last reviewed: 1.16.0, commit `b4c5e3d63318308b7e11f26b2bc156e7793d834a`, tracking pstack 0.15.29.
 - Ponytail versions differ: Codex 5.3.2 and Claude 5.3.1. This audit did not update or align them.
 - Claude reports all five plugins user-enabled, but `projectEnabled` differs between the user home and this repository. No explicit override explaining it was found; effective loading in a live project session remains unverified.
 - Chrome DevTools reports a dependency-install warning. Blender's local provenance notes an animation compatibility limitation. Neither issue was repaired or runtime-tested by this audit.
@@ -67,7 +68,7 @@ To audit without making changes, append: “Report only; do not install, edit se
 
 The per-harness guides distinguish upstream plugins, standalone skills, and local adaptations. In particular, the Codex engineering adaptations are not interchangeable with the upstream Claude/Cursor packages. Their local marketplace names and version suffixes identify compatibility work, not a public upstream release.
 
-Do not substitute an upstream plugin for a locally adapted package and claim parity. Where an adaptation or loose skill lacks a portable pinned source, report the gap and obtain the original reviewed source or reconstruct and review the adapter explicitly. No local package bodies or full profile configurations are vendored by this audit.
+Do not substitute an upstream plugin for a locally adapted package and claim parity. The one chosen exception is pstack, which moves to Open Pstack; record it as a deliberate replacement, not as parity with the observed packages. Where an adaptation or loose skill lacks a portable pinned source, report the gap and obtain the original reviewed source or reconstruct and review the adapter explicitly. No local package bodies or full profile configurations are vendored by this audit.
 
 Herdr integration remains separate from this documentation. The existing setup scripts may install Herdr's own skill/hooks. This folder does not modify those scripts, reintroduce repository-managed Claude/Codex bundles, or claim all agent configuration is untouched by every existing installer.
 

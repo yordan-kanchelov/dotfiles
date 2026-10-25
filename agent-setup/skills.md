@@ -6,6 +6,8 @@ The same name can occur in different plugins/harnesses. Keep the owning namespac
 
 See [Codex](codex.md), [Claude Code](claude.md), and the JSON inventories for full descriptions, policies, source paths and hashes.
 
+The pstack sections below are the observed snapshot. The desired setup installs pstack from [Open Pstack](https://github.com/ericlitman/open-pstack) (`pstack@open-pstack`) in both harnesses instead, so its skill list will differ.
+
 ## Codex
 
 ### cloud-environment@openai-curated-remote — manifest candidates (1)

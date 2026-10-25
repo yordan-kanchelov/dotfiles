@@ -78,7 +78,7 @@ All loose paths below are under `<USER_HOME>/.codex/skills/`. `<USER_HOME>/.agen
 | `epic-unreal-skill/SKILL.md` | Epic skill-only port; implicit-eligible metadata |
 | `herdr/SKILL.md` | Herdr-managed; implicit-eligible metadata, explicit Herdr context required by instructions |
 
-- **Pstack** derives from `https://github.com/cursor/plugins`, with local version `0.15.25-codex.1`. Its adapter registers 54 main skills and three Benny guides. The local source matches the installed cache across 205 files, with no differing, missing, or source-only files. No pinned upstream commit, complete patch series, or reproducible adapter build recipe was found.
+- **Pstack** derives from `https://github.com/cursor/plugins`, with local version `0.15.25-codex.1`. Its adapter registers 54 main skills and three Benny guides. The local source matches the installed cache across 205 files, with no differing, missing, or source-only files. No pinned upstream commit, complete patch series, or reproducible adapter build recipe was found. **Superseded:** the desired setup replaces this adapter with `pstack@open-pstack` from [Open Pstack](https://github.com/ericlitman/open-pstack) (1.16.0, commit `b4c5e3d63318308b7e11f26b2bc156e7793d834a`, tracking pstack 0.15.29), so this gap no longer blocks recreation.
 - **Matt extras** derives from `https://github.com/mattpocock/skills.git`, with local version `1.3.1-codex.1`. Its nine experimental/misc skills are manual-only. Claude handoff and Claude-specific guardrails are excluded from this adapter's manifest. Local source and installed cache match across 22 files. A pinned upstream commit and complete patch recipe remain unresolved.
 - **Blender** provenance records `https://github.com/kajisho5/blender-skill` at `39547d9e118451891c3ff68e087e20c5bde1599c`, version `0.31.0`. It records a labeled Windows note as the only skill change and unchanged source scripts, references, license, and inert MCP sources. The note addresses Python Store aliases, explicit interpreter selection, Blender discovery, and headless use. It records an animation limitation involving `Action.fcurves`; that historical claim was not retested.
 - **Epic ports** record `https://github.com/EpicGames/unreal-engine-skills-for-claude-code-plugin` at `a6aa73ada02a9fb1f5415bec491f9942c519b297`, plugin version `3.1.1`. Changes include namespaced names, a labeled Codex/Hermes adapter, corrected companion routing, and conditional existing-MCP mappings. References and MIT license are retained. Upstream Claude manifests and startup hook are inactive. All three current skill hashes match their provenance records.
@@ -136,7 +136,7 @@ This procedure is reference-only and was not executed.
 2. Present a concrete comparison and plan for review and approval. Separate observed source state from desired destination state. Include every proposed write, unresolved source/patch gap, version difference, and prerequisite. Install natively only as explicitly authorized. Disabled entries stay disabled; destination-disabled entries must not be silently enabled.
 3. Use an approved native Windows Codex distribution and native plugin commands. Never use symlinks, junctions, Ansible, or blind profile copying. Do not copy authentication, history, sessions, project trust, or hook-trust hashes.
 4. Preserve Smart Approve-for-me, workspace-write, and the independent hook-trust gate. Review model and reasoning choices rather than inventing a pinned default. Review each destination project's trust separately.
-5. Recover pinned sources and reviewed adapter patches before proposing the local engineering marketplace. Recreate authorized loose ports as ordinary directories with reviewed modifications and licenses. Do not link another harness's skill tree or infer missing patches from a version suffix.
+5. Install pstack from Open Pstack instead of the local adapter. Recover pinned sources and reviewed adapter patches before proposing the local engineering marketplace, which now only carries Matt extras. Recreate authorized loose ports as ordinary directories with reviewed modifications and licenses. Do not link another harness's skill tree or infer missing patches from a version suffix.
 6. Review hook commands, dependencies, state writes, and shared-setting effects. **Ask separately for hook trust.** Installation approval is not hook-trust approval. Do not use sandbox or hook-trust bypass flags.
 7. Add MCP settings only if separately authorized, using destination endpoints and existing prerequisites. Inventory verification must not start editors, services, proxies, remote execution, or MCP tools. App authorization is a separate account operation.
 8. Verify versions, enabled states, source provenance, skill paths/policies, and preserved approval settings read-only. Report static enumeration separately from runtime discovery. Obtain authorization before tests that launch coding requests, hooks, MCP, or services.
@@ -157,17 +157,20 @@ codex plugin add --help
 codex mcp --help
 ```
 
-The following are **future mutations requiring explicit authorization of the reviewed plan**. None was executed. The local marketplace must first be reconstructed and reviewed.
+The following are **future mutations requiring explicit authorization of the reviewed plan**. None was executed. The local marketplace must first be reconstructed and reviewed. pstack comes from Open Pstack, not the observed `engineering-adaptations` adapter; if that adapter is already installed, remove it first because both use the `pstack:` prefix.
 
 ```powershell
 codex plugin marketplace add https://github.com/mattpocock/skills.git
 codex plugin marketplace add https://github.com/DietrichGebert/ponytail.git
+codex plugin marketplace add ericlitman/open-pstack --ref main
 codex plugin marketplace add '<REVIEWED_LOCAL_MARKETPLACE>'
 codex plugin add mattpocock-skills@mattpocock
 codex plugin add ponytail@ponytail
-codex plugin add pstack@engineering-adaptations
+codex plugin add pstack@open-pstack
 codex plugin add mattpocock-extras@engineering-adaptations
 ```
+
+Open Pstack also asks for Codex subagents (`[features]` `multi_agent = true` in `~/.codex/config.toml`) and a fresh Codex task afterwards. Configure models with `Use pstack:setup-pstack to configure pstack.` The user `AGENTS.md` entry instruction should read Open Pstack's `poteto-mode/SKILL.md`; Open Pstack's own `codex-tools.md` reference replaces the observed Cursor-to-Codex mapping guidance.
 
 Marketplace add supports `--ref <REF>`, `--sparse <PATH>`, and `--json`. Plugin add supports `PLUGIN@MARKETPLACE` or `PLUGIN --marketplace MARKETPLACE`, and `--json`. Neither help surface supplies a payload-version selector or dedicated plugin-enable command. Top-level `--enable` changes feature flags, not a plugin's enabled state. Do not invent version or enable flags. Inspect the destination's account-backed catalog before proposing remote installs; matching names do not guarantee availability or pinning.
 
@@ -187,4 +190,4 @@ if (($inventory.skills.path | Sort-Object -Unique).Count -ne $inventory.skills.C
 
 The first shell read loaded the existing PowerShell startup profile, which attempted `fnm` multishell setup and received access denied. Subsequent commands used no-profile execution. Codex list/help also emitted access-denied warnings for temporary alias creation and stale-temp cleanup. No cleanup or repair was attempted. Git inspection used a command-local safe-directory override after ownership checks blocked ordinary status, without changing global Git configuration.
 
-Runtime behavior, services, entitlements, host-selected defaults, and complete machine policy remain untested. Local provenance claims were not independently checked against fresh upstream sources. Unresolved pstack/extras patches and Herdr skill provenance remain recreation gaps. Only the two owned Codex documents were written by this worker.
+Runtime behavior, services, entitlements, host-selected defaults, and complete machine policy remain untested. Local provenance claims were not independently checked against fresh upstream sources. Unresolved Matt extras patches and Herdr skill provenance remain recreation gaps; the pstack adapter gap is resolved by moving to Open Pstack. Only the two owned Codex documents were written by this worker.
