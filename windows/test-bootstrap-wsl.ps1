@@ -4,8 +4,9 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-bootstrap-wsl-' + [guid]::NewGuid().ToString('N'))
 $fixtureRepo = Join-Path $fixtureRoot 'repo'
-New-Item -ItemType Directory -Path (Join-Path $fixtureRepo '.config\nvim'), (Join-Path $fixtureRepo '.config\yazi'), (Join-Path $fixtureRepo 'windows') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $fixtureRepo '.config\nvim'), (Join-Path $fixtureRepo '.config\yazi'), (Join-Path $fixtureRepo '.config\herdr'), (Join-Path $fixtureRepo 'windows') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $repo 'bootstrap.ps1') -Destination $fixtureRepo
+Copy-Item -LiteralPath (Join-Path $repo '.config\herdr\config.toml') -Destination (Join-Path $fixtureRepo '.config\herdr')
 [IO.File]::WriteAllText((Join-Path $fixtureRepo 'windows\terminal.json'), '{}')
 $stub = @'
 [CmdletBinding(SupportsShouldProcess)]
@@ -17,7 +18,7 @@ param(
     [switch]$IncludeOllama
 )
 if (-not $WhatIfPreference) {
-    foreach ($path in @('local\nvim', 'roaming\yazi\config', 'profile.ps1', 'local\Microsoft\Windows Terminal\Fragments\dotfiles\terminal.json')) {
+    foreach ($path in @('local\nvim', 'roaming\yazi\config', 'roaming\herdr\config.toml', 'profile.ps1', 'local\Microsoft\Windows Terminal\Fragments\dotfiles\terminal.json')) {
         if (-not (Test-Path -LiteralPath (Join-Path $env:DOTFILES_BOOTSTRAP_CASE_ROOT $path))) {
             throw "WSL invoked before native configuration: $path"
         }
