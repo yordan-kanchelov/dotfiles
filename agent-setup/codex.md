@@ -136,7 +136,7 @@ This procedure is reference-only and was not executed.
 2. Present a concrete comparison and plan for review and approval. Separate observed source state from desired destination state. Include every proposed write, unresolved source/patch gap, version difference, and prerequisite. Install natively only as explicitly authorized. Disabled entries stay disabled; destination-disabled entries must not be silently enabled.
 3. Use an approved native Windows Codex distribution and native plugin commands. Never use symlinks, junctions, Ansible, or blind profile copying. Do not copy authentication, history, sessions, project trust, or hook-trust hashes.
 4. Preserve Smart Approve-for-me, workspace-write, and the independent hook-trust gate. Review model and reasoning choices rather than inventing a pinned default. Review each destination project's trust separately.
-5. Install pstack from Open Pstack instead of the local adapter. Recover pinned sources and reviewed adapter patches before proposing the local engineering marketplace, which now only carries Matt extras. Recreate authorized loose ports as ordinary directories with reviewed modifications and licenses. Do not link another harness's skill tree or infer missing patches from a version suffix.
+5. Install the commits in the README's [target revisions](README.md#target-revisions), each only after it passes the README's [security audit](README.md#security-audit-before-installing). Install pstack from Open Pstack instead of the local adapter. Recover pinned sources and reviewed adapter patches before proposing the local engineering marketplace, which now only carries Matt extras. Recreate authorized loose ports as ordinary directories with reviewed modifications and licenses. Do not link another harness's skill tree or infer missing patches from a version suffix.
 6. Review hook commands, dependencies, state writes, and shared-setting effects. **Ask separately for hook trust.** Installation approval is not hook-trust approval. Do not use sandbox or hook-trust bypass flags.
 7. Add MCP settings only if separately authorized, using destination endpoints and existing prerequisites. Inventory verification must not start editors, services, proxies, remote execution, or MCP tools. App authorization is a separate account operation.
 8. Verify versions, enabled states, source provenance, skill paths/policies, and preserved approval settings read-only. Report static enumeration separately from runtime discovery. Obtain authorization before tests that launch coding requests, hooks, MCP, or services.
@@ -160,9 +160,9 @@ codex mcp --help
 The following are **future mutations requiring explicit authorization of the reviewed plan**. None was executed. The local marketplace must first be reconstructed and reviewed. pstack comes from Open Pstack, not the observed `engineering-adaptations` adapter; if that adapter is already installed, remove it first because both use the `pstack:` prefix.
 
 ```powershell
-codex plugin marketplace add https://github.com/mattpocock/skills.git
-codex plugin marketplace add https://github.com/DietrichGebert/ponytail.git
-codex plugin marketplace add ericlitman/open-pstack --ref main
+codex plugin marketplace add https://github.com/mattpocock/skills.git --ref 5beb35b040e3de97e54fa9e386d7e42d15c295c2
+codex plugin marketplace add https://github.com/DietrichGebert/ponytail.git --ref 09c434ab73ca43761c5d8b0c5d341926c2fba710
+codex plugin marketplace add ericlitman/open-pstack --ref b4c5e3d63318308b7e11f26b2bc156e7793d834a
 codex plugin marketplace add '<REVIEWED_LOCAL_MARKETPLACE>'
 codex plugin add mattpocock-skills@mattpocock
 codex plugin add ponytail@ponytail
@@ -170,7 +170,7 @@ codex plugin add pstack@open-pstack
 codex plugin add mattpocock-extras@engineering-adaptations
 ```
 
-Open Pstack also asks for Codex subagents (`[features]` `multi_agent = true` in `~/.codex/config.toml`) and a fresh Codex task afterwards. Configure models with `Use pstack:setup-pstack to configure pstack.` The user `AGENTS.md` entry instruction should read Open Pstack's `poteto-mode/SKILL.md`; Open Pstack's own `codex-tools.md` reference replaces the observed Cursor-to-Codex mapping guidance.
+If `--ref` does not accept a commit SHA, add the marketplace at `main`, then confirm its revision matches the target table before adding plugins. Open Pstack also asks for Codex subagents (`[features]` `multi_agent = true` in `~/.codex/config.toml`) and a fresh Codex task afterwards. Configure models with `Use pstack:setup-pstack to configure pstack.` The user `AGENTS.md` entry instruction should read Open Pstack's `poteto-mode/SKILL.md`; Open Pstack's own `codex-tools.md` reference replaces the observed Cursor-to-Codex mapping guidance.
 
 Marketplace add supports `--ref <REF>`, `--sparse <PATH>`, and `--json`. Plugin add supports `PLUGIN@MARKETPLACE` or `PLUGIN --marketplace MARKETPLACE`, and `--json`. Neither help surface supplies a payload-version selector or dedicated plugin-enable command. Top-level `--enable` changes feature flags, not a plugin's enabled state. Do not invent version or enable flags. Inspect the destination's account-backed catalog before proposing remote installs; matching names do not guarantee availability or pinning.
 
