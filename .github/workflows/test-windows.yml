@@ -66,6 +66,8 @@ jobs:
           ansible-playbook windows.yml --syntax-check
       - name: Verify setup preserves Claude and Codex configuration
         run: bash scripts/test-agent-config.sh
+      - name: Verify retired Claude and Codex links become local copies
+        run: bash scripts/test-agent-migration.sh
   configs:
     runs-on: windows-latest
     steps:

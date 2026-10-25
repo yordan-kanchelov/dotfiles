@@ -29,3 +29,8 @@ shell_snapshots/
 
 # Agent worktree scratch state
 .claude/worktrees/
+
+# Older setups linked ~/.claude/skills here, so Claude synced skills into the
+# checkout. scripts/migrate-agent-links.sh copies them out; leftovers are not ours.
+claude/skills/synced/
+claude/skills/session-start-hook/

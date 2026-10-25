@@ -65,7 +65,9 @@ symlink is left alone, so a no-op run creates no backup directory. Parent direct
 
 Setup does not deploy repository Claude or Codex configuration. CLI installation and Herdr skills
 and integrations remain supported. Herdr setup migrates older settings and skills links to local
-copies before installing integrations.
+copies before installing integrations. `scripts/migrate-agent-links.sh` (tags `symlinks`, `herdr`) first
+replaces any `~/.claude`/`~/.codex` link into the retired `claude/`/`codex/` bundles with a local copy
+restored from Git history, so upgraded machines keep their configuration.
 
 ### Sudo
 Play default is `become: false`. Only the apt, login-shell and Linuxbrew-prefix tasks (and the desktop apt
