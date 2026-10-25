@@ -24,9 +24,7 @@ Clone into your user folder, then run from Windows PowerShell or PowerShell 7:
 git clone https://github.com/yordan-kanchelov/dotfiles.git "$HOME\dotfiles"
 cd "$HOME\dotfiles"
 .\bootstrap.ps1 -WhatIf   # preview without installing or writing files
-.\bootstrap.ps1           # default WSL ref: main (after this PR is merged)
-# Before merge, run this INSTEAD to select the published Windows setup branch in Ubuntu:
-.\bootstrap.ps1 -WslRef feat/windows-setup
+.\bootstrap.ps1
 ```
 
 The Windows installer uses WinGet (Microsoft App Installer), installs the core tools in
@@ -70,8 +68,7 @@ WSL defaults are `-WslDistribution Ubuntu`,
 `-WslRepository https://github.com/yordan-kanchelov/dotfiles.git` and `-WslRef main`.
 These are forwarded as the launcher's `-Distribution`, `-Repository` and `-Ref` options;
 `-IncludeOllama`, `-RestartAndResume` and `-WhatIf` are forwarded too. Ollama and immediate
-restarts are opt-in. Before merge, use `-WslRef feat/windows-setup`; the local
-`fix/pr-14` branch is unpublished and the default `main` does not yet include this PR.
+restarts are opt-in.
 
 The core packages include tree-sitter CLI and WinLibs GCC for Neovim's native parsers.
 Language-specific toolchains, advanced Yazi preview dependencies,
@@ -155,7 +152,7 @@ Open Ubuntu once to create your normal Linux username and password if requested,
 The launcher clones the repo into Ubuntu's own `~/dotfiles` filesystem (not `/mnt/c`),
 and calls `bootstrap.sh`, which installs Ansible and runs `setup.yml`. Existing clean
 checkouts are fast-forwarded; local changes or another branch are never discarded.
-Use `-Ref feat/windows-setup` to test this PR before it is merged.
+Use `-Ref <branch>` to provision Ubuntu from an unmerged branch.
 
 Ansible detects WSL, preserves existing `/etc/wsl.conf` settings while enabling systemd
 and setting the default Linux user, and installs the Ubuntu Zsh/tmux/Atuin stack.
