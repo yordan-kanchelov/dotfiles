@@ -40,6 +40,14 @@ function Invoke-WslCapture([string[]]$Arguments) {
     $code = $LASTEXITCODE
     [pscustomobject]@{ ExitCode = $code; Text = (($output | Out-String).Replace([string][char]0, '')).Trim() }
 }
+function Invoke-WslList {
+    $response = Invoke-WslCapture -Arguments @('--list', '--quiet')
+    # With no distributions, wsl.exe exits non-zero; its error code is not localized.
+    if ($response.ExitCode -ne 0 -and $response.Text -match 'WSL_E_DEFAULT_DISTRO_NOT_FOUND') {
+        return [pscustomobject]@{ ExitCode = 0; Text = '' }
+    }
+    $response
+}
 function Resolve-WslFailure($Response, [string]$Context) {
     if ($Response.Text -match 'restart|reboot|0x8007019e|0x80370102|HYPERV_NOT_INSTALLED|OPTIONAL_COMPONENT_REQUIRED') {
         Request-WslRestart
@@ -89,7 +97,7 @@ if ($installPackage) {
     $version = Invoke-WslCapture -Arguments @('--version')
     if ($version.ExitCode -ne 0) { throw "WSL installation did not provide a working version command: $($version.Text)" }
 }
-$response = Invoke-WslCapture -Arguments @('--list', '--quiet')
+$response = Invoke-WslList
 if ($response.ExitCode -ne 0) { Resolve-WslFailure $response 'WSL cannot list distributions'; return }
 $distributions = $response.Text -split '\r?\n'
 if ($Distribution -notin $distributions) {
@@ -101,7 +109,7 @@ if ($Distribution -notin $distributions) {
         return
     }
     if ($response.ExitCode -ne 0) { Resolve-WslFailure $response 'Ubuntu installation failed'; return }
-    $response = Invoke-WslCapture -Arguments @('--list', '--quiet')
+    $response = Invoke-WslList
     if ($response.ExitCode -ne 0) { Resolve-WslFailure $response 'WSL cannot initialize Ubuntu'; return }
     $distributions = $response.Text -split '\r?\n'
     if ($Distribution -notin $distributions) {

@@ -30,7 +30,8 @@ public class WslLauncherFixture {
     public static int Main(string[] args) {
         File.AppendAllText(Environment.GetEnvironmentVariable("DOTFILES_WSL_CALLS"), string.Join(" ", args) + "\n");
         if (args.Length > 0 && args[0] == "--version") { return int.Parse(Environment.GetEnvironmentVariable("DOTFILES_WSL_VERSION_EXIT")); }
-        if (args.Length > 0 && args[0] == "--list") { return 0; }
+        // Real wsl.exe with no distributions exits non-zero rather than printing an empty list.
+        if (args.Length > 0 && args[0] == "--list") { Console.WriteLine("Error code: Wsl/WSL_E_DEFAULT_DISTRO_NOT_FOUND"); return -1; }
         if (args.Length > 0 && args[0] == "--install") { return 3010; }
         Console.WriteLine("OPTIONAL_COMPONENT_REQUIRED"); return 1;
     }
