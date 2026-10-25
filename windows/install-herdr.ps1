@@ -3,10 +3,18 @@
 param([ValidateSet('claude', 'codex')][string[]]$Targets = @('claude', 'codex'), [switch]$OutputJson)
 $ErrorActionPreference = 'Stop'
 $herdr = (Get-Command herdr.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-$skill = (& $herdr --skill | Out-String).TrimEnd() + "`n"
-if ($LASTEXITCODE -ne 0) { throw 'Could not read the bundled Herdr skill.' }
-$status = @(& $herdr integration status)
-if ($LASTEXITCODE -ne 0) { throw 'Could not inspect Herdr integrations.' }
+# Native output is decoded with the console code page; Herdr writes UTF-8. Restore the
+# caller's console afterwards. Without a console the setter throws and nothing changes.
+$savedEncoding = [Console]::OutputEncoding
+try { [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false } catch { $savedEncoding = $null }
+try {
+    $skill = (& $herdr --skill | Out-String).TrimEnd() + "`n"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not read the bundled Herdr skill.' }
+    $status = @(& $herdr integration status)
+    if ($LASTEXITCODE -ne 0) { throw 'Could not inspect Herdr integrations.' }
+} finally {
+    if ($savedEncoding) { [Console]::OutputEncoding = $savedEncoding }
+}
 $changed = $false
 $planned = @()
 foreach ($target in $Targets) {
