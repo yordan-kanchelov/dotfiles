@@ -54,7 +54,7 @@
       tags: always
 
   tasks:
-    - name: WSL Ubuntu configuration
+    - name: WSL configuration
       ansible.builtin.import_tasks: tasks/wsl.yml
       when: is_wsl
       tags: wsl
@@ -197,6 +197,18 @@
         links: "{{ dotfile_links }}"
       when: is_legacy_platform
       tags: symlinks
+
+    # Older setups linked ~/.claude and ~/.codex paths into the retired claude/ and codex/ bundles.
+    - name: Replace retired Claude/Codex links with local copies
+      ansible.builtin.command:
+        argv: "{{ ['/bin/bash', dotfiles ~ '/scripts/migrate-agent-links.sh'] + (['--check'] if ansible_check_mode else []) }}"
+      environment:
+        HOME: "{{ home }}"
+      register: agent_link_migration
+      changed_when: "'changed:' in agent_link_migration.stdout"
+      check_mode: false
+      when: is_legacy_platform
+      tags: [symlinks, herdr]
 
     - name: Herdr skills and integrations for installed harnesses
       ansible.builtin.command:
