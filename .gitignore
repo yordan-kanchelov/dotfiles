@@ -15,7 +15,7 @@
 
 # This repo IS the source of these files, but the user's global gitignore
 # ignores CLAUDE.md everywhere — re-include the one we deliberately track.
-!claude/CLAUDE.md
+!/CLAUDE.md
 
 # AI tool machine state — must never be committed even if copied in by accident
 auth.json
@@ -30,8 +30,7 @@ shell_snapshots/
 # Agent worktree scratch state
 .claude/worktrees/
 
-# Claude Code syncs Anthropic-authored skills into ~/.claude/skills, which the
-# symlinks task points at this directory — so they land inside the repo. They
-# are re-fetched on demand; only skills we author here belong in git.
+# Older setups linked ~/.claude/skills here, so Claude synced skills into the
+# checkout. scripts/migrate-agent-links.sh copies them out; leftovers are not ours.
 claude/skills/synced/
 claude/skills/session-start-hook/

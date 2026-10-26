@@ -1,0 +1,21 @@
+[
+  { "id": "Git.Git", "command": "git" },
+  { "id": "Microsoft.PowerShell", "command": "pwsh" },
+  { "id": "Microsoft.WindowsTerminal", "command": "wt" },
+  { "id": "Tailscale.Tailscale", "command": "tailscale" },
+  { "id": "GitHub.cli", "command": "gh" },
+  { "id": "Schniz.fnm", "command": "fnm" },
+  { "id": "Starship.Starship", "command": "starship" },
+  { "id": "ajeetdsouza.zoxide", "command": "zoxide" },
+  { "id": "eza-community.eza", "command": "eza" },
+  { "id": "sharkdp.bat", "command": "bat" },
+  { "id": "sharkdp.fd", "command": "fd" },
+  { "id": "junegunn.fzf", "command": "fzf" },
+  { "id": "BurntSushi.ripgrep.MSVC", "command": "rg" },
+  { "id": "JesseDuffield.lazygit", "command": "lazygit" },
+  { "id": "Neovim.Neovim", "command": "nvim" },
+  { "id": "tree-sitter.tree-sitter-cli", "command": "tree-sitter" },
+  { "id": "BrechtSanders.WinLibs.POSIX.UCRT", "command": "gcc" },
+  { "id": "sxyazi.yazi", "command": "yazi" },
+  { "id": "jqlang.jq", "command": "jq" }
+]

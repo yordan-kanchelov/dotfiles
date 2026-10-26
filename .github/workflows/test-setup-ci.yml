@@ -20,12 +20,16 @@ jobs:
         shell: bash # -eo pipefail: a failed playbook behind `| tee` must fail the step
     env:
       CI: "true"
+      ANSIBLE_INJECT_FACT_VARS: "false"
       HOMEBREW_NO_ANALYTICS: "1"
       # The playbook's tool_env sets this for its own tasks, but bootstrap.sh's
       # `brew install ansible` runs before that and would trigger a full update.
       HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
       - uses: actions/checkout@v4
+
+      - name: Herdr installer regression checks
+        run: bash scripts/test-herdr.sh
 
       # ollama: a 1.4 GB download and a user systemd the runner does not have.
       - name: Bootstrap and run the playbook
@@ -38,8 +42,7 @@ jobs:
 
       - name: Smoke-test linked configs
         run: |
-          ls -la ~/.zshrc ~/.zprofile ~/.zshrc.core ~/.tmux.conf ~/.config/nvim \
-            ~/.claude/CLAUDE.md ~/.claude/commands ~/.codex/rules ~/.codex/config.toml
+          ls -la ~/.zshrc ~/.zprofile ~/.zshrc.core ~/.tmux.conf ~/.config/nvim
           # .zshrc.core is pulled in by a runtime `source`, so parsing .zshrc alone proves nothing about it
           zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
           # First start bootstraps every LazyVim plugin (+ Mason, treesitter); bound it, don't fail on it.

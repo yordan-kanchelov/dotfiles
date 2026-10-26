@@ -45,8 +45,8 @@ Verify = run the playbook again and expect `changed=0`.
   .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
   restart. Tagged `[desktop, never]`.
 - `brew_packages.yml` — `formulae:` grouped by category plus `casks:`; used on both OSes.
-- `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `claude/`,
-  `codex/`, `fonts/` — the linked/copied content.
+- `scripts/install-herdr.sh` and `windows/install-herdr.ps1` — release-matched Herdr skills and integrations for Claude/Codex. Linux setup detects installed harnesses; Windows agent setup includes both.
+- `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `fonts/` — the linked/copied content.
 
 ## Key Implementation Details
 
@@ -61,8 +61,13 @@ symlink is left alone, so a no-op run creates no backup directory. Parent direct
 `mode` so pre-existing dirs keep theirs.
 
 ### Copy-if-absent Files
-`~/.secrets` (mode 600, sourced by `.zprofile`) and `~/.codex/config.toml` (codex appends project trust
-entries at runtime) are copied only when missing, never overwritten.
+`~/.secrets` (mode 600, sourced by `.zprofile` and `personal.bash`) is copied only when missing.
+
+Setup does not deploy repository Claude or Codex configuration. CLI installation and Herdr skills
+and integrations remain supported. Herdr setup migrates older settings and skills links to local
+copies before installing integrations. `scripts/migrate-agent-links.sh` (tags `symlinks`, `herdr`) first
+replaces any `~/.claude`/`~/.codex` link into the retired `claude/`/`codex/` bundles with a local copy
+restored from Git history, so upgraded machines keep their configuration.
 
 ### Sudo
 Play default is `become: false`. Only the apt, login-shell and Linuxbrew-prefix tasks (and the desktop apt
@@ -73,6 +78,10 @@ tasks) use `become: true`; run with `-K` on Linux. macOS needs no sudo.
 `--skip-tags packages` is the configs-only run.
 
 ### Testing
+`bash scripts/test-agent-config.sh` runs only the symlink tasks against temporary homes and
+checks that Claude and Codex configuration stays absent or unchanged. The Windows workflow's
+Ansible syntax job runs this regression check without installing tools through setup.
+
 CI (`.github/workflows/test-setup-ci.yml`) runs `bootstrap.sh` + the playbook on `macos-latest` and
 `ubuntu-latest` with `--skip-tags ollama`, then runs the playbook again and fails unless the recap shows
 `changed=0`. A third job runs `.github/mint-release.yml`, which asserts the release

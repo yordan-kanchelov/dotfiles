@@ -7,14 +7,14 @@
 - name: Debian desktop boundary
   ansible.builtin.assert:
     that:
-      - ansible_os_family == 'Debian'
+      - ansible_facts['os_family'] == 'Debian'
       - not is_omarchy
     fail_msg: Desktop tasks are only supported on non-Omarchy Debian-family systems
     quiet: true
 
 - name: Graphical session required
   ansible.builtin.assert:
-    that: ansible_env.XDG_CURRENT_DESKTOP is defined
+    that: ansible_facts['env']['XDG_CURRENT_DESKTOP'] is defined
     fail_msg: --tags desktop needs a graphical session; run it from the desktop, not SSH/cron
     quiet: true
 
@@ -28,7 +28,7 @@
     repo: ppa:agornostal/ulauncher
     codename: "{{ lookup('ansible.builtin.ini', 'UBUNTU_CODENAME', type='properties', file='/etc/os-release') }}"
   become: true
-  when: ansible_distribution != 'Debian' and 'ulauncher' not in ansible_facts.packages
+  when: ansible_facts['distribution'] != 'Debian' and 'ulauncher' not in ansible_facts['packages']
 
 # rofi: Cinnamon has no per-app window overview, so App Exposé is rofi's window
 # mode filtered to one WM_CLASS (xbindkeys/app-expose). wmctrl: xbindkeys/tile
@@ -44,7 +44,7 @@
 # the community .deb builds, which name Ubuntu assets by version ("24.04") and
 # Debian ones by codename, and spell the version ".ppaN" where the tag says "-ppaN".
 - name: Ghostty
-  when: "'ghostty' not in ansible_facts.packages"
+  when: "'ghostty' not in ansible_facts['packages']"
   vars:
     # Not `'(none)' not in stdout`: apt-cache policy prints "Installed: (none)"
     # for any not-installed package, and this block only runs for those.
@@ -79,10 +79,10 @@
         ghostty_downloads: https://github.com/mkasberg/ghostty-ubuntu/releases/download
         tag: "{{ ghostty_latest.json.tag_name }}"
         release: >-
-          {{ ansible_distribution_release if ansible_distribution == 'Debian'
+          {{ ansible_facts['distribution_release'] if ansible_facts['distribution'] == 'Debian'
              else (lookup('ansible.builtin.ini', 'DISTRIB_RELEASE', type='properties',
                           file='/etc/upstream-release/lsb-release', errors='ignore')
-                   or ansible_distribution_version) }}
+                   or ansible_facts['distribution_version']) }}
       become: true
       when: not ghostty_in_apt
 
@@ -98,12 +98,12 @@
   become: true
   # "bitwarden", not "Bitwarden": the desktop app is @bitwarden/desktop, so
   # electron-builder falls back to the product name and fpm downcases it.
-  when: "'bitwarden' not in ansible_facts.packages"
+  when: "'bitwarden' not in ansible_facts['packages']"
 
 # Upstream publishes no "latest" asset URL, so resolve the release first, the
 # same way Ghostty's community .deb is resolved above.
 - name: Drawio
-  when: "'draw.io' not in ansible_facts.packages" # package.json name, not the "drawio" the assets carry
+  when: "'draw.io' not in ansible_facts['packages']" # package.json name, not the "drawio" the assets carry
   block:
     - name: Drawio latest release
       ansible.builtin.uri:
@@ -163,7 +163,7 @@
   when: ulauncher_pgrep.rc != 0
 
 - name: Cinnamon settings
-  when: "'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)"
+  when: "'cinnamon' in (ansible_facts['env']['XDG_CURRENT_DESKTOP'] | lower)"
   block:
     - name: Hot corners (current)
       ansible.builtin.command: gsettings get org.cinnamon hotcorner-layout
@@ -243,8 +243,8 @@
 # starts, binds nothing and reports success — worse than not running at all.
 - name: Xbindkeys
   when: >-
-    'cinnamon' in (ansible_env.XDG_CURRENT_DESKTOP | lower)
-    and (ansible_env.XDG_SESSION_TYPE | default('')) != 'wayland'
+    'cinnamon' in (ansible_facts['env']['XDG_CURRENT_DESKTOP'] | lower)
+    and (ansible_facts['env']['XDG_SESSION_TYPE'] | default('')) != 'wayland'
   block:
     - name: Xbindkeys links
       ansible.builtin.import_tasks: symlinks.yml

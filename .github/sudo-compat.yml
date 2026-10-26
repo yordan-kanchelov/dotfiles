@@ -1,0 +1,23 @@
+---
+# Run as the password-protected fixture user in the Ubuntu 26.04 CI container.
+- name: Verify Ubuntu sudo compatibility
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  pre_tasks:
+    - name: Select the actual playbook privilege escalation configuration
+      ansible.builtin.import_tasks: ../tasks/become.yml
+  tasks:
+    - name: Check that Ansible selected the classic binary
+      ansible.builtin.assert:
+        that: ansible_become_exe == '/usr/bin/sudo.ws'
+
+    - name: Execute a privileged command using password authentication
+      ansible.builtin.command: id -u
+      become: true
+      register: privileged_id
+      changed_when: false
+
+    - name: Verify root privileges
+      ansible.builtin.assert:
+        that: privileged_id.stdout == '0'

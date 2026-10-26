@@ -1,0 +1,127 @@
+name: Windows dotfiles
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ubuntu-sudo-compat:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Install Ansible and a password-protected fixture user
+        run: |
+          apt-get update
+          apt-get install -y ansible sudo sudo-rs git ca-certificates
+          useradd --create-home --groups sudo fixture
+          echo 'fixture:ci-fixture-only' | chpasswd
+      - uses: actions/checkout@v4
+      - name: Verify actual privileged Ansible tasks with Ubuntu 26.04 sudo
+        env:
+          ANSIBLE_BECOME_PASS: ci-fixture-only
+        run: runuser -u fixture -- ansible-playbook .github/sudo-compat.yml
+  agents:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native coding-agent CLIs
+        shell: powershell
+        run: ./windows/install-agents.ps1
+      - name: Install Tailscale without tailnet authentication
+        shell: powershell
+        run: ./windows/install-tailscale.ps1
+      - name: Verify persistent Windows Tailscale PATH
+        shell: powershell
+        run: ./windows/install-tailscale.ps1 -VerifyOnly
+      - name: Verify fresh Windows PATH and repeatability
+        shell: powershell
+        run: ./windows/test-agents.ps1
+      - name: Verify PowerShell 7 agent results
+        shell: pwsh
+        run: ./windows/test-agents.ps1
+  ansible-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify WSL checkout safety and tag reruns
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: bash scripts/test-wsl-bootstrap.sh
+      - name: Verify bootstrap sudo prompting without cached credentials
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: bash scripts/test-bootstrap-sudo.sh
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+      - name: Check Linux and Windows playbooks
+        env:
+          ANSIBLE_INJECT_FACT_VARS: "false"
+        run: |
+          python3 scripts/test-ansible-facts.py
+          ansible-playbook setup.yml --syntax-check
+          ansible-playbook windows.yml --syntax-check
+      - name: Verify setup preserves Claude and Codex configuration
+        run: bash scripts/test-agent-config.sh
+      - name: Verify retired Claude and Codex links become local copies
+        run: bash scripts/test-agent-migration.sh
+  configs:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $files = @('bootstrap.ps1') + @(Get-ChildItem windows/*.ps1 | ForEach-Object { $_.FullName })
+          foreach ($file in $files) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $file).Path, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors) { throw ($errors | Out-String) }
+          }
+          Get-Content windows/packages.json -Raw | ConvertFrom-Json | Out-Null
+          Get-Content windows/terminal.json -Raw | ConvertFrom-Json | Out-Null
+      - name: Verify Herdr shell shortcuts on Windows PowerShell
+        shell: powershell
+        run: ./windows/test-herdr-aliases.ps1
+      - name: Verify Herdr shell shortcuts on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-herdr-aliases.ps1
+      - name: Verify profile-local skills migration
+        shell: powershell
+        run: ./windows/test-herdr-migration.ps1
+      - name: Verify profile-local skills migration on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-herdr-migration.ps1
+      - name: Verify dry run, backup and repeated config installation
+        shell: powershell
+        run: ./windows/test-setup.ps1
+      - name: Verify PowerShell 7 config installation
+        shell: pwsh
+        run: ./windows/test-setup.ps1
+      - name: Verify default Windows and WSL orchestration
+        shell: powershell
+        run: |
+          ./windows/test-bootstrap-wsl.ps1
+          ./windows/test-wsl-platform.ps1
+          ./windows/test-wsl-launcher.ps1
+      - name: Verify default Windows and WSL orchestration on PowerShell 7
+        shell: pwsh
+        run: |
+          ./windows/test-bootstrap-wsl.ps1
+          ./windows/test-wsl-platform.ps1
+          ./windows/test-wsl-launcher.ps1
+      - name: Verify restart-resume persistence without restarting
+        shell: powershell
+        run: ./windows/test-wsl-resume.ps1
+      - name: Verify restart-resume persistence on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-wsl-resume.ps1
+      - name: Verify font registration preserves existing values
+        shell: powershell
+        run: ./windows/test-fonts.ps1
+      - name: Verify font registration on PowerShell 7
+        shell: pwsh
+        run: ./windows/test-fonts.ps1
