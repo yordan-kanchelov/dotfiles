@@ -1752,7 +1752,7 @@
   "guidance": [
     {
       "path": "<USER_HOME>/.codex/AGENTS.md",
-      "summary": "Matt Pocock reusable skills and Ponytail remain configured; obsolete Pstack routing removed. Agent Skills uses native discovery without a preloaded meta-router. Models, native permissions, and hook trust are preserved."
+      "summary": "No skill routing; Matt Pocock, Ponytail, and Agent Skills use native discovery. Models, native permissions, and hook trust are preserved."
     }
   ],
   "local_adaptations": [

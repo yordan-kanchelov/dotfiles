@@ -1,4 +1,4 @@
-# Shared skills and defaults
+# Shared skills
 
 Shared plugin payloads live under `plugins/`; standalone `unslop` lives under `skills/unslop/`. Each harness supplies its native manifests separately. Keep each package intact so relative references, agent prompts, and licenses remain available.
 
@@ -19,9 +19,9 @@ Install the chosen agent CLI, Python 3.9 or later, Node.js, Git, and ripgrep. Py
 
 Keep existing model choices, native permission boundaries, and hook trust. Workflow instructions do not authorize commits, external agent launches, or deployments on their own.
 
-## Install shared instructions
+## Global instructions
 
-Follow your harness guide to place [engineering-defaults.md](engineering-defaults.md) beside its global instructions file. Merge the harness template into existing instructions rather than replacing unrelated guidance. Remove obsolete Pstack routing when replacing that package.
+No global instruction file is installed. Skills rely on native discovery and their own invocation metadata. Remove earlier skill routing from the harness's global instructions, along with obsolete Pstack routing.
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
 

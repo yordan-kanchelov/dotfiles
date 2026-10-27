@@ -31,7 +31,7 @@ The reviewed-agent-pins catalog lives under `~/.local/state/agent-setup-alignmen
 
 ## Skills, agents, and guidance
 
-`~/.claude/CLAUDE.md` preserves Matt Pocock and Ponytail defaults. Pstack routing was removed. Agent Skills is enabled through native discovery with 25 skills, nine command wrappers, four agent prompts, and no registered hooks.
+`~/.claude/CLAUDE.md` carries no skill routing; Matt Pocock, Ponytail, and Agent Skills use native discovery. Agent Skills has 25 skills, nine command wrappers, four agent prompts, and no registered hooks.
 
 The loose skills are `blender-skill`, `herdr`, and standalone `unslop`. Blender's `UPSTREAM.md` records v0.31.0 at `39547d9e118451891c3ff68e087e20c5bde1599c` with a local macOS note. Its historical Windows animation failure is provenance, not a Mac runtime test. Herdr has no pinned skill revision in the inspected files.
 

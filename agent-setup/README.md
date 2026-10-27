@@ -5,7 +5,7 @@ For an agent preparing a machine, start with [universal/](universal/README.md), 
 1. Read the shared guide and the guide for your harness. Inspect the destination's installed plugins, instructions, settings, and CLI help before changing them.
 2. Run `python3 agent-setup/refactor.py` from the repository root to verify the bundled sources and generated references.
 3. Stage the plugins and standalone skills using the command in your harness guide. Staging combines shared payloads with native manifests in a new directory; it does not install anything.
-4. Register the staged marketplaces, install missing plugins, and merge the shared defaults and harness settings into the destination profile. Preserve unrelated settings and existing permissions.
+4. Register the staged marketplaces, install missing plugins, and merge the harness settings into the destination profile. Preserve unrelated settings and existing permissions.
 5. Copy standalone `unslop` into the native loose skill directory. Get Herdr's skill from the installed CLI and configure its integration for the chosen harness. Verify native plugin listings and start a fresh agent session.
 
 Use ordinary files and native plugin management. Keep credentials, account connections, transcripts, project trust, and hook-trust records on the destination. Model choices and external provider setup remain user decisions.
@@ -14,20 +14,19 @@ Use ordinary files and native plugin management. Keep credentials, account conne
 
 ```text
 agent-setup/
-  universal/                 Shared plugin payloads, defaults, and source pins
+  universal/                 Shared plugin payloads and source pins
     plugins/                 Agent Skills, Matt Pocock, and Ponytail
     skills/unslop/           Standalone prose-editing skill
-    engineering-defaults.md  Common agent instructions
     sources.json             Revisions and payload integrity hashes
     skills.md                Generated index of bundled skills
   claude/                    Claude setup, manifests, hooks, and Chrome DevTools
     README.md                Setup steps
-    CLAUDE.md                Instruction template
+    CLAUDE.md                Global instructions template (empty)
     inventory.json           Sanitized machine inventory
     inventory.md             Machine reference
   codex/                     Codex setup, manifests, and Matt extras
     README.md                Setup steps
-    AGENTS.md                Instruction template
+    AGENTS.md                Global instructions template (empty)
     config.toml              Settings to merge
     inventory.json           Sanitized machine inventory
     inventory.md             Machine reference

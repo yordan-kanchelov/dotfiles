@@ -27,9 +27,9 @@ claude plugin install ponytail@ponytail --scope user
 
 On an existing profile, keep matching installs and inspect differences before replacing a marketplace. Remove the old Pstack plugin and its Pstack-only marketplace when replacing it. Keep unrelated marketplace entries. The Chrome DevTools manifest declares `npx chrome-devtools-mcp@1.12.0`; it needs Node, npm, Chrome, and package access.
 
-## Merge profile instructions
+## Profile instructions
 
-Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. Place `universal/engineering-defaults.md` at `$claude_config_home/engineering-defaults.md`, then merge [CLAUDE.md](CLAUDE.md) into `$claude_config_home/CLAUDE.md`. The template imports the shared file and adds Claude-specific routing.
+Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. The [CLAUDE.md](CLAUDE.md) template is empty for now; merge it into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
 
 Keep the destination's model and permission settings. Agent Skills adds native commands and skills, with no wired startup hook. Review Ponytail's existing hooks and task-board module through native trust prompts. Keep the meta-skill body out of always-on context.
 

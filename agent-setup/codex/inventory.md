@@ -39,7 +39,7 @@ Their skill files are recorded separately from installed local-plugin files. Rem
 
 ## Skills and guidance
 
-`~/.codex/AGENTS.md` preserves Matt Pocock and Ponytail defaults. Obsolete Pstack routing is gone. Agent Skills uses native discovery without a preloaded meta-router or new startup hook. Multi-agent support and current model settings are unchanged.
+`~/.codex/AGENTS.md` carries no skill routing; Matt Pocock, Ponytail, and Agent Skills use native discovery without a preloaded meta-router or new startup hook. Multi-agent support and current model settings are unchanged.
 
 The loose skills are `blender-skill`, the three namespaced Epic Unreal ports, `herdr`, and standalone `unslop`. The five system skills include manual-only `review-agent`; installed availability does not establish session exposure. These machine-managed files are recorded in the inventory and excluded from the portable bundle.
 
