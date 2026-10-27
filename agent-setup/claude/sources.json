@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "components": [
+    {
+      "name": "chrome-devtools-mcp",
+      "version": "1.12.0",
+      "source": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "revision": "ada7963246c0c91eae185125a57aecd13cbe0376",
+      "download_url": "https://codeload.github.com/ChromeDevTools/chrome-devtools-mcp/tar.gz/ada7963246c0c91eae185125a57aecd13cbe0376",
+      "archive_sha256": "aa56e7be4d7f23426fd22b8f1f27b63f20870bae2e3b0ead38fa99e7c7ecabc4",
+      "payload": "claude/plugins/chrome-devtools-mcp",
+      "overlays": {},
+      "artifacts": [
+        {
+          "path": "claude/plugins/chrome-devtools-mcp",
+          "tree_sha256": "365ea27ab68ebad5b3658620dde886119aab3eb7b8324af3ef610be9899512b8",
+          "file_count": 16
+        }
+      ],
+      "skill_count": 7,
+      "marketplaces": {
+        "claude": "reviewed-agent-pins"
+      }
+    }
+  ]
+}

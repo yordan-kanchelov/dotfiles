@@ -1,0 +1,1795 @@
+{
+  "schema_version": 2,
+  "snapshot_date": "2026-10-27",
+  "platform": "macOS",
+  "harness": "Codex",
+  "cli_version": "0.164.0",
+  "profile": "<USER_HOME>/.codex",
+  "evidence": [
+    "Native CLI version and plugin list --json from this repository; exact registered install roots inspected.",
+    "Installed manifests, skill frontmatter, invocation-policy files, hashes, and selected nonsecret settings.",
+    "2026-10-27 migration verified through native lists: Agent Skills 0.6.13 enabled, Pstack removed, standalone unslop installed with unchanged body hash."
+  ],
+  "marketplaces": [
+    {
+      "name": "agent-skills",
+      "source_type": "local",
+      "source": "<USER_HOME>/.codex/plugins/local-marketplaces/agent-skills",
+      "root": "<USER_HOME>/.codex/plugins/local-marketplaces/agent-skills",
+      "pinned_revision": "aeac41d4d005999432bb7312f7ff06383a91d59d"
+    },
+    {
+      "name": "engineering-adaptations",
+      "source_type": "local",
+      "source": "<USER_HOME>/.codex/plugins/local-marketplaces/engineering-adaptations",
+      "root": "<USER_HOME>/.codex/plugins/local-marketplaces/engineering-adaptations",
+      "checkout_revision": null
+    },
+    {
+      "name": "mattpocock",
+      "source_type": "git",
+      "source": "https://github.com/mattpocock/skills.git",
+      "ref": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "root": "<USER_HOME>/.codex/.tmp/marketplaces/mattpocock",
+      "checkout_revision": "5beb35b040e3de97e54fa9e386d7e42d15c295c2"
+    },
+    {
+      "name": "ponytail",
+      "source_type": "git",
+      "source": "https://github.com/DietrichGebert/ponytail.git",
+      "root": "<USER_HOME>/.codex/.tmp/marketplaces/ponytail",
+      "checkout_revision": "09c434ab73ca43761c5d8b0c5d341926c2fba710"
+    }
+  ],
+  "plugins": [
+    {
+      "id": "agent-skills@agent-skills",
+      "version": "0.6.13",
+      "enabled": true,
+      "root": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13",
+      "revision": "aeac41d4d005999432bb7312f7ff06383a91d59d",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/.codex-plugin/plugin.json",
+      "source": "https://github.com/addyosmani/agent-skills",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills"
+      ]
+    },
+    {
+      "id": "mattpocock-extras@engineering-adaptations",
+      "version": "1.3.1-codex.1",
+      "enabled": true,
+      "root": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/.codex-plugin/plugin.json",
+      "source": null,
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/migrate-to-shoehorn",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/scaffold-exercises",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/setup-pre-commit",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/chief-of-staff",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/loop-me",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/setup-ts-deep-modules",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-beats",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-fragments",
+        "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-shape"
+      ]
+    },
+    {
+      "id": "mattpocock-skills@mattpocock",
+      "version": "1.3.1",
+      "enabled": true,
+      "root": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/.claude-plugin/plugin.json",
+      "source": "https://github.com/mattpocock/skills",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/ask-matt",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/diagnosing-bugs",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/grill-with-docs",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/triage",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/improve-codebase-architecture",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/setup-matt-pocock-skills",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/tdd",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/to-spec",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/to-tickets",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/wayfinder",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/implement",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/implement-spec",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/prototype",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/research",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/domain-modeling",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/codebase-design",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/code-review",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/pr",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/retro",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/wizard",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/grill-me",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/grilling",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/handoff",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/teach",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/to-questionnaire",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/wait-what",
+        "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/writing-for-agents"
+      ]
+    },
+    {
+      "id": "ponytail@ponytail",
+      "version": "5.3.2",
+      "enabled": true,
+      "root": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.codex-plugin/plugin.json",
+      "source": "https://github.com/DietrichGebert/ponytail",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills"
+      ]
+    }
+  ],
+  "cached_remote_plugins": [
+    {
+      "id": "cloud-environment@openai-curated-remote",
+      "version": "0.1.2",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/cloud-environment/0.1.2",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/cloud-environment/0.1.2/.codex-plugin/plugin.json",
+      "source": null,
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/cloud-environment/0.1.2/skills"
+      ]
+    },
+    {
+      "id": "github@openai-curated-remote",
+      "version": "0.1.12-5f7cd798dc99",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/github/0.1.12-5f7cd798dc99",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/github/0.1.12-5f7cd798dc99/.codex-plugin/plugin.json",
+      "source": "https://github.com/openai/plugins",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/github/0.1.12-5f7cd798dc99/skills"
+      ]
+    },
+    {
+      "id": "openai-templates@openai-curated-remote",
+      "version": "0.1.1",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/.codex-plugin/plugin.json",
+      "source": "https://github.com/openai/oai-maintained-plugins/tree/main/plugins/openai-templates",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills"
+      ]
+    },
+    {
+      "id": "pages@openai-curated-remote",
+      "version": "0.1.26",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/.codex-plugin/plugin.json",
+      "source": null,
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/skills"
+      ]
+    },
+    {
+      "id": "plugin-management@openai-curated-remote",
+      "version": "0.1.0",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/plugin-management/0.1.0",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/plugin-management/0.1.0/.codex-plugin/plugin.json",
+      "source": "https://github.com/openai/openai/tree/master/chatgpt/oai-maintained-plugins/plugins/plugin-management",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/plugin-management/0.1.0/skills"
+      ]
+    },
+    {
+      "id": "sites@openai-curated-remote",
+      "version": "1.1.2",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/sites/1.1.2",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/sites/1.1.2/.codex-plugin/plugin.json",
+      "source": "https://openai.com/",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/sites/1.1.2/skills"
+      ]
+    },
+    {
+      "id": "work-pets@openai-curated-remote",
+      "version": "0.1.6",
+      "root": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6",
+      "manifest": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6/.codex-plugin/plugin.json",
+      "source": "https://github.com/openai/openai/tree/master/chatgpt/oai-maintained-plugins/plugins/pets",
+      "skill_roots": [
+        "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6/skills"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/chief-of-staff/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/chief-of-staff/agents/openai.yaml",
+      "name": "chief-of-staff",
+      "description": "Pursue a long-running goal in a single session by co-ordinating subagents.",
+      "manual_only": true,
+      "sha256": "001ffc84d809d3dc97751e58227f26c20806722f067abcee51ec640f7c97af24",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/loop-me/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/loop-me/agents/openai.yaml",
+      "name": "loop-me",
+      "description": "Grill me about specs for the workflows I want to build, within this workspace.",
+      "manual_only": true,
+      "sha256": "38ac316635d244abfdc1526edec49596f9284b36595f5a212fc5983894b6094a",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/migrate-to-shoehorn/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/migrate-to-shoehorn/agents/openai.yaml",
+      "name": "migrate-to-shoehorn",
+      "description": "Migrate test files from `as` type assertions to @total-typescript/shoehorn. Use when user mentions shoehorn, wants to replace `as` in tests, or needs partial test data.",
+      "manual_only": true,
+      "sha256": "200c11163ecd56d908ec431154e4b452cd6afeb3de91e5b54434f543f0822201",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/scaffold-exercises/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/scaffold-exercises/agents/openai.yaml",
+      "name": "scaffold-exercises",
+      "description": "Create exercise directory structures with sections, problems, solutions, and explainers that pass linting. Use when user wants to scaffold exercises, create exercise stubs, or set up a new course section.",
+      "manual_only": true,
+      "sha256": "de28db7a0954db55c11ba1e3cc0fd4c037bf0f5cb8313cb292e319bcce47f424",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/setup-pre-commit/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/setup-pre-commit/agents/openai.yaml",
+      "name": "setup-pre-commit",
+      "description": "Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.",
+      "manual_only": true,
+      "sha256": "e069e6a23069ebdba946d4dea11e5d663c10640c6b14b55c4585c81b1a256ac9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/setup-ts-deep-modules/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/setup-ts-deep-modules/agents/openai.yaml",
+      "name": "setup-ts-deep-modules",
+      "description": "Wire dependency-cruiser into a TypeScript repo so each package is a deep module, with implementation hidden in subfolders and reachable only through its entry-point files. User-invoked.",
+      "manual_only": true,
+      "sha256": "3709fc7d62ea75cd7da1d6f21e33d58d758766fb8f5247a859687d7ed63c213e",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-beats/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-beats/agents/openai.yaml",
+      "name": "writing-beats",
+      "description": "Writing, exploit; assemble raw material into a journey of beats, grounding each term before a beat leans on it.",
+      "manual_only": true,
+      "sha256": "b23f7851987dab7828c83d42df98090ccebff586b64908ce6a5e772440214621",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-fragments/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-fragments/agents/openai.yaml",
+      "name": "writing-fragments",
+      "description": "Writing, explore: mine raw fragments, no structure yet.",
+      "manual_only": true,
+      "sha256": "3be6ffe9386ddd6de8b320c331295953995792fd65d0972aa2a28524ead73e90",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-shape/SKILL.md",
+      "owner": "mattpocock-extras@engineering-adaptations",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/engineering-adaptations/mattpocock-extras/1.3.1-codex.1/skills/writing-shape/agents/openai.yaml",
+      "name": "writing-shape",
+      "description": "Writing, exploit: shape raw material into an article, paragraph by paragraph.",
+      "manual_only": true,
+      "sha256": "c13cbc364fbceefce654d9a4b0331113ff47efe90ce2523c2de23ecef63fefbd",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/ask-matt/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/ask-matt/agents/openai.yaml",
+      "name": "ask-matt",
+      "description": "Ask which skill or flow fits your situation. A router over the skills in this repo.",
+      "manual_only": true,
+      "sha256": "1371f5ce005de0992a44b137748bfb960a56948aa9871b405fe9d90b24332e3c",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/code-review/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "code-review",
+      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes: Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to \"review since X\".",
+      "manual_only": false,
+      "sha256": "09eb147f793e4647949edd32dbad278f0554dfb56e0d46b699cd4c2c55bf0357",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/codebase-design/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "codebase-design",
+      "description": "Shared vocabulary for designing deep modules. Use when the user wants to design or improve a module's interface, find deepening opportunities, decide where a seam goes, make code more testable or AI-navigable, or when another skill needs the deep-module vocabulary.",
+      "manual_only": false,
+      "sha256": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/diagnosing-bugs/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "diagnosing-bugs",
+      "description": "Diagnosis loop for hard bugs and performance regressions. Use when the user says \"diagnose\"/\"debug this\", or reports something broken/throwing/failing/slow.",
+      "manual_only": false,
+      "sha256": "849198df88cdb65fd0d97236604c1fca7ff2f22d2f705f9724a800d0266b118d",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/domain-modeling/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "domain-modeling",
+      "description": "Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing a GLOSSARY.md, or recording or editing an ADR.",
+      "manual_only": false,
+      "sha256": "7b925d7b1e341a2eeae33ad68a8a8c0ab889a38ddd22a7598e4c240e5a7556a3",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/grill-with-docs/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/grill-with-docs/agents/openai.yaml",
+      "name": "grill-with-docs",
+      "description": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go.",
+      "manual_only": true,
+      "sha256": "7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/implement/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/implement/agents/openai.yaml",
+      "name": "implement",
+      "description": "Implement a piece of work based on a spec or set of tickets.",
+      "manual_only": true,
+      "sha256": "483bdc4ccf4ac31d86ac7beeaa0d0db80313e71e120bb8c59b3196ae5decd53d",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/implement-spec/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/implement-spec/agents/openai.yaml",
+      "name": "implement-spec",
+      "description": "Implement the result of /to-spec and /to-tickets in code.",
+      "manual_only": true,
+      "sha256": "7a22dd2e60b8fcece478ced9d2533582adf3520d695acd3ab715341535c9e56d",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/improve-codebase-architecture/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/improve-codebase-architecture/agents/openai.yaml",
+      "name": "improve-codebase-architecture",
+      "description": "Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.",
+      "manual_only": true,
+      "sha256": "552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/pr/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "pr",
+      "description": "Use when writing a PR body.",
+      "manual_only": false,
+      "sha256": "ab63f1cf78647389edcd386c9427c5dfca27ed2836930c24773ffee834c19bcd",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/prototype/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "prototype",
+      "description": "Build a throwaway prototype to answer a design question. Use when the user wants to sanity-check whether a state model or logic feels right, or explore what a UI should look like.",
+      "manual_only": false,
+      "sha256": "714de632d116bb73f65cdb5a882db15b9369a6713b9a47c0fad827848f0bfbe3",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/research/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "research",
+      "description": "Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.",
+      "manual_only": false,
+      "sha256": "985569f15739c713d6784887c3d186d4ef9ac85bec5ad9c068d25bf0739928e4",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/retro/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/retro/agents/openai.yaml",
+      "name": "retro",
+      "description": "Conduct a retrospective on a coding session.",
+      "manual_only": true,
+      "sha256": "33fbc28568e3146f20fd908b12998bc0ab30aa4f4c87288199a40793efa94696",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/setup-matt-pocock-skills/agents/openai.yaml",
+      "name": "setup-matt-pocock-skills",
+      "description": "Configure this repo for the engineering skills: set up its issue tracker, triage label vocabulary, and domain doc layout. Run once before first use of the other engineering skills.",
+      "manual_only": true,
+      "sha256": "f148858ffb7f63c03c06fca06e6fdb1d91a35c6b293244b8fdfacd5f4cc028c4",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/tdd/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "tdd",
+      "description": "Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions \"red-green-refactor\", or wants integration tests.",
+      "manual_only": false,
+      "sha256": "5505d25bbaa8fc14a79e4d20163936958992a2995b7f1dd1d6197edc9ed722e0",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/to-spec/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/to-spec/agents/openai.yaml",
+      "name": "to-spec",
+      "description": "Turn the current conversation into a spec and publish it to the project issue tracker: no interview, just synthesis of what you've already discussed.",
+      "manual_only": true,
+      "sha256": "43ad9cf318e5e7d3d1fa360253a37021796dc87a0c2e595ad262661a10f85088",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/to-tickets/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/to-tickets/agents/openai.yaml",
+      "name": "to-tickets",
+      "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker (edges as text in one file per ticket locally, or native blocking links on a real tracker).",
+      "manual_only": true,
+      "sha256": "56ec23c5b2782785d4e65bff9e315b6d3aeb4ef977c174a219e99489fada1995",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/triage/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/triage/agents/openai.yaml",
+      "name": "triage",
+      "description": "Move issues and external PRs through a state machine of triage roles, categorise, verify, grill if needed, and write agent-ready briefs.",
+      "manual_only": true,
+      "sha256": "917b0baf74be583e74f110857ed45df2766617f75c00baf61fd136d7af515edf",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/wayfinder/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/wayfinder/agents/openai.yaml",
+      "name": "wayfinder",
+      "description": "Plan a huge chunk of work (more than one agent session can hold) as a shared map of decision tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear.",
+      "manual_only": true,
+      "sha256": "9be7b478c389605a24517d27752f278933588da97a1b5921b165f455edf4c5b7",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/engineering/wizard/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "wizard",
+      "description": "Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover. Don't invoke this for steps the agent can perform itself.",
+      "manual_only": false,
+      "sha256": "bdf31d48211ea559878f95a4f344aeabf8d85897488ba564382bab0b000daac1",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/chief-of-staff/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/chief-of-staff/agents/openai.yaml",
+      "name": "chief-of-staff",
+      "description": "Pursue a long-running goal in a single session by co-ordinating subagents.",
+      "manual_only": true,
+      "sha256": "a187d9e36e65373d2d1f469790858dd57d6eb72b6ea16932df9c40616ac9f720",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/claude-handoff/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/claude-handoff/agents/openai.yaml",
+      "name": "claude-handoff",
+      "description": "Hand the current conversation off to a fresh background agent that picks up the work immediately.",
+      "manual_only": true,
+      "sha256": "79357a18425d66d4c24048bedf83dceb79d3bba356f38014950f764a7fab4026",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/loop-me/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/loop-me/agents/openai.yaml",
+      "name": "loop-me",
+      "description": "Grill me about specs for the workflows I want to build, within this workspace.",
+      "manual_only": true,
+      "sha256": "e44d1cc3e760fb86ac42964c2a5f1fcac511715db50fb375f3f7be814de1eaa7",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/setup-ts-deep-modules/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/setup-ts-deep-modules/agents/openai.yaml",
+      "name": "setup-ts-deep-modules",
+      "description": "Wire dependency-cruiser into a TypeScript repo so each package is a deep module, with implementation hidden in subfolders and reachable only through its entry-point files. User-invoked.",
+      "manual_only": true,
+      "sha256": "29acca66ac99d4532e2a6f0370d8125d7cba1e87c9ac66573203c75189d3e6c7",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/writing-beats/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/writing-beats/agents/openai.yaml",
+      "name": "writing-beats",
+      "description": "Writing, exploit; assemble raw material into a journey of beats, grounding each term before a beat leans on it.",
+      "manual_only": true,
+      "sha256": "a96abafa2372eede8267d770138b322d6125da8adaa7ccf0a5e08e4ee13ee71e",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/writing-fragments/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/writing-fragments/agents/openai.yaml",
+      "name": "writing-fragments",
+      "description": "Writing, explore: mine raw fragments, no structure yet.",
+      "manual_only": true,
+      "sha256": "298b0edd23df229183630de592ed8aa4289233560f2040691f6eb77caeaad4ea",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/writing-shape/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/in-progress/writing-shape/agents/openai.yaml",
+      "name": "writing-shape",
+      "description": "Writing, exploit: shape raw material into an article, paragraph by paragraph.",
+      "manual_only": true,
+      "sha256": "f5e6c57bdd85178ace4a260c92f46da6b64ddee18215b461d875739c68976f72",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/misc/git-guardrails-claude-code/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "git-guardrails-claude-code",
+      "description": "Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. Use when user wants to prevent destructive git operations, add git safety hooks, or block git push/reset in Claude Code.",
+      "manual_only": false,
+      "sha256": "69b291d655626a01602b998a1836fcb93c058ede68dfafddfd71e87f17074764",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/misc/migrate-to-shoehorn/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "migrate-to-shoehorn",
+      "description": "Migrate test files from `as` type assertions to @total-typescript/shoehorn. Use when user mentions shoehorn, wants to replace `as` in tests, or needs partial test data.",
+      "manual_only": false,
+      "sha256": "de4da4c11d924fac79c924b2ee3d2db4a5cb98386eb490a599119463d036ae72",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/misc/scaffold-exercises/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "scaffold-exercises",
+      "description": "Create exercise directory structures with sections, problems, solutions, and explainers that pass linting. Use when user wants to scaffold exercises, create exercise stubs, or set up a new course section.",
+      "manual_only": false,
+      "sha256": "75f5c9d771606fb9762f16522efc954df11c324f87148d8ff069bce166257de9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/misc/setup-pre-commit/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "setup-pre-commit",
+      "description": "Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.",
+      "manual_only": false,
+      "sha256": "c9819d7f1e3b198064edc1faa3154224ed67395e9f07f5d3cea4b67cf0a11a98",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/grill-me/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/grill-me/agents/openai.yaml",
+      "name": "grill-me",
+      "description": "A relentless interview to sharpen a plan or design.",
+      "manual_only": true,
+      "sha256": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/grilling/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "grilling",
+      "description": "Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.",
+      "manual_only": false,
+      "sha256": "befdff1e27a1dfe2a294d5871169ac1afe16d983911daa4f32627514a48c1e15",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/handoff/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/handoff/agents/openai.yaml",
+      "name": "handoff",
+      "description": "Compact the current conversation into a handoff document for another agent to pick up.",
+      "manual_only": true,
+      "sha256": "4cbb043950dad2ffd3662ff1a5a0b51ae676004b5cae10e3787e8ee7a4ee69d3",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/teach/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/teach/agents/openai.yaml",
+      "name": "teach",
+      "description": "Teach the user a new skill or concept, within this workspace.",
+      "manual_only": true,
+      "sha256": "550482c2d674b085c9043b87bfdc14a8f2ec453c736119e7fcbb1e9332bffeba",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/to-questionnaire/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/to-questionnaire/agents/openai.yaml",
+      "name": "to-questionnaire",
+      "description": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in.",
+      "manual_only": true,
+      "sha256": "b5eb929842ee0e93d867c5e906d183d350f2f2d149eaeaa86967d94d8eda1d3b",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/wait-what/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/wait-what/agents/openai.yaml",
+      "name": "wait-what",
+      "description": "Stop. That last message did not land: re-pitch it.",
+      "manual_only": true,
+      "sha256": "d961bb37defd975c539427edb8f450cdbccdcdd552e213c1ece46676a7970905",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/mattpocock/mattpocock-skills/1.3.1/skills/productivity/writing-for-agents/SKILL.md",
+      "owner": "mattpocock-skills@mattpocock",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "writing-for-agents",
+      "description": "Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md.",
+      "manual_only": false,
+      "sha256": "551adca942227b44192edba88acd4e8db911f0121ce58ad16944ccf6a896a74a",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.openclaw/skills/ponytail/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "ponytail",
+      "description": "Lazy senior dev mode for any coding task: the smallest change that fully solves it, and a reply a busy human understands in one read.",
+      "manual_only": false,
+      "sha256": "3868c7aa7cc721b7391a6a136ce609bc1e08a2b29d393fe2e637297d8d45f379",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.openclaw/skills/ponytail-audit/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "ponytail-audit",
+      "description": "Quality audit of the whole repo: bugs, security, real load, missing tests, speed, and what to delete. Most important first.",
+      "manual_only": false,
+      "sha256": "3dc1c18ec325632db297f2c34d03e6f4b3fe5f50a8eaee727f02d223b1ee3d4b",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.openclaw/skills/ponytail-debt/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "ponytail-debt",
+      "description": "Harvest every shortcut: comment into one debt ledger, so deferrals get tracked instead of forgotten. One-shot report.",
+      "manual_only": false,
+      "sha256": "d55354743bf344611907bbcda8da105abe4d3eec4696b80099eb9b6c02029c40",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.openclaw/skills/ponytail-gain/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "ponytail-gain",
+      "description": "Show ponytail measured impact as a scoreboard: less code, less cost, more speed, from the agentic benchmark averages. One-shot display.",
+      "manual_only": false,
+      "sha256": "40efb084e29bfaaa85a0807ec3a88d5c85897a7bf751985496295e541dea937b",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.openclaw/skills/ponytail-help/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "ponytail-help",
+      "description": "Quick reference for ponytail's modes, skills, and commands. One-shot display.",
+      "manual_only": false,
+      "sha256": "3a267f1c71058854b608c4eebcf2291a90c1a25972cbdd52fef777d6a2c60945",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/.openclaw/skills/ponytail-review/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": false,
+      "name": "ponytail-review",
+      "description": "Quality review of a diff: bugs, security, real load, missing tests, speed, and what to delete. Each finding says what goes wrong and how to fix it.",
+      "manual_only": false,
+      "sha256": "1f010d87a90d9e801f5634e3b863510b40121608f6e980f20bb3db8b2d165299",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills/ponytail/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ponytail",
+      "description": "Lazy senior dev mode: the smallest change that fully solves the task, and a reply a busy human understands in one read. Use on any coding task (writing, fixing, refactoring, reviewing, choosing dependencies) and when the user says \"ponytail\", \"be lazy\", \"simplest solution\", \"yagni\", or complains about over-engineering or bloat. Levels: lite, full (default), ultra.\n",
+      "manual_only": false,
+      "sha256": "9badd22a32e19cb884e46dfa8d3aae82bb81dfa5484105b8b4f0262df823a509",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills/ponytail-audit/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ponytail-audit",
+      "description": "Quality audit of a whole repo: bugs, security holes, what breaks under real load, risky code without tests, slow paths, and what to delete, merge or split. Ranked, each finding explained in plain English. One-shot report, changes nothing. Use for \"audit this codebase\", \"review the whole repo\", \"find bloat\", \"what can I delete\", /ponytail-audit.",
+      "manual_only": false,
+      "sha256": "2b3223a02c386d1263e1b08343cb8eb3a53e444cdafb1d79e26c8ec2a8fcad28",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills/ponytail-debt/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ponytail-debt",
+      "description": "List every `shortcut:` comment (and older `ponytail:` ones) as a debt ledger. One-shot report, changes nothing. Use for \"ponytail debt\", \"what did ponytail defer\", \"list the shortcuts\", /ponytail-debt.",
+      "manual_only": false,
+      "sha256": "b5ec2762f6ba8c4af9ea7173aa6c9f91b88655a25e43f9de0264f6ce8722b25f",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills/ponytail-gain/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ponytail-gain",
+      "description": "Show ponytail's measured savings (code, cost, speed) from the benchmark. One-shot display. Use for /ponytail-gain, \"what does ponytail save\", \"ponytail impact\".",
+      "manual_only": false,
+      "sha256": "231034a896d6762e4b5c8468287083422c56b499119976ec9f76821f7d083090",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills/ponytail-help/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ponytail-help",
+      "description": "Quick reference for ponytail levels, skills and commands. One-shot display. Use for /ponytail-help, \"ponytail help\", \"how do I use ponytail\".",
+      "manual_only": false,
+      "sha256": "86ab0ce0af70cbeeeef499d5c884873b393f87f86401dcc45553662ce2c1eff9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/skills/ponytail-review/SKILL.md",
+      "owner": "ponytail@ponytail",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ponytail-review",
+      "description": "Quality review of a change: is the logic right, is it safe, does it hold under real load, is risky code tested, is it fast enough, and is every line needed. Reads the connected code, not only the diff. Each finding is explained in plain English. Use for \"review this\", \"code review\", \"review the last commit\", \"review my PR\", \"is this over-engineered\", /ponytail-review.",
+      "manual_only": false,
+      "sha256": "33fe4ebe22a460924e5d4a261e223df22e409cc94ab76182bee9fb91a3ef022e",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/cloud-environment/0.1.2/skills/runtime/SKILL.md",
+      "owner": "cloud-environment@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "cloud-environment-runtime",
+      "description": "Read at the start of work in a managed cloud environment. Inspect network policy and configured credentials; build and run Docker containers with the session proxy and CA trust; use Tailscale VPN access, configure TCP forwarding, and diagnose access failures.",
+      "manual_only": false,
+      "sha256": "c23513e361a6f9dbe1c28e5c41de635f355469b4ec1740ae1cd2de1d38a91bd3",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-analytics-dashboard/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-analytics-dashboard/agents/openai.yaml",
+      "name": "artifact-template-analytics-dashboard",
+      "description": "Create a spreadsheet using the Analytics Dashboard template and its retained reference file. Use when the user selects or names Analytics Dashboard. Monitor acquisition, engagement, retention, revenue, and conversion funnel KPIs with charts.",
+      "manual_only": true,
+      "sha256": "cf5360fd8b197673bb237c52c603c97fa319c875c3dfa2cd8efff52d4422f513",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-business-review/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-business-review/agents/openai.yaml",
+      "name": "artifact-template-business-review",
+      "description": "Create a presentation using the Business Review template and its retained reference file. Use when the user selects or names Business Review. Review business performance, KPIs, segment results, strategic priorities, decisions, and outlook.",
+      "manual_only": true,
+      "sha256": "27721fc1d67d1b41949caa75ac8f94f81952ff124406878af6524047929e60d2",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-design-report/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-design-report/agents/openai.yaml",
+      "name": "artifact-template-design-report",
+      "description": "Create a document using the Design Report template and its retained reference file. Use when the user selects or names Design Report. Produce design reports with an executive summary, key findings, implications, recommendations, and appendix.",
+      "manual_only": true,
+      "sha256": "563722f53854e606f8a9f87e37e72d7ef70a22d46d5836b8e4d6abfb1b79e9e0",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-experiment-analysis/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-experiment-analysis/agents/openai.yaml",
+      "name": "artifact-template-experiment-analysis",
+      "description": "Create a document using the Experiment Analysis template and its retained reference file. Use when the user selects or names Experiment Analysis. Analyze experiments with hypotheses, methodology, results, interpretation, limitations, and next steps.",
+      "manual_only": true,
+      "sha256": "0b05effc47df0a14f8e0c3e3597e6722224747435546385d38a2cae279bd20b9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-financial-budget/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-financial-budget/agents/openai.yaml",
+      "name": "artifact-template-financial-budget",
+      "description": "Create a spreadsheet using the Financial Budget template and its retained reference file. Use when the user selects or names Financial Budget. Model actuals, budget and scenario forecasts, variances, cash runway, and departmental plans.",
+      "manual_only": true,
+      "sha256": "c0b6b7a62a15597aaf2b1ec679e21da48f533b756127f0aef957cdfe9f3da738",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-investment-committee-memo/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-investment-committee-memo/agents/openai.yaml",
+      "name": "artifact-template-investment-committee-memo",
+      "description": "Create a document using the Investment Committee Memo template and its retained reference file. Use when the user selects or names Investment Committee Memo. Prepare investment committee memos with the thesis, transaction details, financial analysis, risks, and recommendation.",
+      "manual_only": true,
+      "sha256": "68abd08cfe5e073e3c446a3f675f44c5bf98f57434dba679e8acd8a763379a8b",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-legal-memorandum/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-legal-memorandum/agents/openai.yaml",
+      "name": "artifact-template-legal-memorandum",
+      "description": "Create a document using the Legal Memorandum template and its retained reference file. Use when the user selects or names Legal Memorandum. Draft legal memoranda with the issue, brief answer, relevant facts, analysis, and conclusion.",
+      "manual_only": true,
+      "sha256": "51fb9d21baf6119c4ccb1903638a6bac0e859210de63460fffa7025d52e997e0",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-market-trends-report/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-market-trends-report/agents/openai.yaml",
+      "name": "artifact-template-market-trends-report",
+      "description": "Create a presentation using the Market Trends Report template and its retained reference file. Use when the user selects or names Market Trends Report. Communicate market or industry trends, supporting evidence, implications, and recommended responses.",
+      "manual_only": true,
+      "sha256": "d58d019b89cb6f292ac3ab991d561489eef477ff53ce05fb024a0c936f5af26a",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-minimal-letterhead/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-minimal-letterhead/agents/openai.yaml",
+      "name": "artifact-template-minimal-letterhead",
+      "description": "Create a document using the Minimal Letterhead template and its retained reference file. Use when the user selects or names Minimal Letterhead. Write professional business letters with sender, recipient, message, and signature fields in a minimal letterhead layout.",
+      "manual_only": true,
+      "sha256": "880ef094d4d0c89a7bde5ce9bbe4086625c186651e9e6efc8ba8bdd7cc77f9d5",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-operating-calendar/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-operating-calendar/agents/openai.yaml",
+      "name": "artifact-template-operating-calendar",
+      "description": "Create a spreadsheet using the Operating Calendar template and its retained reference file. Use when the user selects or names Operating Calendar. Plan annual and monthly operating milestones, campaigns, launches, deadlines, and recurring events.",
+      "manual_only": true,
+      "sha256": "33bb660791a0b9a21628a42c34934932220203b6aabd84e98cb1b45327d0384c",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-operating-review/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-operating-review/agents/openai.yaml",
+      "name": "artifact-template-operating-review",
+      "description": "Create a presentation using the Operating Review template and its retained reference file. Use when the user selects or names Operating Review. Run weekly operating reviews with scorecards, functional updates, risks, decisions, and action items.",
+      "manual_only": true,
+      "sha256": "6d63c5cd025ffe936e7bab5db3023672bbaec26af55c2bb8b057d38c202c9c32",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-project-kickoff/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-project-kickoff/agents/openai.yaml",
+      "name": "artifact-template-project-kickoff",
+      "description": "Create a presentation using the Project Kickoff template and its retained reference file. Use when the user selects or names Project Kickoff. Align teams on project goals, scope, roles, milestones, risks, and the working model.",
+      "manual_only": true,
+      "sha256": "aa893ebd89e7c8d1db4261d01cc2b1add35d78d00785871ccaaa5fc8db783ec9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-project-tracker/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-project-tracker/agents/openai.yaml",
+      "name": "artifact-template-project-tracker",
+      "description": "Create a spreadsheet using the Project Tracker template and its retained reference file. Use when the user selects or names Project Tracker. Manage workstreams, tasks, owners, status, priority, dates, launch pulse, and a Gantt schedule.",
+      "manual_only": true,
+      "sha256": "d97d5be20189b7f53dd269b6e1c5f694eaf53e5a72f6559fcb1578911b7cda82",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-sales-pipeline/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-sales-pipeline/agents/openai.yaml",
+      "name": "artifact-template-sales-pipeline",
+      "description": "Create a spreadsheet using the Sales Pipeline template and its retained reference file. Use when the user selects or names Sales Pipeline. Track opportunities, stages, owners, deal sizes, probabilities, forecasts, next steps, and risks.",
+      "manual_only": true,
+      "sha256": "15cfeeedf440021f16ed3f3ad8c7c1ef6d48898b9447741e223d2fb41cfc9800",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-simple-dark-mode/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-simple-dark-mode/agents/openai.yaml",
+      "name": "artifact-template-simple-dark-mode",
+      "description": "Create a presentation using the Simple Dark Mode template and its retained reference file. Use when the user selects or names Simple Dark Mode. Create clean dark-mode presentations with bold typography, simple sections, charts, and imagery.",
+      "manual_only": true,
+      "sha256": "b7c8d0c05f75878b9bc21e56a57c41ec1aa29700aca0a24822be0f9f1bd53207",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-simple-light-mode/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-simple-light-mode/agents/openai.yaml",
+      "name": "artifact-template-simple-light-mode",
+      "description": "Create a presentation using the Simple Light Mode template and its retained reference file. Use when the user selects or names Simple Light Mode. Create clean light-mode presentations with spacious typography, simple sections, charts, and imagery.",
+      "manual_only": true,
+      "sha256": "7c68430c6cf57b55b457d4735dbd1a46b889bef135a32222902dd0848b6e1752",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-strategy-memorandum/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-strategy-memorandum/agents/openai.yaml",
+      "name": "artifact-template-strategy-memorandum",
+      "description": "Create a document using the Strategy Memorandum template and its retained reference file. Use when the user selects or names Strategy Memorandum. Present strategic context, choices, rationale, risks, milestones, and a clear recommendation.",
+      "manual_only": true,
+      "sha256": "51d7882ac94e8e57b323394825728c33925af878806e37277217c2dc12a912e5",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-system-design/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-system-design/agents/openai.yaml",
+      "name": "artifact-template-system-design",
+      "description": "Create a document using the System Design template and its retained reference file. Use when the user selects or names System Design. Document system architecture, requirements, components, data flows, APIs, tradeoffs, and operational considerations.",
+      "manual_only": true,
+      "sha256": "87f7b7ed1b0d8410f5e5971cd7f7db9a4165e2f37069e97e52dbfb469b75a57c",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-team-alignment/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-team-alignment/agents/openai.yaml",
+      "name": "artifact-template-team-alignment",
+      "description": "Create a presentation using the Team Alignment template and its retained reference file. Use when the user selects or names Team Alignment. Facilitate team offsites and planning with context, goals, priorities, decisions, and action items.",
+      "manual_only": true,
+      "sha256": "26d7cafdcd1899a937b325c5d02ac57c162d45002153be33a934d35f81eb6110",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-three-statement-forecast/SKILL.md",
+      "owner": "openai-templates@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-three-statement-forecast/agents/openai.yaml",
+      "name": "artifact-template-three-statement-forecast",
+      "description": "Create a spreadsheet using the Three-Statement Forecast template and its retained reference file. Use when the user selects or names Three-Statement Forecast. Build an integrated income statement, balance sheet, and cash flow forecast with assumptions, checks, and an executive summary.",
+      "manual_only": true,
+      "sha256": "74f4a5cccec0107b861548b157e04c51d9b58ec13a990c86394b4c529b8ecf41",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/skills/maintain-space/SKILL.md",
+      "owner": "pages@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "maintain-space",
+      "description": "Reconcile new evidence into existing ChatGPT Pages or a Space when the user requests upkeep. For a direct text correction, use write-page. Do not use for ordinary chat drafts, writing, or advice, or treat a selected Page as a request to save. Schedule future upkeep only when requested.",
+      "manual_only": false,
+      "sha256": "53570e6cb8663d370dce15ed0d67208876c3b13015832c352daa759213e7378e",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/skills/manage-schedules/SKILL.md",
+      "owner": "pages@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "manage-schedules",
+      "description": "Review a ChatGPT Space page and its schedules, recommend useful recurring work, and create, update, or remove scheduled automations.",
+      "manual_only": false,
+      "sha256": "e0a464a83f15a6e896c5536cab775f667ebd0dd61eb64fe3c877a41935d64bd9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/skills/organize-space/SKILL.md",
+      "owner": "pages@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "organize-space",
+      "description": "Organize existing ChatGPT Pages and Space structure when the user requests changes to that structure. Do not use for ordinary chat drafts or advice; a selected Page alone does not authorize reorganization. A narrow text edit does not need this workflow.",
+      "manual_only": false,
+      "sha256": "fe553fb15809c972ae528d64917489e958f8cbf9432629caa79fd6da6b207da4",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/pages/0.1.26/skills/write-page/SKILL.md",
+      "owner": "pages@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "write-page",
+      "description": "Create or edit requested Page/Space content, or use for prose you have already decided to save as a standalone Markdown file, only if the user did not explicitly request a Markdown file. Honor established formats, destinations, and repository documentation. A selected Page alone does not authorize a write.",
+      "manual_only": false,
+      "sha256": "39cb2ab7aa056cd00a38067f833cf5a7f19206e104e58320fc113ba699c14493",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/plugin-management/0.1.0/skills/plugin-management/SKILL.md",
+      "owner": "plugin-management@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "plugin-management",
+      "description": "Discover and suggest relevant plugins, inspect app permissions and dependencies, and manage plugin connections or removal. Use when the user asks about plugins or when a task would materially benefit from an external app, account, service, or data source that available tools cannot access.",
+      "manual_only": false,
+      "sha256": "653841cc21205269f08b0ce135891e1518dac616a766bcfb0b57d788d3f68b10",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/sites/1.1.2/skills/sites/SKILL.md",
+      "owner": "sites@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "sites",
+      "description": "Use Sites when the user wants a website built for them (including a landing page, portfolio, dashboard, portal, tracker, hub, game, event registration, or tool), requests changes to a website already built with Sites, wants to publish a website with Sites, or wants to manage Sites hosting.",
+      "manual_only": false,
+      "sha256": "00750ea5ca37e2b49afd2a57fee2149d22ee4f48af40bc094e6d2cee3e7bd1ad",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/sites/1.1.2/skills/sites-remix/SKILL.md",
+      "owner": "sites@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "sites-remix",
+      "description": "Remix a Site built with the Sites plugin into a new Site. Use when the user has identified the source Site and asks to remix it.",
+      "manual_only": false,
+      "sha256": "34a249750d98e38f676fa391819593ab5c14e5f46f9137832a8c49180d47022d",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6/skills/create-pet/SKILL.md",
+      "owner": "work-pets@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "create-pet",
+      "description": "Create, repair, validate, preview, upload, or activate an animated v2 pet in ChatGPT Work mode from a character idea, brand cue, or reference image. Use for new ChatGPT Pets, custom mascots, non-pixel styles, and unattached sprite sheets requiring nine animation states plus sixteen look directions. Preserve Library artifacts and Pets MCP lifecycle behavior. Exclude real pets, standalone images, and other-app pets; clarify before invoking.",
+      "manual_only": false,
+      "sha256": "841354fb8116f8fdfd3b643b30828f5180196c594d3fed9b669b948b88892af1",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6/skills/pets/SKILL.md",
+      "owner": "work-pets@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "pets",
+      "description": "List, inspect, select, download, or delete animated pets in ChatGPT Work mode. Use for an explicit pet in ChatGPT or established ChatGPT Pets context. Exclude real-world and other-app pets; clarify before invoking.",
+      "manual_only": false,
+      "sha256": "1bf5d45fd6a6390aab777229293fb05cef7cf898aac882f8955e40c378e52fcd",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/openai-curated-remote/work-pets/0.1.6/skills/update-pet/SKILL.md",
+      "owner": "work-pets@openai-curated-remote",
+      "kind": "cached-remote",
+      "registered_candidate": true,
+      "name": "update-pet",
+      "description": "Inspect, validate, preview, repair, or update a custom pet in ChatGPT Work mode, including its name, description, or sprite sheet. Use for a pet in ChatGPT or established ChatGPT Pets context. Exclude real-world and other-app pets; clarify before invoking.",
+      "manual_only": false,
+      "sha256": "c63c98d67b6ad781a72a8f9837ba1fb5e2d2a8054a2562e4025890a97d8a0e67",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/.system/imagegen/SKILL.md",
+      "owner": "system-bundled",
+      "kind": "system",
+      "registered_candidate": true,
+      "name": "imagegen",
+      "description": "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas.",
+      "manual_only": false,
+      "sha256": "681ddb4ad6d06a2acc78a3535b583f8d0c1ea800ecda3d56370d3310fd2cd4ba",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/.system/openai-docs/SKILL.md",
+      "owner": "system-bundled",
+      "kind": "system",
+      "registered_candidate": true,
+      "name": "openai-docs",
+      "description": "Use for Codex models/pricing, scheduled tasks, skills, settings, setup, troubleshooting, customization, automations, and self-knowledge—including 'you,' 'your,' 'this app,' or 'this coding agent' when they refer to Codex—and for OpenAI APIs/products and ChatGPT Work. Also use for model choice/migration, prompting, SDKs, Responses, Realtime, agents, evals, and Chat/Work/Codex comparisons. Do not use for generic app/software tasks that merely mention Codex.",
+      "manual_only": false,
+      "sha256": "aa6829e21df2223167c85d2e49b6337a7345c84c1033f1ec10182c7882b36d45",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/.system/review-agent/SKILL.md",
+      "owner": "system-bundled",
+      "kind": "system",
+      "registered_candidate": true,
+      "policy_path": "<USER_HOME>/.codex/skills/.system/review-agent/agents/openai.yaml",
+      "name": "review-agent",
+      "description": "Perform a read-only, defect-first review of a specified code change and return every actionable finding. Use when another agent delegates review of uncommitted changes, a base-branch diff, a commit, or custom review instructions.",
+      "manual_only": true,
+      "sha256": "07079efd0dc76f05fade424e5dfb048dce1de2df7626e1a4f56292a4f3f92228",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/.system/skill-creator/SKILL.md",
+      "owner": "system-bundled",
+      "kind": "system",
+      "registered_candidate": true,
+      "name": "skill-creator",
+      "description": "Create or update a Codex skill with appropriately scoped instructions and any needed supporting resources.",
+      "manual_only": false,
+      "sha256": "6656e54755638e8efcf275a472b9672eaa8a9a1b9e59dc210e275b03b59e1e66",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/.system/skill-installer/SKILL.md",
+      "owner": "system-bundled",
+      "kind": "system",
+      "registered_candidate": true,
+      "name": "skill-installer",
+      "description": "Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos).",
+      "manual_only": false,
+      "sha256": "d68b77e5bbb34dedab89d134da52855f140fc4b4299b80104f534e3b9e98f8ee",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/blender-skill/SKILL.md",
+      "owner": "user loose skills",
+      "kind": "loose",
+      "registered_candidate": true,
+      "name": "blender-skill",
+      "description": "Inspect, convert, optimize, render, bake and validate 3D assets with local, headless Blender: glb/gltf, fbx, obj, stl, usd/usdz, ply, abc, .blend. Cut triangle count, cap texture resolution, bake AO/normal/roughness/diffuse/combined maps, render a thumbnail/turntable/4-view sheet, check a file against three.js/Unity/Unreal/Godot/iOS-AR/Android-AR/WebXR/3D-print/Sketchfab budgets, assemble a multi-asset scene. Use this skill whenever the user mentions a 3D model or asset file (glb, gltf, fbx, obj, stl, usd, usdz, ply, blend), a mesh, polycount/triangle count, UV, texture baking, decimation, a turntable render, an AR/game-engine import, or asks to check/optimize/convert/render something \"for Unity\", \"for Unreal\", \"for the web\", \"for AR\" -- even when they do not say \"Blender\". Headless only (`blender -b`); this is not a replacement for interactive modeling or the official Blender MCP add-on, and complements rather than competes with it. Requires Blender 4.2+ on the machine; no API keys, no cloud, no pip dependencies.",
+      "manual_only": false,
+      "sha256": "dfd823f1cfb8c007bb497897b3082be61bc0c908eef45b959494ba1461409fa0",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/epic-unreal-create-toolset/SKILL.md",
+      "owner": "user loose skills",
+      "kind": "loose",
+      "registered_candidate": true,
+      "name": "epic-unreal-create-toolset",
+      "description": "Use this skill when authoring or extending an Unreal Engine toolset, a class of static, AI-callable functions registered with `ToolsetRegistry` and exposed through the unreal-mcp server. Trigger when the user wants to add, expose, or register a new tool method, create a new toolset, or extend an existing one such as `BlueprintTools`, `StaticMeshTools`, `ObjectTools`, `LevelTools`, or `MaterialTools`. Concrete triggers: 'add a tool to X', 'expose this via MCP', 'register a function so Claude/the agent can call it', 'wire this into the toolset registry', 'create a new toolset for Y', 'add a Python toolset', 'make this AI-callable'; adding a `static` method to a `*Tools.cpp/.h/.py` file; editing files under a `Toolsets/` folder; designing tool parameters, return types, or struct schemas for a toolset. SKIP for: invoking existing tools at runtime (use epic-unreal-mcp instead), authoring an Agent Skill (use epic-unreal-skill), generic refactors that happen to touch a toolset file but don't add or redesign a tool, or unrelated uses of the word 'toolset'.",
+      "manual_only": false,
+      "sha256": "b91d0c1a46db5794f24b71bb4eba4fe77df0fe3e706a030072c166c4dcc49ef8",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/epic-unreal-mcp/SKILL.md",
+      "owner": "user loose skills",
+      "kind": "loose",
+      "registered_candidate": true,
+      "name": "epic-unreal-mcp",
+      "description": "Use this skill to perform actions inside an Unreal Engine project via a live-editor MCP connection. Trigger when the user wants to change, query, or run something in their Unreal Engine project, not for conceptual or docs questions. Concrete triggers: spawn/move/duplicate/transform actors in a level, open a `.uproject`, add things around a PlayerStart, create or edit a Blueprint/Widget/Material/Niagara/Control Rig/Sequencer/Behavior Tree/GAS ability, read or write properties on actors (e.g. `bIsLocked` on `BP_DoorActor`), Live Coding recompile after editing C++ (`AActor`, `UMyComponent::Method`, `UPROPERTY`), or modify Static/Skeletal Mesh assets. Treat as Unreal context even without the word \"Unreal\": asset prefixes `BP_`, `WBP_`, `M_`, `MI_`, `NS_`, `CR_`, `SK_`, `SM_`, `ABP_`; UE C++ types/macros; `.uproject`; Content Browser; Outliner; PlayerStart; \"in my game\" plus UE signals. Skip for: pure conceptual/docs questions, Unity, Godot, or unrelated uses of \"blueprint\"/\"sequencer\"/\"widget\".",
+      "manual_only": false,
+      "sha256": "2b76fe286834adbc40988788819c76a4d50380c672cf2144812db9cdc0635828",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/epic-unreal-skill/SKILL.md",
+      "owner": "user loose skills",
+      "kind": "loose",
+      "registered_candidate": true,
+      "name": "epic-unreal-skill",
+      "description": "Use this skill when creating, editing, or reviewing an Unreal Engine Agent Skill, a named bundle of instructions registered with the unreal-mcp server (distinct from ALL host/harness SKILL.md files, including Claude, Codex and Hermes skills). Trigger when the user wants to add or change a skill that the in-editor agent will load. Concrete triggers: 'create a new Agent Skill', 'add a skill for X workflow', 'edit/update this skill', 'review my skill', 'make a Python skill class', 'create a skill UAsset', 'register a skill so Claude picks it up'; writing or editing a `SKILL.md` inside a UE plugin's `Skills/` or `Python/skills/` folder; defining a Python skill class registered with the skill registry; calling `CreateSkill`, `ListSkills`, or `GetSkills` MCP tools; designing a skill's name, description, or instruction body. SKIP for: authoring a toolset (use epic-unreal-create-toolset), invoking an existing skill at runtime (use epic-unreal-mcp), editing ANY harness-level `SKILL.md`, including `.claude/skills/`, `~/.claude/skills/`, `~/.codex/skills/`, and the active `HERMES_HOME/skills/` (this skill is only for in-engine Agent Skills), or generic uses of the word 'skill'.",
+      "manual_only": false,
+      "sha256": "ae919e94c6c75efac3de5bbf25cacf23315a36291d49042c1d15d1a9ee8b67d2",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/herdr/SKILL.md",
+      "owner": "user loose skills",
+      "kind": "loose",
+      "registered_candidate": true,
+      "name": "herdr",
+      "description": "Control Herdr, a terminal multiplexer for coding agents. Use only when the user explicitly mentions Herdr or asks to use Herdr to inspect or control panes, tabs, workspaces, commands, or another agent. Do not use merely because a task could benefit from a background terminal, delegation, or parallel work. Requires HERDR_ENV=1.",
+      "manual_only": false,
+      "sha256": "fbd9d502767f7dff29c211505a0bd9ba34e980ed4cc456247e2adc1642883984",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/api-and-interface-design/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "api-and-interface-design",
+      "description": "Guides stable API and interface design. Use when designing APIs, module boundaries, or any public interface. Use when creating REST or GraphQL endpoints, defining type contracts between modules, or establishing boundaries between frontend and backend.",
+      "manual_only": false,
+      "sha256": "e83d34f52ff12dd8a7c5134cd7e8140ea4541ec65e204f8a1e4cd366e30c4192",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/browser-testing-with-devtools/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "browser-testing-with-devtools",
+      "description": "Tests in real browsers via Chrome DevTools MCP. Use when building or debugging anything that runs in a browser. Use when you need to inspect the DOM, capture console errors, analyze network requests, profile performance, or verify visual output with real runtime data. Requires the chrome-devtools MCP server to be configured.",
+      "manual_only": false,
+      "sha256": "4e3aacd6a380cd25bc6c2d67fdd1c926a9b22535b8a62109ecd33cefd909e3d9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/ci-cd-and-automation/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "ci-cd-and-automation",
+      "description": "Automates CI/CD pipeline setup. Use when setting up or modifying build and deployment pipelines. Use when you need to automate quality gates, configure test runners in CI, or establish deployment strategies.",
+      "manual_only": false,
+      "sha256": "a6ed8ed56456b01ff8314c44eefc69897d9905ae4e06bb2b7036286efb79b5f0",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/code-review-and-quality/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "code-review-and-quality",
+      "description": "Conducts multi-axis code review. Use before merging any change. Use when reviewing code written by yourself, another agent, or a human. Use when you need to assess code quality across multiple dimensions before it enters the main branch. Use when asked to review a diff or a pull request, even when the diff is pasted inline.",
+      "manual_only": false,
+      "sha256": "2db1e850379f255fd3091ef278cde24cd6c7d2ba23e360cc52ea522c40d4396e",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/code-simplification/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "code-simplification",
+      "description": "Simplifies code for clarity. Use when refactoring code for clarity without changing behavior. Use when code works but is harder to read, maintain, or extend than it should be. Use when reviewing code that has accumulated unnecessary complexity.",
+      "manual_only": false,
+      "sha256": "f0c5ed754057eb0c1e027e2587f59de816651feb5e837242296c43ea21cf621d",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/constraint-driven-development/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "constraint-driven-development",
+      "description": "Establishes a project's quality bar as a written contract and stops agents quietly lowering it. Interviews the user on which dimensions matter, supplies sane default thresholds when they have no number in mind, records everything in CONSTRAINTS.md, and watches the diff for a weakened bar — new @ts-ignore or eslint-disable suppressions, skipped or deleted tests, assertions stripped out, unimplemented stubs, thresholds edited down. Use when no quality bar is written down, when the user says \"set up constraints\" or \"define our standards\", when the user wants dimensions they care about — accessibility, web performance, coverage — set up as enforced constraints, when an agent keeps silencing checks or skipping tests to get to green, when you need a coverage or performance threshold and don't know what number to pick, or when an agent writes more code than anyone will read.",
+      "manual_only": false,
+      "sha256": "06479d4305f286d23cfb99f5dc85695896785269664e1f6a8d800e3b71e70c10",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/context-engineering/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "context-engineering",
+      "description": "Optimizes agent context setup. Use when starting a new session, when agent output quality degrades, when switching between tasks, or when you need to configure rules files and context for a project.",
+      "manual_only": false,
+      "sha256": "8b736cb9e55b82b265ab6ff78349c0e826e8a6df550deddf665b7fb3ff858b63",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/debugging-and-error-recovery/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "debugging-and-error-recovery",
+      "description": "Guides systematic root-cause debugging. Use when tests fail, builds break, something that worked yesterday broke, behavior doesn't match expectations, or you encounter any unexpected error. Use when you need to figure out what broke and why — a systematic approach to finding and fixing the root cause rather than guessing.",
+      "manual_only": false,
+      "sha256": "21f3960f5d7ae2cc95c40896545004dbbcbbd752ea65fc2d53962554d4174220",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/deprecation-and-migration/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "deprecation-and-migration",
+      "description": "Manages deprecation and migration. Use when removing old systems, APIs, or features. Use when migrating users from one implementation to another. Use when migrating a database schema in production, such as renaming or dropping a column without downtime (expand/contract). Use when deciding whether to maintain or sunset existing code.",
+      "manual_only": false,
+      "sha256": "6a624f942e09c69863a4219b9bd5d56975026b67b0c70bc83385ffd2120b6142",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/documentation-and-adrs/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "documentation-and-adrs",
+      "description": "Records decisions and documentation. Use when you need to document an architecture decision (ADR) or the reasoning behind a design choice, when changing public APIs, shipping features, or when you need to record context that future engineers and agents will need to understand the codebase.",
+      "manual_only": false,
+      "sha256": "b60d503925bbaacee7fd63935db70b9ced5b2514ff5a56a672130e01b9690bc5",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/doubt-driven-development/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "doubt-driven-development",
+      "description": "Subjects every non-trivial decision to a fresh-context adversarial review before it stands. Use when you want every assumption cross-examined before proceeding, when stress-testing a plan for hidden failure modes, when correctness matters more than speed, when working in unfamiliar code, when stakes are high (production auth, security-sensitive logic, a high-stakes migration, irreversible operations), or any time a confident output would be cheaper to verify now than to debug later.",
+      "manual_only": false,
+      "sha256": "6fa1fcd8420c28daf7e53c5b08b0f20b907911efd2a6d9bce0b9740da20a4008",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/frontend-ui-engineering/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "frontend-ui-engineering",
+      "description": "Builds production-quality, accessible, responsive user-facing UIs. Use when building or modifying interfaces and pages, creating components, implementing layouts, meeting WCAG accessibility requirements, managing state, or when the output needs to look and feel production-quality rather than AI-generated.",
+      "manual_only": false,
+      "sha256": "29a3e53d57c0a128831a20730ae874a8c4fda40c001fcdc15f8e9ad4b5f72f1b",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/git-workflow-and-versioning/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "git-workflow-and-versioning",
+      "description": "Structures git workflow practices. Use when making any code change. Use when committing, branching, resolving conflicts, splitting uncommitted work in a messy working tree into clean atomic commits, opening or reviewing a pull request (PR), pushing to a remote, or when you need to organize work across multiple parallel streams. Use when cutting a release, choosing a semantic version bump, tagging, or writing a changelog.",
+      "manual_only": false,
+      "sha256": "b7465d187935c52546d39fdc7bd6ac36d94eda25a9500ef8c18b767d2eb116ea",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/idea-refine/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "idea-refine",
+      "description": "Refines raw ideas into sharp, actionable concepts through structured divergent and convergent thinking. Use when an idea is still vague, when you need to stress-test assumptions before committing to a plan, or when you want to expand options before converging on one. Triggers on \"ideate\", \"refine this idea\", or \"stress-test my plan\".",
+      "manual_only": false,
+      "sha256": "21ef828e3a2144245b67f840cc3805f761e98c9acce9a96670b7cd7441353463",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/incremental-implementation/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "incremental-implementation",
+      "description": "Delivers changes incrementally in thin, verifiable slices. Use when implementing any feature or change that touches more than one file, or when picking up the next task from a plan. Use when rolling a change out behind a feature flag, when you're about to write a large amount of code at once, or when a task feels too big to land in one step.",
+      "manual_only": false,
+      "sha256": "df66536610071727feae1ca95f3c391c248ad828041750ccd3699cce763aa00b",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/interview-me/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "interview-me",
+      "description": "Extracts what the user actually wants instead of what they think they should want. Achieves this through one-question-at-a-time interview until ~95% confidence about the underlying intent. Use when an ask is underspecified (\"build me X\" without \"for whom\" or \"why now\"), when the user explicitly invokes (\"interview me\", \"grill me\", \"are we sure?\", \"stress-test my thinking\"), or when you catch yourself silently filling in ambiguous requirements before any plan, spec, or code exists.",
+      "manual_only": false,
+      "sha256": "ace4b675999bb504593d572e0f73f3d7e803ad6fddf318445598c82c11939db2",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/observability-and-instrumentation/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "observability-and-instrumentation",
+      "description": "Instruments code so production behavior is visible and diagnosable. Use when adding logging, metrics, tracing, or alerting. Use when shipping any feature that runs in production and you need evidence it works. Use when production issues are reported but you can't tell what happened from the available data.",
+      "manual_only": false,
+      "sha256": "e7fcb0820306d46268de9594d676ad98e35040858926c412b7000faa52a61f87",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/performance-optimization/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "performance-optimization",
+      "description": "Optimizes application performance across frontend, backend, queries, and databases. Use when performance requirements exist, when you suspect performance regressions, when Core Web Vitals or load times need improvement, when N+1 query patterns need fixing, or when profiling reveals bottlenecks.",
+      "manual_only": false,
+      "sha256": "bd36a30e55a5f84329a6977eba5e1ab7654146e71eaba88e34337d4ee020460f",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/planning-and-task-breakdown/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "planning-and-task-breakdown",
+      "description": "Breaks work into ordered tasks. Use when you have a spec or clear requirements and need to break work into implementable tasks. Use when a task feels too large to start, when you need to estimate scope, or when parallel work is possible.",
+      "manual_only": false,
+      "sha256": "ed0f90cc5951ddd4bcab7f871f64efec93a49af9279ef93bc470da77ad8da3f7",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/security-and-hardening/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "security-and-hardening",
+      "description": "Hardens code against vulnerabilities. Use when auditing an input handler for vulnerabilities, when handling user input, authentication, data storage, or external integrations, or when checking a login flow is safe against the OWASP Top Ten. Use when building any feature that accepts untrusted data, manages user sessions, or interacts with third-party services. Use when auditing dependencies for known vulnerabilities, triaging package-manager audit findings, or assessing supply-chain risk in a new package. Use when personal data or privacy compliance (GDPR, CCPA) is involved.",
+      "manual_only": false,
+      "sha256": "2e3fc60eed5aba97fe416f3f3c9317fdb014a682925ec70a733c3ff99e4b9858",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/shipping-and-launch/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "shipping-and-launch",
+      "description": "Prepares production launches. Use when preparing to deploy to production, or when asking what needs to be in place before shipping. Use when you need a pre-launch checklist, when setting up monitoring, when planning a staged rollout, or when you need a rollback strategy.",
+      "manual_only": false,
+      "sha256": "726f3e546369db289160b8d42195590f00b6432887e17bf19070dcc9a347fe39",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/source-driven-development/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "source-driven-development",
+      "description": "Grounds every implementation decision in official documentation. Use when you want to verify an approach against the official docs before implementing it, or when you want authoritative, source-cited code free from outdated patterns. Use when building with any framework or library where correctness matters.",
+      "manual_only": false,
+      "sha256": "c59faf851377f0eeda45306398d16eb96d77ab1c2fd3e1a7fb58e9a0af33c1e9",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/spec-driven-development/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "spec-driven-development",
+      "description": "Creates specs before coding. Use when starting a new project, feature, or significant change and no specification exists yet. Use when drafting a PRD or requirements document with objectives and scope, or when requirements are unclear, ambiguous, or only exist as a vague idea. Use when a single requirement spans several independently testable capabilities and needs decomposing into a capability map of modules before specifying.",
+      "manual_only": false,
+      "sha256": "c4b97ce3d7f24be0e67fd612c7595f65504872e3a9f8d338d098b2363fdb66ef",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/test-driven-development/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "test-driven-development",
+      "description": "Drives development with tests using the red-green-refactor loop. Use when implementing any logic, fixing any bug, or changing any behavior. Use when you need to prove that code works, when a bug report arrives, or when you're about to modify existing functionality. Use when asked to add tests to a function, fix a bug in it or change its behavior, even when the code is pasted inline and the request does not mention tests.",
+      "manual_only": false,
+      "sha256": "a3aa6ba95638497025577469eda10ed17918698209615aeafbc26f131bf2469d",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/skills/using-agent-skills/SKILL.md",
+      "owner": "agent-skills@agent-skills",
+      "kind": "plugin",
+      "registered_candidate": true,
+      "name": "using-agent-skills",
+      "description": "Discovers and invokes agent skills. Use when starting a session, or when you need to decide which skill or workflow applies to the piece of work at hand. This is the meta-skill that governs how all other skills are discovered and invoked.",
+      "manual_only": false,
+      "sha256": "30787ef2c77bf1a4729fffed0f6523ba6fcbe81bdc436b36371b78c21394d3c3",
+      "user_invocable": true
+    },
+    {
+      "path": "<USER_HOME>/.codex/skills/unslop/SKILL.md",
+      "owner": "user loose skills",
+      "kind": "loose",
+      "registered_candidate": true,
+      "name": "unslop",
+      "description": "Cut AI tells from any writing.",
+      "manual_only": false,
+      "sha256": "0503149a9b85dad02bbc747a3aeb534e2ba07f53c5fd57e491ea3d1e67659aa3",
+      "user_invocable": true
+    }
+  ],
+  "agents": [
+    {
+      "owner": "agent-skills@agent-skills",
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/agents/code-reviewer.md",
+      "sha256": "4efbd53e08e57291cc2869865be809897fbe598767600118ec687d00a557fff4",
+      "registration": "shared prompt reference; not a registered Codex agent type"
+    },
+    {
+      "owner": "agent-skills@agent-skills",
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/agents/security-auditor.md",
+      "sha256": "66a3f68f1c691b600ddb44e88afb138e239d0572df37be84e1f9a427c887dd0a",
+      "registration": "shared prompt reference; not a registered Codex agent type"
+    },
+    {
+      "owner": "agent-skills@agent-skills",
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/agents/test-engineer.md",
+      "sha256": "a7a0b33ec3294da8fb4ee02ed28c665056bafa48982930fe551dcfadda9117af",
+      "registration": "shared prompt reference; not a registered Codex agent type"
+    },
+    {
+      "owner": "agent-skills@agent-skills",
+      "path": "<USER_HOME>/.codex/plugins/cache/agent-skills/agent-skills/0.6.13/agents/web-performance-auditor.md",
+      "sha256": "0928b1cf8103262a364bce0c1fc689a918852e2275441f1b2e687adfa1e607e9",
+      "registration": "shared prompt reference; not a registered Codex agent type"
+    }
+  ],
+  "hooks": [
+    {
+      "owner": "ponytail@ponytail",
+      "source": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/hooks/claude-codex-hooks.json",
+      "event": "SessionStart",
+      "matcher": "startup|resume|clear|compact",
+      "command": "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT.split(String.fromCharCode(92)).join('/'), 'hooks/ponytail-activate.js'))\"",
+      "timeout_seconds": 15
+    },
+    {
+      "owner": "ponytail@ponytail",
+      "source": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/hooks/claude-codex-hooks.json",
+      "event": "SubagentStart",
+      "matcher": null,
+      "command": "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT.split(String.fromCharCode(92)).join('/'), 'hooks/ponytail-subagent.js'))\"",
+      "timeout_seconds": 15
+    },
+    {
+      "owner": "ponytail@ponytail",
+      "source": "<USER_HOME>/.codex/plugins/cache/ponytail/ponytail/5.3.2/hooks/claude-codex-hooks.json",
+      "event": "UserPromptSubmit",
+      "matcher": null,
+      "command": "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT.split(String.fromCharCode(92)).join('/'), 'hooks/ponytail-mode-tracker.js'))\"",
+      "timeout_seconds": 15
+    },
+    {
+      "owner": "user",
+      "source": "<USER_HOME>/.codex/hooks.json",
+      "event": "SessionStart",
+      "command": "bash '<USER_HOME>/.codex/herdr-agent-state.sh' session",
+      "timeout_seconds": 10,
+      "integration_version": 10
+    }
+  ],
+  "catalog_roots": [
+    {
+      "name": "personal",
+      "root": "<USER_HOME>"
+    },
+    {
+      "name": "openai-curated",
+      "root": "<USER_HOME>/.codex/.tmp/plugins"
+    }
+  ],
+  "settings": {
+    "approval_policy": "on-request",
+    "approvals_reviewer": "auto_review",
+    "sandbox_mode": "workspace-write",
+    "model": "gpt-6.1-sol",
+    "model_reasoning_effort": "high",
+    "features": {
+      "hooks": true,
+      "multi_agent": true
+    }
+  },
+  "disabled_plugin_settings": [
+    "github@openai-curated",
+    "caveman@caveman-repo",
+    "frontend-design@claude-plugins-official",
+    "skill-creator@claude-plugins-official",
+    "documents@openai-primary-runtime",
+    "spreadsheets@openai-primary-runtime",
+    "presentations@openai-primary-runtime",
+    "pdf@openai-primary-runtime",
+    "template-creator@openai-primary-runtime",
+    "visualize@openai-bundled",
+    "sites@openai-bundled",
+    "chrome-devtools-mcp@claude-plugins-official",
+    "browser@openai-bundled",
+    "codex-app-tools@openai-bundled"
+  ],
+  "configured_mcp": [
+    {
+      "name": "sync-worktrees",
+      "transport": "stdio",
+      "command": "<USER_HOME>/.local/bin/sync-worktrees-mcp"
+    },
+    {
+      "name": "chrome-devtools",
+      "transport": "stdio",
+      "command": "<USER_HOME>/.local/bin/npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--no-usage-statistics"
+      ]
+    }
+  ],
+  "guidance": [
+    {
+      "path": "<USER_HOME>/.codex/AGENTS.md",
+      "summary": "Matt Pocock reusable skills and Ponytail remain configured; obsolete Pstack routing removed. Agent Skills uses native discovery without a preloaded meta-router. Models, native permissions, and hook trust are preserved."
+    }
+  ],
+  "local_adaptations": [
+    {
+      "name": "mattpocock-extras",
+      "source": "https://github.com/mattpocock/skills",
+      "note": "Nine manual-only skills in a local marketplace; no pinned patch/build recipe found. Claude-specific handoff and guardrails are excluded."
+    },
+    {
+      "name": "Blender and Epic loose skills",
+      "note": "Loose copies exist. No INSTALL-PROVENANCE.json or UPSTREAM.md found beside these skills; pinned revision and patch metadata are unresolved."
+    },
+    {
+      "name": "Herdr",
+      "note": "Release-provided loose skill; shell integration version 10. No pinned skill revision found."
+    }
+  ],
+  "limitations": [
+    "Native installed/enabled state, selected skill hashes, and fresh-session discovery were verified during migration. Skill workflows, bundled helpers, and external services were not exercised.",
+    "Credentials, tokens, authentication files, transcripts, plugin user data, and private connection details are excluded.",
+    "Local source and registry revisions were inspected; no fresh upstream byte comparison or security audit was performed.",
+    "The native CLI lists four local plugins here and omits the seven cached account-managed remote payloads. Their installed/enabled state is not established by this listing. Other disabled caches are excluded from skill enumeration."
+  ],
+  "counts": {
+    "installed_plugins": 4,
+    "enabled_plugins": 4,
+    "disabled_plugins": 0,
+    "cached_remote_plugins": 7,
+    "skills_total": 126,
+    "plugin_skill_files": 84,
+    "registered_plugin_candidates": 67,
+    "enabled_plugin_candidates": 67,
+    "supporting_plugin_files": 17,
+    "loose_and_system_skill_files": 11,
+    "synced_skill_files": 0,
+    "cached_remote_skill_files": 31,
+    "agent_prompt_files": 4,
+    "hook_declarations": 4
+  }
+}
