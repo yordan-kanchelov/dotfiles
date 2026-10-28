@@ -28,17 +28,21 @@ headroom --version
 
 RTK OSS installs an executable named `rtk`. The full RTK edition conflicts with it. Keep RTK Engine, RTK Proxy, and delegated models out of this comparison.
 
-## Configure dashboard logging
+## Show Before and After in the dashboard
 
-The default in [settings.json](settings.json) keeps message logging on. It uses Headroom's settings file so the dashboard can change it. The other managed settings remain in [headroom.env](headroom.env).
+The Transforms view compares the request before compression with the compressed request sent upstream. It needs both snapshots. The default in [settings.json](settings.json) keeps message logging on. The other managed settings remain in [headroom.env](headroom.env).
 
-Installed Headroom 0.42.0 mistakes file-loaded settings for explicit environment exports after startup. That locks the dashboard controls. The [local patch](patches/headroom-0.42.0-settings-origin.patch) fixes that provenance check. It does not change request capture or the dashboard display.
+Headroom 0.42.0 needs local fixes for this view. The [capture patch](patches/headroom-0.42.0-transformations-capture.patch) records native Codex HTTP and WebSocket requests, including `input`, `instructions`, and `tools`, only when message logging is on. The [display patch](patches/headroom-0.42.0-transformations-ui.patch) reads the compressed request for After and formats structured Anthropic and Responses content as JSON. It keeps line breaks and a 2,000-character preview cap, with a truncation marker.
 
-After installing Headroom and before applying its service, run the guarded patcher with the installed tool's Python. It checks the version and source hashes, keeps a private backup, and accepts an already-patched source. Re-run it after reinstalling Headroom. It refuses unknown versions or source changes rather than patching them blindly.
+An ambiguous WebSocket error, cancellation, or more than 100 pending turns stops snapshots for that connection to avoid assigning content to the wrong request. Reconnecting resumes capture. Forwarding and request metrics continue.
+
+The separate [settings-origin patch](patches/headroom-0.42.0-settings-origin.patch) lets the dashboard edit file-loaded settings after startup. This is a convenience for the logging toggle. Compression and snapshot capture do not depend on it.
+
+After installing Headroom and before applying its service, run the guarded [patcher](../../scripts/apply-headroom-fixes.py) with the installed tool's Python. It checks the version and source hashes, keeps private backups, and accepts patches already applied. Re-run it after reinstalling Headroom. It refuses unknown versions or source changes.
 
 ```sh
 headroom_python="$(uv tool dir)/headroom-ai/bin/python"
-"$headroom_python" scripts/apply-headroom-settings-fix.py
+"$headroom_python" scripts/apply-headroom-fixes.py
 unset HEADROOM_LOG_MESSAGES
 
 "$headroom_python" - <<'PY'
@@ -96,7 +100,11 @@ The exclusions preserve Ansible verification, complete Git reviews, exhaustive s
 
 [settings.json](settings.json) enables message logging by default; [headroom.env](headroom.env) sets its path to `~/.headroom/logs/requests.jsonl`. These logs can contain prompts, source, tool results, and secrets. Keep them outside Git and review them before sharing. Disabling outbound reporting does not prevent local content storage.
 
-Installed Headroom 0.42.0 leaves `response_content` empty in its [unified logging path](https://github.com/headroomlabs-ai/headroom/blob/17d38e5699b7d7c69ac6addcd762f39e42dd7f00/headroom/proxy/outcome.py#L774-L808). Claude request content was present in the live smoke checks, while Codex WebSocket and passthrough records omitted request content. Treat capture as incomplete. The dashboard can also show placeholders or `[object Object]`, and its After view can display a reply instead of the compressed request. The logging toggle patch fixes none of these capture or display defects.
+With the capture and display fixes applied, Before shows `request_messages` and After shows `compressed_messages`. Complete captured snapshots remain in the private JSONL log and `/transformations/feed`, beyond the dashboard's preview cap. These snapshots contain request content, not authentication headers. Prompts or tool results can still contain secrets.
+
+Control requests such as `GET /api/hello` and bodyless metrics records have no message snapshots. Their cards show a neutral placeholder. Older records cannot recover content that was never captured, so start fresh requests after applying the fixes.
+
+Headroom 0.42.0 still leaves `response_content` empty in its [unified logging path](https://github.com/headroomlabs-ai/headroom/blob/17d38e5699b7d7c69ac6addcd762f39e42dd7f00/headroom/proxy/outcome.py#L774-L808). This field is the model's reply. The Before/After comparison uses request snapshots and does not need it.
 
 On macOS, render [newsyslog.conf.in](newsyslog.conf.in) and [logrotate.plist.in](logrotate.plist.in) with the standard library. This recipe backs up existing rendered files and sets private permissions:
 
@@ -173,7 +181,7 @@ headroom dashboard --port 8787
 
 Omit every `--target` argument. Configure agent routing with the small merge snippets below instead. The native installer manages only the persistent service here. It does not write shell exports or introduce a custom Codex provider.
 
-[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics are on. Message logging defaults to on through `settings.json`, subject to the capture limits above. Built-in local compression-feedback statistics remain separate from traffic learning.
+[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics are on. Message logging defaults to on through `settings.json`. Built-in local compression-feedback statistics remain separate from traffic learning.
 
 CCR is disabled with `HEADROOM_NO_CCR=1`, so no retrieval MCP is needed. To test lossy compression later, set `HEADROOM_LOSSLESS=0` and `HEADROOM_NO_CCR=0`, reapply the service, and register Headroom retrieval tools together. The one-hour `HEADROOM_CCR_TTL_SECONDS` value applies when CCR is enabled. It does not control request-log or RTK retention.
 
@@ -230,8 +238,15 @@ Keep or delete local logs and recovery data according to their contents. Removin
 
 ```sh
 python3 scripts/test-context-tools.py
+python3 scripts/test-headroom-fix-installer.py
 shellcheck agent-setup/context-tools/rtk-hook.sh
-"$(uv tool dir)/headroom-ai/bin/python" scripts/test-headroom-settings-origin.py
+headroom_python="$(uv tool dir)/headroom-ai/bin/python"
+"$headroom_python" scripts/test-headroom-settings-origin.py
+"$headroom_python" scripts/test-headroom-transformations-capture.py
+headroom_root="$("$headroom_python" -c 'import headroom; from pathlib import Path; print(Path(headroom.__file__).parent)')"
+node scripts/test-headroom-transformations-ui.js --source "$headroom_root/dashboard/templates/dashboard.html"
 ```
 
-The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. Local checks covered health endpoints and synthetic content. One small live request through each ordinary CLI also completed and produced a request-log record. The patched dashboard passed an off/restart/on/restart logging cycle and remains editable with logging on. These smoke checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.
+The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. Before the capture and display fixes, health checks and one small live request through each ordinary CLI passed and produced request-log records. Those checks found Claude request content but missing Codex snapshots. The settings-origin patch also passed an off/restart/on/restart logging cycle.
+
+Fresh Claude and Codex requests now pass live Before/After checks. The browser renders both snapshots without object coercion or the old enable-logging hint. The Codex sample's compressed snapshot differs from its original. These checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.

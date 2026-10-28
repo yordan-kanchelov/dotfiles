@@ -1,0 +1,200 @@
+--- a/headroom/proxy/outcome.py
++++ b/headroom/proxy/outcome.py
+@@ -30 +30,4 @@
+-from dataclasses import dataclass, field
++from collections import deque
++from copy import deepcopy
++from dataclasses import dataclass, field, replace
++import json
+@@ -42,0 +46,76 @@
++
++
++def _request_projection(body: Any) -> list[dict[str, Any]]:
++    if isinstance(body, (str, bytes)):
++        try:
++            body = json.loads(body)
++        except (ValueError, UnicodeDecodeError):
++            return []
++    if not isinstance(body, dict):
++        return []
++    if isinstance(body.get("response"), dict):
++        body = body["response"]
++    content = {key: body[key] for key in ("instructions", "input", "messages", "system", "tools")
++               if key in body}
++    return [deepcopy(content)] if content else []
++
++
++@dataclass
++class RequestSnapshots:
++    before: list[dict[str, Any]]
++    after: list[dict[str, Any]] | None = None
++
++    @classmethod
++    def capture(cls, enabled: bool, original: Any) -> RequestSnapshots | None:
++        # Do not parse or copy payloads while content logging is disabled.
++        return cls(_request_projection(original)) if enabled else None
++
++    def set_sent(self, body: Any) -> None:
++        self.after = _request_projection(body)
++
++    def apply(self, outcome: RequestOutcome) -> RequestOutcome:
++        return replace(outcome, request_messages=self.before, compressed_messages=self.after)
++
++
++class RequestSnapshotQueue:
++    """Bind sent request snapshots to the provider's response IDs."""
++
++    def __init__(self) -> None:
++        self.pending: deque[RequestSnapshots] = deque()
++        self.active: dict[str, RequestSnapshots] = {}
++        self.disabled = False
++
++    def enqueue(self, pair: RequestSnapshots | None) -> None:
++        if pair is None or self.disabled:
++            return
++        if len(self.pending) + len(self.active) >= 100:
++            self.pending.clear()
++            self.active.clear()
++            # shortcut: stop snapshots after overflow; reconnect to resume safely.
++            self.disabled = True
++            return
++        self.pending.append(pair)
++
++    def event(self, event: Any) -> RequestSnapshots | None:
++        if self.disabled or not isinstance(event, dict):
++            return None
++        kind = event.get("type")
++        response = event.get("response")
++        response_id = response.get("id") if isinstance(response, dict) else None
++        response_id = response_id or event.get("response_id")
++        response_id = response_id if isinstance(response_id, str) else None
++        if kind == "response.created":
++            if response_id and response_id not in self.active and self.pending:
++                self.active[response_id] = self.pending.popleft()
++        elif kind == "response.completed":
++            return self.active.pop(response_id, None)
++        elif kind in {"error", "response.cancel", "response.cancelled",
++                      "response.failed", "response.incomplete"}:
++            if response_id in self.active:
++                self.active.pop(response_id)
++            else:
++                # An uncorrelated rejection must not shift later FIFO matches.
++                self.pending.clear()
++                self.active.clear()
++                self.disabled = True
++        return None
+--- a/headroom/proxy/handlers/openai.py
++++ b/headroom/proxy/handlers/openai.py
+@@ -119 +119 @@
+-from headroom.proxy.outcome import RequestOutcome
++from headroom.proxy.outcome import RequestOutcome, RequestSnapshots, RequestSnapshotQueue
+@@ -5845,0 +5846,3 @@
++        request_snapshots = RequestSnapshots.capture(
++            getattr(self.config, "log_full_messages", False), body
++        )
+@@ -6632,0 +6636 @@
++                    request_snapshots=request_snapshots,
+@@ -6654,0 +6659 @@
++                        request_snapshots=request_snapshots,
+@@ -7110,3 +7115,2 @@
+-                            request_messages=messages
+-                            if getattr(self.config, "log_full_messages", False)
+-                            else None,
++                            request_messages=request_snapshots.before if request_snapshots else None,
++                            compressed_messages=request_snapshots.after if request_snapshots else None,
+@@ -7870,0 +7875,2 @@
++            ws_request_snapshots = RequestSnapshotQueue()
++            fallback_request_snapshots = None
+@@ -7872,0 +7879,4 @@
++            )
++            first_request_snapshots = (
++                RequestSnapshots.capture(getattr(self.config, "log_full_messages", False), body)
++                if first_frame_is_create else None
+@@ -8685 +8695,5 @@
+-                    await upstream.send(_strip_codex_lite_metadata(first_msg_raw))
++                    first_upstream_frame = _strip_codex_lite_metadata(first_msg_raw)
++                    if first_request_snapshots is not None:
++                        first_request_snapshots.set_sent(first_upstream_frame)
++                        ws_request_snapshots.enqueue(first_request_snapshots)
++                    await upstream.send(first_upstream_frame)
+@@ -9019,0 +9034 @@
++                                frame_request_snapshots = None
+@@ -9030,0 +9046 @@
++                                    ws_request_snapshots.event(_inbound_frame_body)
+@@ -9081,0 +9098,4 @@
++                                    frame_request_snapshots = RequestSnapshots.capture(
++                                        getattr(self.config, "log_full_messages", False),
++                                        _inbound_frame_body,
++                                    )
+@@ -9178 +9198,5 @@
+-                                await upstream.send(_strip_codex_lite_metadata(msg))
++                                upstream_frame = _strip_codex_lite_metadata(msg)
++                                if frame_request_snapshots is not None:
++                                    frame_request_snapshots.set_sent(upstream_frame)
++                                    ws_request_snapshots.enqueue(frame_request_snapshots)
++                                await upstream.send(upstream_frame)
+@@ -9267,0 +9292 @@
++                        completed_request_snapshots = None
+@@ -9388,0 +9414,4 @@
++                                    request_messages=(completed_request_snapshots.before
++                                                      if completed_request_snapshots else None),
++                                    compressed_messages=(completed_request_snapshots.after
++                                                         if completed_request_snapshots else None),
+@@ -9498,0 +9528 @@
++                                completed_request_snapshots = ws_request_snapshots.event(event)
+@@ -9682,2 +9712,3 @@
+-                                await upstream.send(
+-                                    _normalize_ws_response_create_for_upstream(continuation_raw)
++                                continuation_frame = _normalize_ws_response_create_for_upstream(continuation_raw)
++                                continuation_snapshots = RequestSnapshots.capture(
++                                    getattr(self.config, "log_full_messages", False), continuation_frame
+@@ -9684,0 +9716,4 @@
++                                if continuation_snapshots is not None:
++                                    continuation_snapshots.set_sent(continuation_frame)
++                                    ws_request_snapshots.enqueue(continuation_snapshots)
++                                await upstream.send(continuation_frame)
+@@ -9917,2 +9952,4 @@
+-                    websocket, body, first_msg_raw, upstream_headers, request_id
+-                )
++                    websocket, body, first_msg_raw, upstream_headers, request_id,
++                    request_snapshots=first_request_snapshots,
++                )
++                fallback_request_snapshots = first_request_snapshots
+@@ -10062,3 +10099,4 @@
+-                        request_messages=ws_messages_for_log
+-                        if getattr(self.config, "log_full_messages", False)
+-                        else None,
++                        request_messages=(fallback_request_snapshots.before
++                                          if fallback_request_snapshots else None),
++                        compressed_messages=(fallback_request_snapshots.after
++                                             if fallback_request_snapshots else None),
+@@ -10197,0 +10236 @@
++        request_snapshots: Any | None = None,
+@@ -10296,0 +10336,2 @@
++        if request_snapshots is not None:
++            request_snapshots.set_sent(outbound_bytes)
+--- a/headroom/proxy/handlers/streaming.py
++++ b/headroom/proxy/handlers/streaming.py
+@@ -809,0 +810 @@
++        request_snapshots: Any | None = None,
+@@ -1048,0 +1050,2 @@
++        if request_snapshots is not None:
++            outcome = request_snapshots.apply(outcome)
+@@ -1068,0 +1072 @@
++        request_snapshots: Any | None = None,
+@@ -1117,0 +1122 @@
++                request_snapshots=request_snapshots,
+@@ -1152,0 +1158 @@
++        request_snapshots: Any | None,
+@@ -1262,0 +1269,2 @@
++        if request_snapshots is not None:
++            request_snapshots.set_sent(outbound_bytes)
+@@ -2025,0 +2034 @@
++                    request_snapshots=request_snapshots,
+--- a/headroom/proxy/server.py
++++ b/headroom/proxy/server.py
+@@ -2594,0 +2595 @@
++        request_snapshots: Any | None = None,
+@@ -2627,0 +2629,2 @@
++        if request_snapshots is not None:
++            request_snapshots.set_sent(outbound_bytes)
