@@ -6,6 +6,10 @@ This file provides guidance to coding agents (Claude Code, Codex, etc.) when wor
 
 When changing a configuration or instruction in this repo, apply the matching change to the current machine unless the user asks for repo-only changes. Use the existing install or symlink workflow. Merge agent instructions and settings into the active user profile. Back up regular files before editing. Preserve credentials, permissions, model choices, and unrelated settings. Verify the live result and report anything that could not be applied.
 
+## Shared agent tooling
+
+For shared tooling, proxies, hooks, logging, or agent configuration, inspect every installed harness, including Claude Code, Codex, Pi, Hermes, and OpenCode. Apply and verify supported integrations within the user's requested scope. Report which harnesses were configured, excluded, unsupported, or untested.
+
 ## Repository Overview
 
 Dotfiles for macOS, Debian/Ubuntu-based Linux (incl. Linux Mint) and Omarchy. Setup is an
