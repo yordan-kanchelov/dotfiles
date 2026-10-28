@@ -79,9 +79,15 @@ Version 5.3.2. Used by claude, codex.
 
 ## unslop (1)
 
-Version 1.16.0. Used by claude, codex, hermes.
+Version 1.16.0. Used by claude, codex, hermes, pi.
 
 - `unslop`
+
+## sloptrim (1)
+
+Version 0.9.6. Used by claude, codex, hermes, pi.
+
+- `sloptrim`
 
 ## chrome-devtools-mcp (7)
 

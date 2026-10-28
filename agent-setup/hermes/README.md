@@ -1,6 +1,6 @@
 # Set up Hermes
 
-Read the [shared guide](../universal/README.md). Hermes uses the same 25 Agent Skills and the standalone `unslop` skill. Its manifest adapter adds only the `$schema` field required by the installed native validator. Skill bodies and shared checklists stay unchanged.
+Read the [shared guide](../universal/README.md). Hermes uses the same 25 Agent Skills and the standalone `unslop` and Sloptrim skills. Its manifest adapter adds only the `$schema` field required by the installed native validator. Skill bodies and shared checklists stay unchanged.
 
 ## Stage the files
 
@@ -11,7 +11,11 @@ hermes_stage="$HOME/.local/share/agent-setup/hermes"
 python3 agent-setup/refactor.py --stage hermes --output "$hermes_stage"
 ```
 
-The result contains `plugins/agent-skills/` and `skills/unslop/`. Keep the Agent Skills package intact so its root references resolve. Use the installed `hermes plugins --help` and native install/enable commands for the plugin. Place the standalone skill under `${HERMES_HOME:-$HOME/.hermes}/skills/unslop/` as ordinary files. Preserve existing skills, models, providers, permissions, and hooks.
+The result contains `plugins/agent-skills/`, `skills/unslop/`, and `skills/sloptrim/`. Keep the Agent Skills package intact so its root references resolve. Use the installed `hermes plugins --help` and native install/enable commands for the plugin. Place the standalone skill under `${HERMES_HOME:-$HOME/.hermes}/skills/unslop/` as ordinary files. Preserve existing skills, models, providers, permissions, and hooks.
+
+## Install Sloptrim
+
+Copy staged `skills/sloptrim/` into `${HERMES_HOME:-$HOME/.hermes}/skills/sloptrim/` as ordinary files. Keep the detector, references, and license files together. Merge the prose rule from [Codex's AGENTS.md](../codex/AGENTS.md) into `${HERMES_HOME:-$HOME/.hermes}/SOUL.md`. Preserve existing guidance. Restart Hermes and confirm native skill discovery. Run `python3 "$HOME/.hermes/skills/sloptrim/scripts/detect.py" README.md`, adjusting for `HERMES_HOME`, and check `_metrics.ai_tell_score`. This is a portable skill install; Claude hooks are not registered.
 
 ## Review before activation
 

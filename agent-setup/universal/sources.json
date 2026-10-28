@@ -143,8 +143,36 @@
       "hosts": [
         "claude",
         "codex",
-        "hermes"
+        "hermes",
+        "pi"
       ]
+    },
+    {
+      "name": "sloptrim",
+      "kind": "skill",
+      "version": "0.9.6",
+      "source": "https://github.com/seyedehsanhadi/sloptrim",
+      "revision": "9b3e2efe6ab64d9b60c214ad1213b2b30bbddb27",
+      "download_url": "https://codeload.github.com/seyedehsanhadi/sloptrim/tar.gz/9b3e2efe6ab64d9b60c214ad1213b2b30bbddb27",
+      "archive_sha256": "a56ec2e304601383034c9adbd98282b141ab25c7688b79e18a11591367df8b97",
+      "payload": "universal/skills/sloptrim",
+      "overlays": {},
+      "artifacts": [
+        {
+          "path": "universal/skills/sloptrim",
+          "tree_sha256": "9f3f9045c1c78c5e936104c643eb1435195444e62608313add8f0985cf27408a",
+          "file_count": 18
+        }
+      ],
+      "skill_count": 1,
+      "marketplaces": {},
+      "hosts": [
+        "claude",
+        "codex",
+        "hermes",
+        "pi"
+      ],
+      "notes": "Unchanged upstream skill, detector, references, hooks, command wrapper, Cursor rule, and Claude marketplace. Claude registers the staged skill root as a native marketplace; other hosts install it as a loose skill."
     }
   ]
 }

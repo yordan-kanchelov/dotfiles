@@ -30,7 +30,7 @@ On an existing profile, keep matching installs and inspect differences before re
 
 ## Merge profile settings and instructions
 
-Resolve the profile with `codex_config_home="${CODEX_HOME:-$HOME/.codex}"`. The [AGENTS.md](AGENTS.md) template is empty for now; merge it into `$codex_config_home/AGENTS.md`. Remove earlier skill routing, such as the `installed-engineering-skills` block, from that file and delete `$codex_config_home/engineering-defaults.md` if present.
+Resolve the profile with `codex_config_home="${CODEX_HOME:-$HOME/.codex}"`. The [AGENTS.md](AGENTS.md) template contains the prose rule; merge it into `$codex_config_home/AGENTS.md`. Remove earlier skill routing, such as the `installed-engineering-skills` block, from that file and delete `$codex_config_home/engineering-defaults.md` if present.
 
 Merge [config.toml](config.toml) into `$codex_config_home/config.toml`. Keep existing model choices and unrelated tables. The snippet preserves on-request approval, automatic approval review, workspace-write, hooks, and multi-agent support. Retain native hook trust; accept source changes only after reviewing the selected hooks.
 
@@ -39,6 +39,12 @@ Agent Skills uses native Codex discovery. Its Claude slash-command wrappers and 
 ## Install standalone unslop
 
 Copy `universal/skills/unslop/` (also staged at `skills/unslop/`) into `$codex_config_home/skills/unslop/` using ordinary files. Keep its license and provenance beside SKILL.md. It is a loose skill, so no plugin registration or startup hook is needed.
+
+## Install Sloptrim
+
+Copy staged `skills/sloptrim/` into `$codex_config_home/skills/sloptrim/` as ordinary files. Keep its detector, references, hooks, and license files together. Use the loose skill for prose review and the global rule from [AGENTS.md](AGENTS.md) to check docs, READMEs, and skills before sharing them. This install uses Codex skill discovery and direct detector calls; Claude hooks are not registered.
+
+Start a fresh task to discover the skill. Run `python3 "$codex_config_home/skills/sloptrim/scripts/detect.py" README.md` and confirm a numeric `_metrics.ai_tell_score`.
 
 ## Add Herdr
 

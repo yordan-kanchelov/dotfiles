@@ -61,6 +61,28 @@ class SetupTests(unittest.TestCase):
             self.assertNotEqual(self.run_helper("--stage", harness, "--output", destination).returncode, 0)
             self.assertEqual(before, {p.relative_to(destination): p.read_bytes() for p in destination.rglob("*") if p.is_file()})
 
+    def test_stages_sloptrim_with_detector_and_native_claude_hooks(self):
+        for harness in ["claude", "codex", "hermes", "pi"]:
+            with self.subTest(harness=harness):
+                destination = self.output / harness
+                result = self.run_helper("--stage", harness, "--output", destination)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((destination / "skills/unslop/SKILL.md").read_bytes(), (ROOT / "universal/skills/unslop/SKILL.md").read_bytes())
+                skill = destination / "skills/sloptrim"
+                for relative in ["SKILL.md", "scripts/detect.py", "references/patterns.md", "LICENSE.txt", "NOTICE"]:
+                    self.assertEqual((skill / relative).read_bytes(), (ROOT / "universal/skills/sloptrim" / relative).read_bytes())
+                manifest = json.loads((skill / ".claude-plugin/plugin.json").read_text())
+                for events in manifest["hooks"].values():
+                    for event in events:
+                        for hook in event["hooks"]:
+                            script = hook["command"].split('${CLAUDE_PLUGIN_ROOT}/', 1)[1].rstrip('"')
+                            self.assertTrue((skill / script).is_file(), script)
+                draft = self.output / "draft.md"
+                draft.write_text("The setup copies this file. Run the command again to check it.\n")
+                report = subprocess.run([sys.executable, str(skill / "scripts/detect.py"), str(draft)], capture_output=True, text=True)
+                self.assertEqual(report.returncode, 0, report.stderr)
+                self.assertIsInstance(json.loads(report.stdout)["_metrics"]["ai_tell_score"], (int, float))
+
     def test_rejects_source_drift_before_staging(self):
         fixture = self.output / "fixture"
         fixture.mkdir()

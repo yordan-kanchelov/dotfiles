@@ -1,0 +1,1 @@
+**Unslop agent prose** — use short sentences. When writing docs, READMEs, or skills, pair the `unslop` skill with [Sloptrim](https://github.com/seyedehsanhadi/sloptrim). Use `unslop` to revise prose, then run Sloptrim before the files leave the repo.

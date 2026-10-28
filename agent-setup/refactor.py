@@ -170,7 +170,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="Regenerate inventory counts, tables, and universal/skills.md")
-    mode.add_argument("--stage", choices=["claude", "codex", "hermes"], help="Assemble native plugin payloads and standalone skills without installing")
+    mode.add_argument("--stage", choices=["claude", "codex", "hermes", "pi"], help="Assemble native plugin payloads and standalone skills without installing")
     parser.add_argument("--output", type=Path, help="New directory for staged marketplaces")
     args = parser.parse_args()
     if bool(args.stage) != bool(args.output):

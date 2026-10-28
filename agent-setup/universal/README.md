@@ -1,13 +1,14 @@
 # Shared skills
 
-Shared plugin payloads live under `plugins/`; standalone `unslop` lives under `skills/unslop/`. Each harness supplies its native manifests separately. Keep each package intact so relative references, agent prompts, and licenses remain available.
+Shared plugin payloads live under `plugins/`; standalone `unslop` and Sloptrim live under `skills/`. Each harness supplies its native manifests separately. Keep each package intact so relative references, agent prompts, and licenses remain available.
 
 | Payload | Version | Skills | Used by |
 | --- | --- | --- | --- |
 | `plugins/agent-skills/` | 0.6.13 | 25 | Claude, Codex, and Hermes |
 | `plugins/mattpocock-skills/` | 1.3.1 | 27 | Claude and Codex |
 | `plugins/ponytail/` | 5.3.2 | 6 | Claude and Codex |
-| `skills/unslop/` | pinned from 1.16.0 | 1 | Claude, Codex, and Hermes |
+| `skills/unslop/` | pinned from 1.16.0 | 1 | Claude, Codex, Hermes, and Pi |
+| `skills/sloptrim/` | 0.9.6 | 1 | Claude, Codex, Hermes, and Pi |
 
 [Agent Skills](https://github.com/addyosmani/agent-skills) replaces Open Pstack. It is pinned to `aeac41d4d005999432bb7312f7ff06383a91d59d`. Its root `references/` directory is retained because per-skill copies alone lose shared checklists. Native manifests do not wire the standalone SessionStart helper. Keep the `using-agent-skills` body out of always-on instructions.
 
@@ -21,9 +22,21 @@ Keep existing model choices, native permission boundaries, and hook trust. Workf
 
 ## Global instructions
 
-No global instruction file is installed. Skills rely on native discovery and their own invocation metadata. Remove earlier skill routing from the harness's global instructions, along with obsolete Pstack routing.
+Merge the short prose rule from the harness guide into the destination's global instructions. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
+
+## Sloptrim
+
+[Sloptrim](https://github.com/seyedehsanhadi/sloptrim) is pinned at `9b3e2efe6ab64d9b60c214ad1213b2b30bbddb27` (0.9.6). The package keeps the upstream skill, Python detector, pattern reference, Claude hooks and marketplace, command wrapper, Cursor rule, and license files unchanged. Tests, recordings, images, and research tools are omitted. Source and payload hashes are in `sources.json`.
+
+Every harness stages it at `skills/sloptrim/`. Claude registers that directory as a native marketplace. Codex, Hermes, and Pi copy it into their loose skill directories. Those loose installs use the skill and global prose rule to run the detector; they do not register Claude hooks. The detector accepts a file path:
+
+```sh
+python3 /absolute/path/to/sloptrim/scripts/detect.py README.md
+```
+
+Read `_metrics.ai_tell_score` and the flagged spans. Revise only prose that needs it, preserve facts and code, and score the saved file again. When writing docs, READMEs, or skills, pair the `unslop` skill with Sloptrim. Use `unslop` to revise prose, then score the saved files with Sloptrim before committing or sharing them. Instruction files and skills need this explicit check because the Claude save hook exempts them. Keep third-party skill bodies unchanged.
 
 ## Get Herdr from its CLI
 

@@ -11,7 +11,7 @@ claude_catalogs="$HOME/.local/share/agent-setup/claude"
 python3 agent-setup/refactor.py --stage claude --output "$claude_catalogs"
 ```
 
-The command refuses an existing output directory. It assembles three marketplaces with ordinary copies of the payloads and Claude manifests. It does not run hooks or install packages.
+The command refuses an existing output directory. It assembles three plugin marketplaces and standalone skill packages with ordinary copies of the payloads and Claude manifests. It does not run hooks or install packages.
 
 On a new profile, register and install them:
 
@@ -29,13 +29,26 @@ On an existing profile, keep matching installs and inspect differences before re
 
 ## Profile instructions
 
-Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. The [CLAUDE.md](CLAUDE.md) template is empty for now; merge it into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
+Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. The [CLAUDE.md](CLAUDE.md) template contains the prose rule; merge it into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
 
 Keep the destination's model and permission settings. Agent Skills adds native commands and skills, with no wired startup hook. Review Ponytail's existing hooks and task-board module through native trust prompts. Keep the meta-skill body out of always-on context.
 
 ## Install standalone unslop
 
 Copy `universal/skills/unslop/` (also staged at `skills/unslop/`) into `$claude_config_home/skills/unslop/` using ordinary files. Keep its license and provenance beside SKILL.md. It is a loose skill, so no plugin registration or startup hook is needed.
+
+## Install Sloptrim
+
+The staged Sloptrim package includes its upstream marketplace and Claude hooks. Register the stable staged path, then install:
+
+```sh
+claude plugin marketplace add "$claude_catalogs/skills/sloptrim" --scope user
+claude plugin install sloptrim@sloptrim --scope user
+```
+
+If `sloptrim` is already registered from upstream, keep that registration when its installed revision matches the pin in the [shared guide](../universal/README.md#sloptrim). For an upstream install on a machine without the bundle, use `claude plugin marketplace add seyedehsanhadi/sloptrim` and the same install command; that follows upstream updates.
+
+If `/sloptrim` is absent from the command menu, copy the upstream wrapper from `skills/sloptrim/install/sloptrim-command.md` to `$claude_config_home/commands/sloptrim.md`, creating the parent directory. Preserve any existing custom command. Restart Claude, run `/sloptrim doctor`, then save a prose file and check `/sloptrim show`. The doctor checks local dependencies; the saved-file check confirms hook delivery. Use the detector directly for docs and skills as described in the shared guide.
 
 ## Add Herdr
 
