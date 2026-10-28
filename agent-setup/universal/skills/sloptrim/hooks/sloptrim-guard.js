@@ -1,0 +1,168 @@
+#!/usr/bin/env node
+// PostToolUse hook: scores a saved prose file, nudges past threshold.
+'use strict';
+process.on('uncaughtException', () => process.exit(0));
+process.on('unhandledRejection', () => process.exit(0));
+const path = require('path');
+const fs = require('fs');
+const { readMode, parseStdin, runDetectResult, verdict, logDeliverable } = require('./sloptrim-lib');
+
+// ------------------------------------------------------------------------
+// SCOPE: Which files are prose, which are documents, and which are neither.
+// ------------------------------------------------------------------------
+const PROSE_EXT = new Set([
+  '.md', '.mdx', '.markdown', '.txt', '.text', '.rst', '.tex', '.org', '.adoc',
+]);
+const OFFICE_EXT = new Set([
+  '.docx', '.docm', '.pptx', '.pptm', '.xlsx', '.xlsm',
+  '.odt', '.odp', '.ods', '.epub',
+]);
+const BINARY_PROSE = new Set(['.pdf', '.rtf']);
+// A notebook is prose in its markdown cells and code everywhere else, so the
+// detector is handed the path and pulls out only the markdown.
+const NOTEBOOK_EXT = new Set(['.ipynb']);
+
+module.exports = { PROSE_EXT, OFFICE_EXT, NOTEBOOK_EXT, BINARY_PROSE };
+if (require.main !== module) return;
+
+const mode = readMode();
+if (mode === 'off' || mode === 'lite') process.exit(0);
+
+const input = parseStdin();
+const sid = input.session_id;
+// NotebookEdit names its target notebook_path, not file_path.
+const ti = input.tool_input || {};
+let filePath = String(ti.file_path || ti.notebook_path || '');
+if (!filePath) {
+  // Codex aliases apply_patch to Write for hook matching, but sends the patch in
+  // tool_input.command. Re-run this same guard once per resulting file so the
+  // established one-file path stays the only scoring implementation.
+  const patch = String(ti.command || '');
+  const paths = [...patch.matchAll(/^\*\*\* (?:Add|Update) File:\s*(.+?)\s*$/gm)]
+    .map((m) => m[1].trim());
+  const moves = [...patch.matchAll(/^\*\*\* Move to:\s*(.+?)\s*$/gm)]
+    .map((m) => m[1].trim());
+  // Bound the fan-out of one patch.
+  const changed = [...new Set(paths.concat(moves))].slice(0, 16);
+  if (!changed.length) process.exit(0);
+  const { spawnSync } = require('child_process');
+  const contexts = [];
+  for (const changedPath of changed) {
+    const childInput = { ...input, tool_name: 'Write',
+      tool_input: { ...ti, file_path: changedPath } };
+    const child = spawnSync(process.execPath, [__filename], {
+      input: JSON.stringify(childInput), encoding: 'utf8', env: process.env,
+      timeout: 20000, maxBuffer: 4 * 1024 * 1024,
+    });
+    try {
+      const parsed = JSON.parse(child.stdout || '');
+      const context = parsed.hookSpecificOutput && parsed.hookSpecificOutput.additionalContext;
+      if (context) contexts.push(context);
+    } catch (e) { /* a clean file produces no output */ }
+  }
+  if (contexts.length) process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PostToolUse',
+      additionalContext: contexts.join('\n'),
+    },
+  }));
+  process.exit(0);
+}
+
+filePath = path.resolve(typeof input.cwd === 'string' ? input.cwd : process.cwd(), filePath);
+const ext = path.extname(filePath).toLowerCase();
+const base = path.basename(filePath);
+
+if (/(^|[\\/])node_modules[\\/]|[\\/]\.git[\\/]|[\\/]memory[\\/]/i.test(filePath)) process.exit(0);
+
+const selfRoot = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
+try {
+  const rel = path.relative(selfRoot, path.resolve(filePath));
+  if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) process.exit(0);
+} catch (e) { /* unresolvable path: fall through and score it */ }
+
+// Instruction files are the agent's own scaffolding, not a deliverable. The exempt names
+// are exact, because agents.txt and memory.txt are ordinary prose a user may well write.
+// Outside the prose extensions the stem is enough: skill.pdf is scaffolding whatever its
+// format, and matching it here rather than lower down keeps it out of the binary log too.
+const lowerBase = base.toLowerCase();
+const SKIP_NAMES = new Set(['claude.md', 'claude.local.md', 'agents.md', 'agents.local.md',
+                            'skill.md', 'memory.md']);
+const SKIP_STEMS = new Set(['claude', 'claude.local', 'agents', 'agents.local',
+                            'skill', 'memory']);
+const stem = lowerBase.slice(0, lowerBase.length - ext.length);
+if (SKIP_NAMES.has(lowerBase)) process.exit(0);
+if (!PROSE_EXT.has(ext) && SKIP_STEMS.has(stem)) process.exit(0);
+
+const isOffice = OFFICE_EXT.has(ext) || NOTEBOOK_EXT.has(ext);
+if (!PROSE_EXT.has(ext) && !isOffice) {
+  if (BINARY_PROSE.has(ext)) {
+    logDeliverable({ t: Date.now(), file: base, kind: 'binary' }, sid);
+  }
+  process.exit(0);
+}
+
+// ------------------------------------------------------------------------
+// READ: Plain text is read here; zip-based documents are handed to the detector by path.
+// ------------------------------------------------------------------------
+function failed(reason) {
+  logDeliverable({ t: Date.now(), file: base, kind: 'failed', reason }, sid);
+  process.exit(0);
+}
+
+try {
+  const stat = fs.statSync(filePath);
+  if (!stat.isFile()) process.exit(0);
+  const limit = isOffice ? 4 * 1024 * 1024 : 512 * 1024;
+  if (stat.size > limit) {
+    logDeliverable({ t: Date.now(), file: base, kind: 'skipped',
+                     reason: 'size', size: stat.size, limit }, sid);
+    process.exit(0);
+  }
+} catch (e) {
+  failed('cannot read file');
+}
+
+// Keep the extension: TeX needs syntax-aware scoring, including through hooks.
+const detected = runDetectResult('', { timeout: isOffice ? 15000 : 8000 }, [filePath]);
+if (!detected.ok) failed(detected.kind === 'no-python' ? 'Python unavailable'
+  : detected.detail === 'ETIMEDOUT' ? 'detector timed out' : 'detector could not read or score this file');
+
+let report;
+try {
+  report = JSON.parse(detected.out);
+} catch (e) {
+  failed('invalid detector report');
+}
+const m = (report && report._metrics) || {};
+const score = m.ai_tell_score;
+if (typeof score !== 'number') failed('invalid detector score');
+
+// ------------------------------------------------------------------------
+// REPORT: The nudge, in plain language, or silence.
+// ------------------------------------------------------------------------
+const labels = Object.entries(report)
+  .filter(([k, v]) => !k.startsWith('_') && v && v.label)
+  .map(([k, v]) => v.label)
+  .slice(0, 5);
+
+const threshold = mode === 'strict' ? 20 : 40;
+const flagged = score > threshold && m.confidence !== 'none';
+
+logDeliverable({ t: Date.now(), file: base, kind: 'scored', score,
+                 band: m.ai_tell_band, tells: labels, flagged,
+                 truncated: Boolean(m.truncated) }, sid);
+
+if (!flagged) process.exit(0);
+
+process.stdout.write(JSON.stringify({
+  hookSpecificOutput: {
+    hookEventName: 'PostToolUse',
+    additionalContext:
+      `sloptrim: ${base} ${verdict(score)} (score ${score}, band ${m.ai_tell_band}` +
+      // The scan stops at 262,144 characters, so on a longer file the score covers a prefix.
+      `${m.truncated ? ', first 262,144 characters only' : ''}). Flagged: ${labels.join('; ')}. ` +
+      'Fix the flagged spans before finishing (max 2 passes, keep rhythm variation).',
+  },
+}));
+process.exit(0);

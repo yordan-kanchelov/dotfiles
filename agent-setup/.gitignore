@@ -1,0 +1,4 @@
+# Keep required Claude payloads despite user-level agent-config ignores.
+!claude/CLAUDE.md
+!claude/plugins/agent-skills/.claude/
+!claude/plugins/agent-skills/.claude/**

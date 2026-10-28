@@ -2,7 +2,7 @@
 
 Terminal setup for macOS, Debian/Ubuntu (incl. Linux Mint) and Omarchy, installed and kept in sync by one Ansible playbook.
 
-For a reference-only audit and future recreation guide for Codex and Claude Code plugins and skills, start at [agent-setup/README.md](agent-setup/README.md). That folder is documentation only: it is not deployed or linked into agent profiles.
+For agent plugins, skills, and global prose instructions, start at [agent-setup/README.md](agent-setup/README.md). That bundle includes pinned Sloptrim setup for Claude, Codex, Hermes, and Pi. Stage and install it separately; the Ansible playbook does not deploy or link agent profiles.
 
 ## Features
 
