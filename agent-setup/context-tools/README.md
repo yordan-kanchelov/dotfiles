@@ -1,12 +1,12 @@
-# Evaluate Headroom and RTK
+# Headroom and RTK
 
-This optional setup installs RTK command filters and a local Headroom service. The Ansible playbook and staged skill bundles do not install them. Tested on this Mac with Headroom 0.42.0, RTK OSS 1.1.0, and Python 3.13.
+This optional setup routes ordinary `claude` and `codex` sessions through a local Headroom service. RTK filters selected shell commands through native hooks. The Ansible playbook and staged skill bundles do not install this setup. The recorded versions are Headroom 0.42.0, RTK OSS 1.1.0, and Python 3.13.
 
-The [Headroom dashboard](http://127.0.0.1:8787/dashboard) belongs to the proxy service. It does not need a separate dashboard process. Headroom routing is opt-in. RTK hooks apply to fresh Claude/Codex sessions and can be disabled for a session with the gate below.
+The [dashboard](http://127.0.0.1:8787/dashboard) belongs to the proxy service. On macOS, launchd starts the service after login and restarts it if it exits. No shell aliases, PATH shims, or wrapper commands are needed. Hermes, Pi, and OpenCode keep their existing setup.
 
 ## Install the tools
 
-Run from the repository root. Export the reviewed settings in this terminal before invoking Headroom. They contain no provider base URLs:
+Run from the repository root. Export the reviewed settings before invoking Headroom. Sourcing the file expands the log path's `~` to your home directory:
 
 ```sh
 set -a
@@ -30,7 +30,7 @@ RTK OSS installs an executable named `rtk`. The full RTK edition conflicts with 
 
 ## Configure RTK
 
-Merge [rtk.toml](rtk.toml) into the destination configuration. Back up an existing regular file first. The macOS path is `~/Library/Application Support/rtk/config.toml`; Linux uses `~/.config/rtk/config.toml`. Keep other destination settings. Recovery output and command history remain local and expire after seven days in this setup.
+Merge [rtk.toml](rtk.toml) into the destination configuration. Back up an existing regular file first. The macOS path is `~/Library/Application Support/rtk/config.toml`; Linux uses `~/.config/rtk/config.toml`. Keep other destination settings. Recovery output and command history remain local and use seven-day retention in this setup.
 
 Preview native agent setup before applying it. Run from the repository root:
 
@@ -55,14 +55,72 @@ Restart the agent and review its native hook prompts. In Codex, use `/hooks` to 
 
 The exclusions preserve Ansible verification, complete Git reviews, exhaustive searches, and interpreter-sensitive commands. RTK's Ansible filter can hide `PLAY RECAP`; use the original output to verify `changed=0`. `rtk bypass <command>` runs a specific command unfiltered. `rtk recall <hash>` retrieves retained output when a filter supplies a recovery hint.
 
+## Keep request logs private
+
+[headroom.env](headroom.env) enables full request logging at `~/.headroom/logs/requests.jsonl`. These logs can contain prompts, source, tool results, and secrets. Keep them outside Git and review them before sharing. Disabling outbound reporting does not prevent local content storage.
+
+`HEADROOM_LOG_MESSAGES=1` requests message logging. Installed Headroom 0.42.0 records the request and compressed request, but leaves `response_content` empty in its [unified logging path](https://github.com/headroomlabs-ai/headroom/blob/17d38e5699b7d7c69ac6addcd762f39e42dd7f00/headroom/proxy/outcome.py#L774-L808). The live smoke checks confirmed this limitation. Treat reply capture as unavailable pending an upstream fix.
+
+On macOS, render [newsyslog.conf.in](newsyslog.conf.in) and [logrotate.plist.in](logrotate.plist.in) with the standard library. This recipe backs up existing rendered files and sets private permissions:
+
+```sh
+python3 - <<'PY'
+from datetime import datetime
+from html import escape
+import os
+from pathlib import Path
+import plistlib
+import shutil
+
+home = Path.home()
+if any(char.isspace() for char in str(home)):
+    raise SystemExit("newsyslog requires a log path without whitespace")
+workspace = home / ".headroom"
+logs = workspace / "logs"
+logs.mkdir(parents=True, exist_ok=True)
+workspace.chmod(0o700)
+logs.chmod(0o700)
+log = logs / "requests.jsonl"
+if log.is_symlink():
+    raise SystemExit(f"Refusing to open symlink: {log}")
+log.touch(exist_ok=True)
+log.chmod(0o600)
+templates = Path("agent-setup/context-tools")
+stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+for source, target, values in (
+    ("newsyslog.conf.in", workspace / "newsyslog.conf",
+     {"@LOG_FILE@": str(log), "@UID@": str(os.getuid()), "@GID@": str(os.getgid())}),
+    ("logrotate.plist.in", home / "Library/LaunchAgents/com.dotfiles.headroom-logrotate.plist",
+     {"@HOME@": escape(str(home))}),
+):
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.is_symlink():
+        raise SystemExit(f"Refusing to replace symlink: {target}")
+    if target.exists():
+        shutil.copy2(target, target.with_name(target.name + ".backup-" + stamp))
+    text = (templates / source).read_text()
+    for key, value in values.items():
+        text = text.replace(key, value)
+    if target.suffix == ".plist":
+        plistlib.loads(text.encode())
+    target.write_text(text)
+    target.chmod(0o600)
+PY
+
+launchctl bootout "gui/$(id -u)/com.dotfiles.headroom-logrotate" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.dotfiles.headroom-logrotate.plist"
+```
+
+The job runs `/usr/sbin/newsyslog -r -f ~/.headroom/newsyslog.conf` hourly. It rotates at 10,240 KiB or 24 hours and retains seven gzip archives. The active log can exceed the size threshold between hourly checks. This is not a hard disk quota. The request log uses mode 600; its directories use 700.
+
 ## Start Headroom and its dashboard
 
-Run this Bash or zsh block from the repository root. The environment file contains plain assignments, one per line:
+Source the environment file as shown above before this Bash or zsh block. To update a running profile, stop it with `headroom install stop --profile evaluation` and confirm it has stopped before applying. Read each exported value rather than passing the unexpanded assignment text to the service:
 
 ```sh
 headroom_env_args=()
-while IFS= read -r setting; do
-  headroom_env_args+=(--env "$setting")
+while IFS='=' read -r headroom_name _; do
+  headroom_env_args+=(--env "$headroom_name=$(printenv "$headroom_name")")
 done < agent-setup/context-tools/headroom.env
 
 headroom install apply \
@@ -76,45 +134,66 @@ headroom install status --profile evaluation
 headroom dashboard --port 8787
 ```
 
-Omit every `--target` argument. Manual provider selection with no targets installs the service without writing global agent routing or shell exports. The native installer uses launchd on macOS. The service stays available after the setup terminal closes.
+Omit every `--target` argument. Configure agent routing with the small merge snippets below instead. The native installer manages only the persistent service here. It does not write shell exports or introduce a custom Codex provider.
 
-Stop or remove the evaluation service with:
+[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics and full request logging are on. Built-in local compression-feedback statistics remain separate from traffic learning.
 
-```sh
-headroom install stop --profile evaluation
-headroom install start --profile evaluation
-# Remove the service when the evaluation is over:
-headroom install remove --profile evaluation
-```
+CCR is disabled with `HEADROOM_NO_CCR=1`, so no retrieval MCP is needed. To test lossy compression later, set `HEADROOM_LOSSLESS=0` and `HEADROOM_NO_CCR=0`, reapply the service, and register Headroom retrieval tools together. The one-hour `HEADROOM_CCR_TTL_SECONDS` value applies when CCR is enabled. It does not control request-log or RTK retention.
 
-[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics are on. Built-in local compression-feedback statistics remain separate from traffic learning.
+Store future setting changes in this repository first, then reapply the matching live configuration. Treat dashboard changes as temporary experiments. Mirror any setting you want to keep into `headroom.env` and reapply the service. Service environment values can override dashboard settings. There is no automatic dashboard-to-Git sync.
 
-To compare normal CCR compression later, change `HEADROOM_LOSSLESS=1` to `0` and reapply the service command. Keep retrieval available. The four-hour CCR retention setting matters in that mode. Service environment values can override dashboard settings, so reapply the service when changing this file.
+## Route ordinary agent sessions
 
-The initial lossless comparison skips Headroom MCP registration. For a later CCR comparison, remove `--no-mcp` from the wrapper commands to register retrieval tools. Native MCP removal can also remove legacy Headroom code-memory registrations; inspect the host before using it. Stop routing sessions before removing their retrieval tools.
+Back up the active `settings.json` and `config.toml` before merging [claude.json](claude.json) and [codex.toml](codex.toml). Resolve redirected profiles through `CLAUDE_CONFIG_DIR` and `CODEX_HOME`; their defaults are `~/.claude` and `~/.codex`.
+
+For Claude, merge the two `env` entries into the existing `settings.json` environment map. For Codex, add `openai_base_url` at the root of `config.toml`, before any table header. Preserve all other fields. Keep the built-in provider, account, selected model, permissions, hooks, and existing MCP tools. Do not run `headroom init` or replace the profile with a snippet.
+
+Restart into fresh sessions after merging. Ordinary `claude` and `codex` now use Headroom plus RTK, including direct launches from Herdr. Codex keeps its shared app-server behavior because no wrapper adds command-line configuration overrides. Existing sessions may need to finish before their processes reload configuration.
+
+These are user-level defaults. Project, command-line, or managed settings can override them. Check effective routing when a session behaves differently.
+
+Claude's custom API endpoint disables Remote Control on affected versions. The original account and model settings remain in place. Use a direct session below when Remote Control is needed.
 
 ## Compare sessions
 
-Use the same model and comparable tasks. Start fresh sessions after installing hooks. In each new terminal, export `headroom.env` with the `set -a` block above. This also disables Headroom's wrapper-added test flags, including its quiet pytest option.
+Use the same model and comparable tasks. The direct Codex URL below is for this Mac's ChatGPT account. API-key users must use `https://api.openai.com/v1` instead.
 
-| Mode | Claude Code | Codex |
+| Mode | Claude Code | Codex with ChatGPT login |
 | --- | --- | --- |
-| Normal | `RTK_DISABLED=1 claude` | `RTK_DISABLED=1 codex` |
-| RTK only | `claude` | `codex` |
-| Headroom only | `RTK_DISABLED=1 headroom wrap claude --no-proxy --port 8787 --no-mcp --code-memory none` | `RTK_DISABLED=1 headroom wrap codex --no-proxy --port 8787 --no-mcp --code-memory none` |
-| Both | `headroom wrap claude --no-proxy --port 8787 --no-mcp --code-memory none` | `headroom wrap codex --no-proxy --port 8787 --no-mcp --code-memory none` |
+| Both | `claude` | `codex` |
+| Headroom only | `RTK_DISABLED=1 claude` | `RTK_DISABLED=1 codex` |
+| RTK only | `claude --settings '{"env":{"ANTHROPIC_BASE_URL":"https://api.anthropic.com"}}'` | `codex -c 'openai_base_url="https://chatgpt.com/backend-api/codex"'` |
+| Neither | `RTK_DISABLED=1 claude --settings '{"env":{"ANTHROPIC_BASE_URL":"https://api.anthropic.com"}}'` | `RTK_DISABLED=1 codex -c 'openai_base_url="https://chatgpt.com/backend-api/codex"'` |
 
-Pass agent arguments after `--`. These lossless wrappers skip Headroom MCP and Serena, leaving the original tool selection available in all four modes. Routing stays scoped to the launched process. Omit memory, learning, and code-graph flags. Wrapped Codex sessions use embedded operation rather than its shared background server.
+The direct Codex overrides run those comparison sessions in embedded mode. Ordinary sessions keep the shared server. Do not add Headroom MCP, Serena, memory, learning, or code-graph features during the lossless comparison.
 
 Check `rtk gain` and the dashboard alongside task completion, elapsed time, retries, and missing evidence. Output reduction is not the same as bill reduction. Headroom cannot recover content that RTK discarded before it reached the proxy. Local recovery databases can contain source or secrets even though outbound reporting is off.
 
-The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. No provider inference is needed to check local health and hook rewriting.
+## Roll back
 
-The hook gate has a local regression check:
+Restore the prior Claude and Codex routing settings before stopping Headroom. Preserve any unrelated changes made since the backups. Otherwise ordinary agent launches will still point at a stopped proxy. Remove only the added RTK hook commands to disable automatic filtering permanently, or use `RTK_DISABLED=1` for one session.
+
+```sh
+headroom install stop --profile evaluation
+# To resume the service:
+headroom install start --profile evaluation
+# To remove it after restoring routing:
+headroom install remove --profile evaluation
+```
+
+Remove the rotation job separately if it is no longer needed:
+
+```sh
+launchctl bootout "gui/$(id -u)/com.dotfiles.headroom-logrotate"
+```
+
+Keep or delete local logs and recovery data according to their contents. Removing the service does not erase them.
+
+## Checks
 
 ```sh
 python3 scripts/test-context-tools.py
 shellcheck agent-setup/context-tools/rtk-hook.sh
 ```
 
-Setup smoke checks used local synthetic content without provider inference. Their records remain in Headroom's lifetime history. Use the current Session view for new comparisons.
+The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. Local checks covered health endpoints and synthetic content. One small live request through each ordinary CLI also completed and produced a request-log record. These smoke checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.

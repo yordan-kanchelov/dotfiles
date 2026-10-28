@@ -2,6 +2,8 @@
 
 Reviewed on 2026-10-28 for our Claude Code and Codex workflow. Source defaults were checked at commit `f10725e6b9940d8bc2fcde950c86f8ac97543cb6`. Cached documentation sometimes describes older behavior. No `headroom` executable was found on this shell's PATH. No installation or agent-profile changes were made.
 
+The later [installed setup](../../agent-setup/context-tools/README.md) records the active service and agent settings. It sets CCR retention to 3600 seconds at the user's request. CCR remains disabled during the lossless trial. Full-message logging is enabled with local rotation, though Headroom 0.42.0 leaves response bodies empty. The tables below describe the source review; use the installed setup for current choices.
+
 Start with `coding`, `cache`, and lossless compaction. Then compare normal CCR compression on matched tasks. Keep file reads and instructions protected. Leave memory, learning, code graphs, output shaping, and remote compression out of that first comparison. Recommendations below are ours; default values describe the cited source revision.
 
 The runtime inventory covers public options for the proxy, Claude/Codex wrappers, deployment, and MCP. Compression tables explain the profile controls and direct SDK settings. Related constructor fields share rows. This is not an inventory of private developer switches or every option for other agent integrations.
@@ -53,7 +55,7 @@ The wrapper reuses an existing healthy proxy. An existing process may retain ear
 | `HEADROOM_UPDATE_CHECK` | On | Check PyPI daily for update notices | Set `off` if updates belong to our package management. This is a notice check, not automatic installation. |
 | `HEADROOM_OFFLINE` | Off | Block Headroom-initiated external connections | Use only with required models already cached. It still permits forwarding client calls to their configured upstream. |
 | `--no-subscription-tracking` | False, tracking enabled | Poll Claude account usage | Keep tracking only if quota visibility helps; polling defaults to every 300 seconds. |
-| `--log-messages` | Off | Retain full request and response bodies | Leave off outside a short debugging session. |
+| `--log-messages` | Off | Requests full message logging | Enabled at the user's request. Installed 0.42.0 records original and compressed requests but omits response bodies. |
 | `HEADROOM_LOG_PAYLOAD_PREVIEW` | Off | Log retrieved content snippets | Leave off to avoid retaining source or secrets in logs. |
 | `HEADROOM_PROXY_TOKEN` | Unset | Authenticate non-loopback proxy callers | Keep loopback binding; add a token before exposing the port. |
 | `HEADROOM_TLS_STRICT` | Strict | Upstream TLS certificate constraints | Keep strict. Add corporate roots through the trust configuration. |
@@ -458,8 +460,8 @@ Sources: [actual proxy construction](https://github.com/headroomlabs-ai/headroom
 
 | Setting | Default | Meaning | Recommendation |
 |---|---|---|---|
-| `--no-ccr` / `HEADROOM_NO_CCR` | Off | Disables retrieval markers, injected retrieval tool, and server-side response handling together. It is not the same as lossless mode. | Keep CCR enabled when trying lossy compression. Use `--lossless` for a marker-free baseline. |
-| `HEADROOM_CCR_TTL_SECONDS` | 1800 seconds | Retrieval-store lifetime for originals. Expiry can make an old marker unresolvable. | Use a session-appropriate value such as 14400 for several-hour trials if storing source content that long is acceptable. This is a proposed value, not a benchmark-backed optimum. |
+| `--no-ccr` / `HEADROOM_NO_CCR` | Off | Disables retrieval markers, injected retrieval tool, and server-side response handling together. It is not the same as lossless mode. | Set `1` with lossless mode for the current baseline. Enable CCR and retrieval together when trying lossy compression. |
+| `HEADROOM_CCR_TTL_SECONDS` | 1800 seconds | Retrieval-store lifetime for originals. Expiry can make an old marker unresolvable. | Set 3600 seconds for the requested one-hour retention. This applies when CCR is enabled. |
 | `HEADROOM_CCR_BACKEND` | SQLite locally | Stores originals. `memory` avoids disk persistence but loses data on restart. Redis can support shared deployments. | SQLite for recoverability across restart; memory only if disk copies are unacceptable. |
 | `--ccr-inline-resolve` / `HEADROOM_CCR_INLINE_RESOLVE` | Off | Resolves response-side markers for clients without a tool-call round trip. Non-streaming only. | Keep off for coding agents with retrieval tools. |
 | `--no-ccr-proactive-expansion` / `HEADROOM_NO_CCR_PROACTIVE_EXPANSION` | Off | Disables automatic expansions based on tracked context. | Keep default during a CCR trial. Count expansions as overhead. |
@@ -726,7 +728,7 @@ Serena reports anonymous startup metadata by default. Set `SERENA_USAGE_REPORTIN
 
 Context7 receives the query formulated by the agent and the library identifier. It forwards queries to LLMs for reranking and stores queries anonymously for benchmarking, except Enterprise teamspaces. Instructions tell the agent to omit sensitive data; that is not a technical guarantee that a generated query contains none. The free account currently includes 1,000 monthly calls. [Data privacy](https://context7.com/docs/security/data-privacy), [plans](https://context7.com/docs/plans-pricing)
 
-Headroom sees full agent traffic and provider credentials. CCR originals and persistent memories are not encrypted at rest. Stay on loopback and avoid full-message logging during an initial trial. The usage beacon is separate from local dashboard telemetry; `HEADROOM_BEACON=off` disables the beacon. [Security model](https://docs.headroomlabs.ai/docs/security-model), [telemetry options](https://docs.headroomlabs.ai/docs/proxy)
+Headroom sees full agent traffic and provider credentials. CCR originals and persistent memories are not encrypted at rest. Stay on loopback. The user approved full-message logging for this trial; keep those files private and outside Git. The usage beacon is separate from local dashboard telemetry; `HEADROOM_BEACON=off` disables the beacon. [Security model](https://docs.headroomlabs.ai/docs/security-model), [telemetry options](https://docs.headroomlabs.ai/docs/proxy)
 
 ## Leave these out initially
 
