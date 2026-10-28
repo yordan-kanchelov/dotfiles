@@ -28,6 +28,43 @@ headroom --version
 
 RTK OSS installs an executable named `rtk`. The full RTK edition conflicts with it. Keep RTK Engine, RTK Proxy, and delegated models out of this comparison.
 
+## Configure dashboard logging
+
+The default in [settings.json](settings.json) keeps message logging on. It uses Headroom's settings file so the dashboard can change it. The other managed settings remain in [headroom.env](headroom.env).
+
+Installed Headroom 0.42.0 mistakes file-loaded settings for explicit environment exports after startup. That locks the dashboard controls. The [local patch](patches/headroom-0.42.0-settings-origin.patch) fixes that provenance check. It does not change request capture or the dashboard display.
+
+After installing Headroom and before applying its service, run the guarded patcher with the installed tool's Python. It checks the version and source hashes, keeps a private backup, and accepts an already-patched source. Re-run it after reinstalling Headroom. It refuses unknown versions or source changes rather than patching them blindly.
+
+```sh
+headroom_python="$(uv tool dir)/headroom-ai/bin/python"
+"$headroom_python" scripts/apply-headroom-settings-fix.py
+unset HEADROOM_LOG_MESSAGES
+
+"$headroom_python" - <<'PY'
+from datetime import datetime
+import json
+from pathlib import Path
+import shutil
+from headroom import paths, settings_store
+
+target = paths.settings_path()
+if target.is_symlink():
+    raise SystemExit(f"Refusing to replace symlink: {target}")
+if target.exists():
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    backup = target.with_name(target.name + ".backup-" + stamp)
+    shutil.copy2(target, backup)
+    backup.chmod(0o600)
+settings_store.save(json.loads(Path("agent-setup/context-tools/settings.json").read_text()))
+target.chmod(0o600)
+PY
+```
+
+The merge preserves other stored keys. The `unset` removes the older setup's logging export from this terminal. Any explicit `HEADROOM_LOG_MESSAGES` export still locks that setting; remove it from service or shell configuration if GUI control is intended.
+
+In the dashboard, change message logging, then use Save + Restart to apply it. Mirror a lasting default into the repository's `settings.json`, then merge that file again. Dashboard changes do not update Git automatically.
+
 ## Configure RTK
 
 Merge [rtk.toml](rtk.toml) into the destination configuration. Back up an existing regular file first. The macOS path is `~/Library/Application Support/rtk/config.toml`; Linux uses `~/.config/rtk/config.toml`. Keep other destination settings. Recovery output and command history remain local and use seven-day retention in this setup.
@@ -57,9 +94,9 @@ The exclusions preserve Ansible verification, complete Git reviews, exhaustive s
 
 ## Keep request logs private
 
-[headroom.env](headroom.env) enables full request logging at `~/.headroom/logs/requests.jsonl`. These logs can contain prompts, source, tool results, and secrets. Keep them outside Git and review them before sharing. Disabling outbound reporting does not prevent local content storage.
+[settings.json](settings.json) enables message logging by default; [headroom.env](headroom.env) sets its path to `~/.headroom/logs/requests.jsonl`. These logs can contain prompts, source, tool results, and secrets. Keep them outside Git and review them before sharing. Disabling outbound reporting does not prevent local content storage.
 
-`HEADROOM_LOG_MESSAGES=1` requests message logging. Installed Headroom 0.42.0 records the request and compressed request, but leaves `response_content` empty in its [unified logging path](https://github.com/headroomlabs-ai/headroom/blob/17d38e5699b7d7c69ac6addcd762f39e42dd7f00/headroom/proxy/outcome.py#L774-L808). The live smoke checks confirmed this limitation. Treat reply capture as unavailable pending an upstream fix.
+Installed Headroom 0.42.0 leaves `response_content` empty in its [unified logging path](https://github.com/headroomlabs-ai/headroom/blob/17d38e5699b7d7c69ac6addcd762f39e42dd7f00/headroom/proxy/outcome.py#L774-L808). Claude request content was present in the live smoke checks, while Codex WebSocket and passthrough records omitted request content. Treat capture as incomplete. The dashboard can also show placeholders or `[object Object]`, and its After view can display a reply instead of the compressed request. The logging toggle patch fixes none of these capture or display defects.
 
 On macOS, render [newsyslog.conf.in](newsyslog.conf.in) and [logrotate.plist.in](logrotate.plist.in) with the standard library. This recipe backs up existing rendered files and sets private permissions:
 
@@ -136,11 +173,11 @@ headroom dashboard --port 8787
 
 Omit every `--target` argument. Configure agent routing with the small merge snippets below instead. The native installer manages only the persistent service here. It does not write shell exports or introduce a custom Codex provider.
 
-[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics and full request logging are on. Built-in local compression-feedback statistics remain separate from traffic learning.
+[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics are on. Message logging defaults to on through `settings.json`, subject to the capture limits above. Built-in local compression-feedback statistics remain separate from traffic learning.
 
 CCR is disabled with `HEADROOM_NO_CCR=1`, so no retrieval MCP is needed. To test lossy compression later, set `HEADROOM_LOSSLESS=0` and `HEADROOM_NO_CCR=0`, reapply the service, and register Headroom retrieval tools together. The one-hour `HEADROOM_CCR_TTL_SECONDS` value applies when CCR is enabled. It does not control request-log or RTK retention.
 
-Store future setting changes in this repository first, then reapply the matching live configuration. Treat dashboard changes as temporary experiments. Mirror any setting you want to keep into `headroom.env` and reapply the service. Service environment values can override dashboard settings. There is no automatic dashboard-to-Git sync.
+Store future defaults in this repository, then reapply the matching live configuration. Use `settings.json` for message logging and `headroom.env` for the other managed settings. Dashboard logging changes need Save + Restart; mirror a lasting choice into the repository. Service environment exports can lock dashboard settings. There is no automatic dashboard-to-Git sync.
 
 ## Route ordinary agent sessions
 
@@ -194,6 +231,7 @@ Keep or delete local logs and recovery data according to their contents. Removin
 ```sh
 python3 scripts/test-context-tools.py
 shellcheck agent-setup/context-tools/rtk-hook.sh
+"$(uv tool dir)/headroom-ai/bin/python" scripts/test-headroom-settings-origin.py
 ```
 
-The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. Local checks covered health endpoints and synthetic content. One small live request through each ordinary CLI also completed and produced a request-log record. These smoke checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.
+The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. Local checks covered health endpoints and synthetic content. One small live request through each ordinary CLI also completed and produced a request-log record. The patched dashboard passed an off/restart/on/restart logging cycle and remains editable with logging on. These smoke checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.

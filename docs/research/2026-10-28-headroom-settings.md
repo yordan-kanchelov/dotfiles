@@ -2,7 +2,7 @@
 
 Reviewed on 2026-10-28 for our Claude Code and Codex workflow. Source defaults were checked at commit `f10725e6b9940d8bc2fcde950c86f8ac97543cb6`. Cached documentation sometimes describes older behavior. No `headroom` executable was found on this shell's PATH. No installation or agent-profile changes were made.
 
-The later [installed setup](../../agent-setup/context-tools/README.md) records the active service and agent settings. It sets CCR retention to 3600 seconds at the user's request. CCR remains disabled during the lossless trial. Full-message logging is enabled with local rotation, though Headroom 0.42.0 leaves response bodies empty. The tables below describe the source review; use the installed setup for current choices.
+The later [installed setup](../../agent-setup/context-tools/README.md) records the active service and agent settings. It sets CCR retention to 3600 seconds at the user's request. CCR remains disabled during the lossless trial. Full-message logging is enabled with local rotation, though Headroom 0.42.0 leaves response bodies empty. A local patch makes the logging control editable through file-backed settings. The tables below describe the source review; use the installed setup for current choices.
 
 Start with `coding`, `cache`, and lossless compaction. Then compare normal CCR compression on matched tasks. Keep file reads and instructions protected. Leave memory, learning, code graphs, output shaping, and remote compression out of that first comparison. Recommendations below are ours; default values describe the cited source revision.
 
