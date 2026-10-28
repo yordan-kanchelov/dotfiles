@@ -1,0 +1,10 @@
+{
+  "providers": {
+    "xai": {
+      "baseUrl": "http://127.0.0.1:8787/v1",
+      "headers": {
+        "x-headroom-base-url": "https://api.x.ai"
+      }
+    }
+  }
+}

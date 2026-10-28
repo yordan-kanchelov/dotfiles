@@ -1,8 +1,8 @@
 # Headroom and RTK
 
-This optional setup routes ordinary `claude` and `codex` sessions through a local Headroom service. RTK filters selected shell commands through native hooks. The Ansible playbook and staged skill bundles do not install this setup. The recorded versions are Headroom 0.42.0, RTK OSS 1.1.0, and Python 3.13.
+This optional setup routes Claude Code, Codex, and the configured Pi and Hermes models through a local Headroom service. RTK filters selected shell commands through native hooks in Claude and Codex only. The Ansible playbook and staged skill bundles do not install this setup. The recorded versions are Headroom 0.42.0, RTK OSS 1.1.0, and Python 3.13.
 
-The [dashboard](http://127.0.0.1:8787/dashboard) belongs to the proxy service. On macOS, launchd starts the service after login and restarts it if it exits. No shell aliases, PATH shims, or wrapper commands are needed. Hermes, Pi, and OpenCode keep their existing setup.
+The [dashboard](http://127.0.0.1:8787/dashboard) belongs to the proxy service. On macOS, launchd starts the service after login and restarts it if it exits. No shell aliases, PATH shims, or wrapper commands are needed. OpenCode remains unchanged under the current requested scope.
 
 ## Install the tools
 
@@ -199,6 +199,28 @@ These are user-level defaults. Project, command-line, or managed settings can ov
 
 Claude's custom API endpoint disables Remote Control on affected versions. The original account and model settings remain in place. Use a direct session below when Remote Control is needed.
 
+### Pi
+
+Back up an existing `${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/models.json`, then merge [pi-models.json](pi-models.json) into it. Keep other providers and fields. The snippet changes only the built-in `xai` provider's URL and adds Headroom's upstream header. It preserves credentials, model metadata, and the selected `xai/grok-4.7` model. Use mode 600 for a new file.
+
+Keep `baseUrl` at `http://127.0.0.1:8787/v1` and `x-headroom-base-url` at the origin `https://api.x.ai`. Adding `/v1` to that header produces a duplicated `/v1/v1/responses` path and a 404 in Headroom 0.42.0. Open `/model` to reload the file or start a fresh session.
+
+Ordinary Pi sessions on xAI now use Headroom. Other Pi providers keep their existing routes. Headroom labels these xAI Responses records as provider `openai`; that label describes the protocol, while the upstream remains xAI. Pi has no RTK hook in this setup.
+
+### Hermes
+
+[hermes.yaml](hermes.yaml) contains the routing field to merge into the active profile's `config.yaml`. Apply it through Hermes's native command, which keeps a private backup and preserves other settings:
+
+```sh
+hermes config set model.base_url http://127.0.0.1:8787/v1
+```
+
+The verified profile uses `openai-codex` with `gpt-6.1-sol` and its existing ChatGPT login. Start a fresh Hermes session after changing the URL. Keep credentials and account state on the machine. Hermes has no RTK hook in this setup.
+
+`HERMES_CODEX_BASE_URL` takes precedence over `model.base_url`. Explicitly custom credential-pool URLs can also keep their own route. Other profiles or provider selections need separate verification. Proxy routing disables Hermes's direct-host transport compression; residency-restricted accounts and alternate pool endpoints remain untested.
+
+Store future Pi and Hermes routing defaults in these snippets, then merge them into the active profiles. Preserve provider and model selections when applying a routing change.
+
 ## Compare sessions
 
 Use the same model and comparable tasks. The direct Codex URL below is for this Mac's ChatGPT account. API-key users must use `https://api.openai.com/v1` instead.
@@ -212,11 +234,25 @@ Use the same model and comparable tasks. The direct Codex URL below is for this 
 
 The direct Codex overrides run those comparison sessions in embedded mode. Ordinary sessions keep the shared server. Do not add Headroom MCP, Serena, memory, learning, or code-graph features during the lossless comparison.
 
+For one direct Hermes session with the current ChatGPT account, run:
+
+```sh
+HERMES_CODEX_BASE_URL=https://chatgpt.com/backend-api/codex hermes
+```
+
+Pi 1.4 has no CLI base-URL bypass flag. For a direct comparison, change only `providers.xai.baseUrl` in the active `models.json` to `https://api.x.ai/v1` and remove only its `x-headroom-base-url` header. Reload through `/model` or restart. Restore the repository snippet afterward. Neither Pi nor Hermes needs `RTK_DISABLED` because their sessions have no RTK hooks here.
+
 Check `rtk gain` and the dashboard alongside task completion, elapsed time, retries, and missing evidence. Output reduction is not the same as bill reduction. Headroom cannot recover content that RTK discarded before it reached the proxy. Local recovery databases can contain source or secrets even though outbound reporting is off.
 
 ## Roll back
 
-Restore the prior Claude and Codex routing settings before stopping Headroom. Preserve any unrelated changes made since the backups. Otherwise ordinary agent launches will still point at a stopped proxy. Remove only the added RTK hook commands to disable automatic filtering permanently, or use `RTK_DISABLED=1` for one session.
+Restore prior routing in Claude, Codex, Pi, and Hermes before stopping Headroom. Preserve unrelated changes made since the backups. For Pi, restore the direct xAI URL and remove only Headroom's header as described above. This Hermes profile previously had an empty base URL; restore it with:
+
+```sh
+hermes config set model.base_url ''
+```
+
+Otherwise ordinary agent launches will still point at a stopped proxy. Remove only the added Claude and Codex RTK hook commands to disable automatic filtering permanently, or use `RTK_DISABLED=1` for one session.
 
 ```sh
 headroom install stop --profile evaluation
@@ -249,4 +285,6 @@ node scripts/test-headroom-transformations-ui.js --source "$headroom_root/dashbo
 
 The [Headroom settings review](../../docs/research/2026-10-28-headroom-settings.md) and [RTK evaluation](../../docs/research/2026-10-28-rtk-evaluation.md) explain the tradeoffs. Before the capture and display fixes, health checks and one small live request through each ordinary CLI passed and produced request-log records. Those checks found Claude request content but missing Codex snapshots. The settings-origin patch also passed an off/restart/on/restart logging cycle.
 
-Fresh Claude and Codex requests now pass live Before/After checks. The browser renders both snapshots without object coercion or the old enable-logging hint. The Codex sample's compressed snapshot differs from its original. These checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.
+Fresh Claude and Codex requests now pass live Before/After checks. The browser renders both snapshots without object coercion or the old enable-logging hint. The Codex sample's compressed snapshot differs from its original.
+
+Small live Pi and Hermes requests also passed on their existing models and logins. Pi's xAI request and Hermes's main and auxiliary requests produced both snapshots. These smoke checks do not establish coding quality or savings. Their records remain in Headroom's lifetime history; use the current Session view for new comparisons.
