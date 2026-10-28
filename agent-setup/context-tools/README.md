@@ -22,6 +22,8 @@ Review the tap's `Formula/rtk-oss.rb`, then trust and install that formula:
 brew trust --formula rtk-ai/tap/rtk-oss
 brew install rtk-ai/tap/rtk-oss
 uv tool install --python "$(brew --prefix python@3.13)/bin/python3.13" 'headroom-ai[proxy]==0.42.0'
+headroom_python="$(uv tool dir)/headroom-ai/bin/python"
+uv pip install --python "$headroom_python" --no-deps --reinstall-package dotfiles-headroom-rtk ./agent-setup/context-tools/headroom-rtk
 rtk --version
 headroom --version
 ```
@@ -68,6 +70,16 @@ PY
 The merge preserves other stored keys. The `unset` removes the older setup's logging export from this terminal. Any explicit `HEADROOM_LOG_MESSAGES` export still locks that setting; remove it from service or shell configuration if GUI control is intended.
 
 In the dashboard, change message logging, then use Save + Restart to apply it. Mirror a lasting default into the repository's `settings.json`, then merge that file again. Dashboard changes do not update Git automatically.
+
+## RTK savings in the dashboard
+
+The local [RTK extension](headroom-rtk/) adds an RTK command-output card to Headroom's dashboard. `HEADROOM_PROXY_EXTENSIONS=dotfiles-rtk` in [headroom.env](headroom.env) enables it. Reinstall the extension with the command above after changing its source or reinstalling Headroom.
+
+The card reads `rtk gain --all --format json` and refreshes every 15 seconds. It shows RTK's estimated tokens saved, raw and filtered output totals, command count, and output-reduction percentage. These cover RTK's global tracking history. They stay independent of Headroom's Session, Lifetime, and Historical switches. RTK excludes oversized command outputs from these headline figures.
+
+RTK estimates tokens from output bytes divided by four. Its figures remain separate from Headroom compression and provider-cache discounts. Automatic RTK filtering currently covers Claude Code and Codex; Pi and Hermes use Headroom only.
+
+Only aggregate counters are exposed. Command text, recall payloads, and subprocess errors stay out of the endpoint. The native analytics command may perform its normal database maintenance. Missing RTK or failed reads display unavailable rather than a fabricated zero. Both extension endpoints require a local caller and reject remote browser origins.
 
 ## Configure RTK
 
@@ -275,10 +287,12 @@ Keep or delete local logs and recovery data according to their contents. Removin
 ```sh
 python3 scripts/test-context-tools.py
 python3 scripts/test-headroom-fix-installer.py
+node --test agent-setup/context-tools/headroom-rtk/tests/test-panel.js
 shellcheck agent-setup/context-tools/rtk-hook.sh
 headroom_python="$(uv tool dir)/headroom-ai/bin/python"
 "$headroom_python" scripts/test-headroom-settings-origin.py
 "$headroom_python" scripts/test-headroom-transformations-capture.py
+"$headroom_python" -m unittest discover -s agent-setup/context-tools/headroom-rtk/tests -p 'test_*.py'
 headroom_root="$("$headroom_python" -c 'import headroom; from pathlib import Path; print(Path(headroom.__file__).parent)')"
 node scripts/test-headroom-transformations-ui.js --source "$headroom_root/dashboard/templates/dashboard.html"
 ```
