@@ -104,9 +104,15 @@ jobs:
 
       - uses: ansible/ansible-lint@main
 
+      - name: Verify bundled agent sources and staging
+        run: |
+          python3 agent-setup/refactor.py
+          python3 agent-setup/test_refactor.py
+
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@master
         with:
           severity: error
           scandir: "."
-          ignore_paths: "zsh"
+          # Keep pinned upstream payloads unchanged; verify them with the bundle checks above.
+          ignore_paths: "zsh agent-setup/universal/plugins"
