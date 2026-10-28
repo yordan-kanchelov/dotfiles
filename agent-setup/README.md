@@ -33,7 +33,7 @@ agent-setup/
     inventory.json           Sanitized machine inventory
     inventory.md             Machine reference
   hermes/                    Hermes plugin setup and manifest adaptation
-  pi/                        Pi Sloptrim setup
+  pi/                        Pi extension inventory and prose-skill setup
 scripts/
   agent-setup-bundle.py       Verify, regenerate references, or stage marketplaces
   test-agent-setup-bundle.py  Bundle and staging checks
