@@ -8,7 +8,7 @@ Run from the repository root. Choose a new, stable staging directory because nat
 
 ```sh
 codex_catalogs="$HOME/.local/share/agent-setup/codex"
-python3 agent-setup/refactor.py --stage codex --output "$codex_catalogs"
+python3 scripts/agent-setup-bundle.py --stage codex --output "$codex_catalogs"
 ```
 
 The command refuses an existing output directory. It assembles four marketplaces with ordinary copies of shared payloads and Codex manifests. Matt's upstream Claude manifest is retained as the compatibility manifest used by the installed Codex package.

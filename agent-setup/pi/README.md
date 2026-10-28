@@ -4,7 +4,7 @@ Read the [shared guide](../universal/README.md#sloptrim). Install Pi and Python 
 
 ```sh
 pi_stage="$HOME/.local/share/agent-setup/pi"
-python3 agent-setup/refactor.py --stage pi --output "$pi_stage"
+python3 scripts/agent-setup-bundle.py --stage pi --output "$pi_stage"
 ```
 
 Copy `$pi_stage/skills/sloptrim/` into `${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills/sloptrim/` as ordinary files. Preserve existing packages and settings. Keep the detector, pattern reference, and license files together. Also copy `$pi_stage/skills/unslop/` into the same profile's `skills/unslop/` directory. Use `unslop` to revise prose before checking it with Sloptrim. Pi loads these as skills; Claude hooks are not registered.

@@ -8,7 +8,7 @@ import re
 import shutil
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent / "agent-setup"
 
 
 def counts(doc):
@@ -102,7 +102,7 @@ def check_sources(selected):
 
 
 def skill_index(selected):
-    lines = ["# Bundled skills", "", "Generated from the payloads and source manifests by `refactor.py`. Manual-only labels describe metadata; shared guidance can impose further limits.", "",
+    lines = ["# Bundled skills", "", "Generated from the payloads and source manifests by `scripts/agent-setup-bundle.py`. Manual-only labels describe metadata; shared guidance can impose further limits.", "",
              "Herdr's skill comes from `herdr --skill`. Blender, Unreal, account-managed plugins, and system skills are not bundled.", ""]
     for component in selected:
         lines += [f'## {component["name"]} ({component["skill_count"]})', "",
@@ -201,7 +201,7 @@ def main():
                 path.write_text(text)
         print("Updated " + (", ".join(str(p.relative_to(ROOT)) for p in changed) or "nothing"))
     elif changed:
-        parser.exit(1, "Out of date: " + ", ".join(str(p.relative_to(ROOT)) for p in changed) + "\nRun python3 agent-setup/refactor.py --write\n")
+        parser.exit(1, "Out of date: " + ", ".join(str(p.relative_to(ROOT)) for p in changed) + "\nRun python3 scripts/agent-setup-bundle.py --write\n")
     else:
         print("Bundled sources, inventories, counts, generated tables, and skill index agree.")
 

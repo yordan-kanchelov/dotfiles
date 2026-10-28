@@ -9,17 +9,18 @@ import tempfile
 import unittest
 
 
-ROOT = Path(__file__).resolve().parent
+SCRIPTS = Path(__file__).resolve().parent
+ROOT = SCRIPTS.parent / "agent-setup"
 
 
 class SetupTests(unittest.TestCase):
     def setUp(self):
-        self.scratch = tempfile.TemporaryDirectory(prefix=".refactor-test-", dir=ROOT)
+        self.scratch = tempfile.TemporaryDirectory(prefix=".agent-setup-bundle-test-", dir=ROOT)
         self.addCleanup(self.scratch.cleanup)
         self.output = Path(self.scratch.name)
 
-    def run_helper(self, *args, root=ROOT):
-        return subprocess.run([sys.executable, str(root / "refactor.py"), *map(str, args)], capture_output=True, text=True)
+    def run_helper(self, *args, script=SCRIPTS / "agent-setup-bundle.py"):
+        return subprocess.run([sys.executable, str(script), *map(str, args)], capture_output=True, text=True)
 
     def test_stages_complete_native_plugins(self):
         for harness, expected in [("claude", 65), ("codex", 67)]:
@@ -85,15 +86,17 @@ class SetupTests(unittest.TestCase):
 
     def test_rejects_source_drift_before_staging(self):
         fixture = self.output / "fixture"
-        fixture.mkdir()
-        shutil.copyfile(ROOT / "refactor.py", fixture / "refactor.py")
-        for folder in ["universal", "claude", "codex"]:
-            shutil.copytree(ROOT / folder, fixture / folder)
-        shutil.copytree(ROOT / "hermes", fixture / "hermes")
-        source = fixture / "universal/plugins/agent-skills/skills/context-engineering/SKILL.md"
+        bundle = fixture / "agent-setup"
+        bundle.mkdir(parents=True)
+        script = fixture / "scripts/agent-setup-bundle.py"
+        script.parent.mkdir()
+        shutil.copyfile(SCRIPTS / "agent-setup-bundle.py", script)
+        for folder in ["universal", "claude", "codex", "hermes"]:
+            shutil.copytree(ROOT / folder, bundle / folder)
+        source = bundle / "universal/plugins/agent-skills/skills/context-engineering/SKILL.md"
         source.write_text(source.read_text() + "\nchanged fixture\n")
         destination = self.output / "staged"
-        result = self.run_helper("--stage", "claude", "--output", destination, root=fixture)
+        result = self.run_helper("--stage", "claude", "--output", destination, script=script)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Source drift", result.stderr)
         self.assertFalse(destination.exists())

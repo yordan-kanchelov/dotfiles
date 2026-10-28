@@ -8,7 +8,7 @@ Run from the repository root. Choose a new, stable staging directory because nat
 
 ```sh
 claude_catalogs="$HOME/.local/share/agent-setup/claude"
-python3 agent-setup/refactor.py --stage claude --output "$claude_catalogs"
+python3 scripts/agent-setup-bundle.py --stage claude --output "$claude_catalogs"
 ```
 
 The command refuses an existing output directory. It assembles three plugin marketplaces and standalone skill packages with ordinary copies of the payloads and Claude manifests. It does not run hooks or install packages.

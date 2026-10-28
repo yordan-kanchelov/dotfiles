@@ -8,7 +8,7 @@ Run from the repository root with a new output directory:
 
 ```sh
 hermes_stage="$HOME/.local/share/agent-setup/hermes"
-python3 agent-setup/refactor.py --stage hermes --output "$hermes_stage"
+python3 scripts/agent-setup-bundle.py --stage hermes --output "$hermes_stage"
 ```
 
 The result contains `plugins/agent-skills/`, `skills/unslop/`, and `skills/sloptrim/`. Keep the Agent Skills package intact so its root references resolve. Use the installed `hermes plugins --help` and native install/enable commands for the plugin. Place the standalone skill under `${HERMES_HOME:-$HOME/.hermes}/skills/unslop/` as ordinary files. Preserve existing skills, models, providers, permissions, and hooks.
