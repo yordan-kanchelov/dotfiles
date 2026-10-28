@@ -104,10 +104,11 @@ jobs:
 
       - uses: ansible/ansible-lint@main
 
-      - name: Verify bundled agent sources and staging
+      - name: Verify agent sources, staging, and evaluation hooks
         run: |
           python3 scripts/agent-setup-bundle.py
           python3 scripts/test-agent-setup-bundle.py
+          python3 scripts/test-context-tools.py
 
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@master

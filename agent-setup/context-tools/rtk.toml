@@ -1,0 +1,64 @@
+[tracking]
+enabled = true
+history_days = 7
+
+[retriever]
+mode = "sqlite"
+retention_days = 7
+
+[telemetry]
+enabled = false
+
+[awareness]
+level = "high"
+
+[hooks]
+wrap_fish_scripts = false
+# Preserve exact evidence and commands whose interpreter or approval matters.
+exclude_commands = [
+  "ansible",
+  "ansible-playbook",
+  "ansible-lint",
+  '^git\s+-',
+  "git diff",
+  "git show",
+  "git log",
+  "git blame",
+  "git reflog",
+  "git add",
+  "git commit",
+  "git push",
+  "git fetch",
+  "git pull",
+  "git merge",
+  "git rebase",
+  "git cherry-pick",
+  "git revert",
+  "git reset",
+  "git clean",
+  "git checkout",
+  "git switch",
+  "git restore",
+  "git branch",
+  "git tag",
+  "git stash",
+  "git worktree",
+  "git apply",
+  "git am",
+  "git rm",
+  "git mv",
+  "git config",
+  "git remote",
+  "git submodule",
+  "rg",
+  "grep",
+  "find",
+  "fd",
+  "python",
+  "python3",
+  "pytest",
+  "uv",
+  "poetry",
+  "tox",
+  "nox",
+]

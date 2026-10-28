@@ -12,6 +12,8 @@ For an agent preparing a machine, start with [universal/](universal/README.md), 
 
 Use ordinary files and native plugin management. Keep credentials, account connections, transcripts, project trust, and hook-trust records on the destination. Model choices and external provider setup remain user decisions.
 
+[context-tools/](context-tools/README.md) contains an optional Headroom and RTK evaluation setup, including a local dashboard and separate comparison modes. It is installed independently of the staged skill bundles.
+
 ## Folder layout
 
 ```text
@@ -34,6 +36,7 @@ agent-setup/
     inventory.md             Machine reference
   hermes/                    Hermes plugin setup and manifest adaptation
   pi/                        Pi extension inventory and prose-skill setup
+  context-tools/             Optional Headroom service and RTK command filters
 scripts/
   agent-setup-bundle.py       Verify, regenerate references, or stage marketplaces
   test-agent-setup-bundle.py  Bundle and staging checks
