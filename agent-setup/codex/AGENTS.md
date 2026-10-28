@@ -1,1 +1,3 @@
 **Unslop agent prose** — use short sentences. When writing docs, READMEs, or skills, pair the `unslop` skill with [Sloptrim](https://github.com/seyedehsanhadi/sloptrim). Use `unslop` to revise prose, then run Sloptrim before the files leave the repo.
+
+**Guard the context.** When subagents are available, delegate bulk exploration and reviews. Handle trivial tasks in the main thread. Give each agent a clear question, scope, relevant files, and constraints. For reviews, include the review base and spec. Ask for concise findings with file and line evidence and checks run. Keep summaries and decisions in the main thread. Leave bulk reads and logs with the subagents.

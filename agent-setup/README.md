@@ -23,12 +23,12 @@ agent-setup/
     skills.md                Generated index of bundled skills
   claude/                    Claude setup, manifests, hooks, and Chrome DevTools
     README.md                Setup steps
-    CLAUDE.md                Global prose instructions template
+    CLAUDE.md                Global instructions template
     inventory.json           Sanitized machine inventory
     inventory.md             Machine reference
   codex/                     Codex setup, manifests, and Matt extras
     README.md                Setup steps
-    AGENTS.md                Global prose instructions template
+    AGENTS.md                Global instructions template
     config.toml              Settings to merge
     inventory.json           Sanitized machine inventory
     inventory.md             Machine reference

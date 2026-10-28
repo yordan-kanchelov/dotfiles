@@ -29,7 +29,7 @@ On an existing profile, keep matching installs and inspect differences before re
 
 ## Profile instructions
 
-Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. The [CLAUDE.md](CLAUDE.md) template contains the prose rule; merge it into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
+Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. The [CLAUDE.md](CLAUDE.md) template contains prose and context rules. Merge both into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
 
 Keep the destination's model and permission settings. Agent Skills adds native commands and skills, with no wired startup hook. Review Ponytail's existing hooks and task-board module through native trust prompts. Keep the meta-skill body out of always-on context.
 

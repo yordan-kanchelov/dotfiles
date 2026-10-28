@@ -2,6 +2,10 @@
 
 This file provides guidance to coding agents (Claude Code, Codex, etc.) when working with code in this repository.
 
+## Live machine updates
+
+When changing a configuration or instruction in this repo, apply the matching change to the current machine unless the user asks for repo-only changes. Use the existing install or symlink workflow. Merge agent instructions and settings into the active user profile. Back up regular files before editing. Preserve credentials, permissions, model choices, and unrelated settings. Verify the live result and report anything that could not be applied.
+
 ## Repository Overview
 
 Dotfiles for macOS, Debian/Ubuntu-based Linux (incl. Linux Mint) and Omarchy. Setup is an

@@ -22,7 +22,7 @@ Keep existing model choices, native permission boundaries, and hook trust. Workf
 
 ## Global instructions
 
-Merge the short prose rule from the harness guide into the destination's global instructions. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
+Merge the global rules from the harness guide into the destination's instructions. Claude and Codex templates include both prose and context rules. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
 

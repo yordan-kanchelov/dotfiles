@@ -2,7 +2,7 @@
 
 These instructions cover changes inside `agent-setup/`. Read [README.md](README.md) for installation and [universal/README.md](universal/README.md) for shared package conventions. Read the affected agent's README before changing its manifests or setup steps.
 
-This folder holds portable packages and setup instructions. The Ansible playbook does not deploy it. Keep live profile updates scoped to the user's request, and preserve credentials, permissions, model choices, and unrelated settings.
+This folder holds portable packages and setup instructions. The Ansible playbook does not deploy it. Follow the repo's [live machine update rule](../AGENTS.md#live-machine-updates) when changing agent configuration or instructions.
 
 ## Add or update a skill
 

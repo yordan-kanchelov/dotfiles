@@ -30,7 +30,7 @@ On an existing profile, keep matching installs and inspect differences before re
 
 ## Merge profile settings and instructions
 
-Resolve the profile with `codex_config_home="${CODEX_HOME:-$HOME/.codex}"`. The [AGENTS.md](AGENTS.md) template contains the prose rule; merge it into `$codex_config_home/AGENTS.md`. Remove earlier skill routing, such as the `installed-engineering-skills` block, from that file and delete `$codex_config_home/engineering-defaults.md` if present.
+Resolve the profile with `codex_config_home="${CODEX_HOME:-$HOME/.codex}"`. The [AGENTS.md](AGENTS.md) template contains prose and context rules. Merge both into `$codex_config_home/AGENTS.md`. Remove earlier skill routing, such as the `installed-engineering-skills` block, from that file and delete `$codex_config_home/engineering-defaults.md` if present.
 
 Merge [config.toml](config.toml) into `$codex_config_home/config.toml`. Keep existing model choices and unrelated tables. The snippet preserves on-request approval, automatic approval review, workspace-write, hooks, and multi-agent support. Retain native hook trust; accept source changes only after reviewing the selected hooks.
 
