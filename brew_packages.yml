@@ -17,6 +17,7 @@ formulae:
   terminal:
     - bat            # cat with syntax highlighting
     - btop
+    - duti           # macOS default-app associations (setup.yml)
     - eza
     - fd             # Fast find alternative
     - fzf

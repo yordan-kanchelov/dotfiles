@@ -3,3 +3,21 @@
 brew_prefix: "{{ '/opt/homebrew' if ansible_facts['architecture'] == 'arm64' else '/usr/local' }}"
 fonts_dir: "{{ ansible_facts['env']['HOME'] }}/Library/Fonts"
 brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten }}"
+
+# Opened in VS Code by Finder and by a cmd+click on a file:// link in Ghostty
+# (the open-in-editor Claude mod draws reply paths as those links). Set by UTI:
+# duti's extension form reports success while macOS keeps the old handler.
+# .ts is public.mpeg-2-transport-stream to macOS, so those videos land in VS Code too.
+vscode_utis:
+  - net.daringfireball.markdown
+  - public.plain-text
+  - public.yaml
+  - public.json
+  - public.python-script
+  - public.shell-script
+  - public.zsh-script
+  - public.bash-script
+  - com.microsoft.typescript
+  - public.mpeg-2-transport-stream
+  - com.netscape.javascript-source
+  - public.css

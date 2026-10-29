@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "dotfiles-mods",
+  "description": "Mods developed in the dotfiles repo, linked from agent-setup/claude/mods.",
+  "owner": { "name": "Yordan Kanchelov" },
+  "plugins": [
+    {
+      "name": "open-in-editor",
+      "version": "0.1.0",
+      "source": "./open-in-editor",
+      "description": "Click a file path in Claude's reply to open it in VS Code, with the file's git root as the workspace"
+    }
+  ]
+}

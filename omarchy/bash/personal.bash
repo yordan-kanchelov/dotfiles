@@ -10,6 +10,10 @@
 export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
 case ":$PATH:" in *":$PNPM_HOME:"*) ;; *) PATH="$PNPM_HOME:$PATH" ;; esac
 
+# herdr passes OSC 8 links through, but its TERM_PROGRAM is unknown to
+# supports-hyperlinks, so Claude Code would print each link's URL after it.
+[[ $TERM_PROGRAM == herdr ]] && export FORCE_HYPERLINK=1
+
 # shellcheck source=/dev/null
 [[ -r ~/.secrets ]] && source ~/.secrets
 
