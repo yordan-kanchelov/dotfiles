@@ -6,7 +6,7 @@ if [[ "${1:-}" == --check ]]; then check=true; shift; fi
 command -v herdr >/dev/null || { echo 'Herdr not installed; skipping'; exit 0; }
 targets=("$@")
 if (( ${#targets[@]} == 0 )); then
-  for target in claude codex; do
+  for target in claude codex pi hermes; do
     if command -v "$target" >/dev/null; then targets+=("$target"); fi
   done
 fi
@@ -14,8 +14,14 @@ skill=$(herdr --skill)
 status=$(herdr integration status)
 # Bash 3.2 (macOS) treats an empty array as unset under nounset.
 for target in ${targets[@]+"${targets[@]}"}; do
-  case "$target" in claude|codex) ;; *) echo "Unsupported dotfiles harness: $target" >&2; exit 1 ;; esac
-  directory="$HOME/.$target/skills"
+  case "$target" in
+    claude) profile="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ;;
+    codex) profile="${CODEX_HOME:-$HOME/.codex}" ;;
+    pi) profile="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}" ;;
+    hermes) profile="${HERMES_HOME:-$HOME/.hermes}" ;;
+    *) echo "Unsupported dotfiles harness: $target" >&2; exit 1 ;;
+  esac
+  directory="$profile/skills"
   if [[ -L "$directory" ]]; then
     echo "changed: $target skills directory"
     if ! $check; then
@@ -36,8 +42,12 @@ for target in ${targets[@]+"${targets[@]}"}; do
   if ! grep -q "^$target: current[ (]" <<< "$status"; then
     echo "changed: $target integration"
     if ! $check; then
-      config="$HOME/.codex/config.toml"
-      [[ "$target" != claude ]] || config="$HOME/.claude/settings.json"
+      case "$target" in
+        claude) config="$profile/settings.json" ;;
+        codex) config="$profile/config.toml" ;;
+        hermes) config="$profile/config.yaml" ;;
+        pi) config="" ;;
+      esac
       if [[ -L "$config" ]]; then
         temporary=$(mktemp)
         cp -L "$config" "$temporary"

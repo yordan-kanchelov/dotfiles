@@ -1,6 +1,6 @@
 # Set up Claude Code
 
-Read the [shared setup](../universal/README.md) first. This folder adds Claude manifests and command wrappers for the shared plugins, plus the pinned Chrome DevTools plugin. [inventory.md](inventory.md) records the current Mac; [sources.json](sources.json) records the Chrome DevTools payload.
+Read the [shared setup](../universal/README.md) first. This folder adds Claude manifests and command wrappers for the shared plugins, plus the pinned Chrome DevTools plugin and the [Image View](mods/image-view/) mod. [inventory.md](inventory.md) records the current Mac; [sources.json](sources.json) records the Chrome DevTools and Image View payloads.
 
 ## Stage and install plugins
 
@@ -22,14 +22,15 @@ claude plugin marketplace add "$claude_catalogs/ponytail" --scope user
 claude plugin install agent-skills@addy-agent-skills --scope user
 claude plugin install mattpocock-skills@reviewed-agent-pins --scope user
 claude plugin install chrome-devtools-mcp@reviewed-agent-pins --scope user
+claude plugin install image-view@reviewed-agent-pins --scope user
 claude plugin install ponytail@ponytail --scope user
 ```
 
-On an existing profile, keep matching installs and inspect differences before replacing a marketplace. Remove the old Pstack plugin and its Pstack-only marketplace when replacing it. Keep unrelated marketplace entries. The Chrome DevTools manifest declares `npx chrome-devtools-mcp@1.12.0`; it needs Node, npm, Chrome, and package access.
+On an existing profile, keep matching installs and inspect differences before replacing a marketplace. Remove the old Pstack plugin and its Pstack-only marketplace when replacing it. Keep unrelated marketplace entries. The Chrome DevTools manifest declares `npx chrome-devtools-mcp@1.12.0`; it needs Node, npm, Chrome, and package access. Image View is a mod that shows pasted images as thumbnails above the prompt; run `/reload-plugins` after installing it. It makes no network requests and converts non-PNG pastes with macOS `sips`.
 
 ## Profile instructions
 
-Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. The [CLAUDE.md](CLAUDE.md) template contains prose and context rules. Merge both into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
+Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. Merge all rules from the [CLAUDE.md](CLAUDE.md) template into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.
 
 Keep the destination's model and permission settings. Agent Skills adds native commands and skills, with no wired startup hook. Review Ponytail's existing hooks and task-board module through native trust prompts. Keep the meta-skill body out of always-on context.
 
@@ -52,15 +53,13 @@ If `/sloptrim` is absent from the command menu, copy the upstream wrapper from `
 
 ## Add Herdr
 
-With Herdr installed, create its skill from the CLI:
+With Herdr installed, run from the repository root:
 
 ```sh
-mkdir -p "$claude_config_home/skills/herdr"
-herdr --skill > "$claude_config_home/skills/herdr/SKILL.md"
-herdr integration install claude
+bash scripts/install-herdr.sh claude
 ```
 
-The integration command updates managed hook settings. For a redirected profile, verify that Herdr targets that profile before installing the integration.
+The script refreshes the CLI-owned skill and integration while preserving unrelated settings. Follow the [shared Herdr guide](../universal/README.md#herdr) after upgrades.
 
 ## Verify
 

@@ -30,7 +30,7 @@ On an existing profile, keep matching installs and inspect differences before re
 
 ## Merge profile settings and instructions
 
-Resolve the profile with `codex_config_home="${CODEX_HOME:-$HOME/.codex}"`. The [AGENTS.md](AGENTS.md) template contains prose and context rules. Merge both into `$codex_config_home/AGENTS.md`. Remove earlier skill routing, such as the `installed-engineering-skills` block, from that file and delete `$codex_config_home/engineering-defaults.md` if present.
+Resolve the profile with `codex_config_home="${CODEX_HOME:-$HOME/.codex}"`. Merge all rules from the [AGENTS.md](AGENTS.md) template into `$codex_config_home/AGENTS.md`. Remove earlier skill routing, such as the `installed-engineering-skills` block, from that file and delete `$codex_config_home/engineering-defaults.md` if present.
 
 Merge [config.toml](config.toml) into `$codex_config_home/config.toml`. Keep existing model choices and unrelated tables. The snippet preserves on-request approval, automatic approval review, workspace-write, hooks, and multi-agent support. Retain native hook trust; accept source changes only after reviewing the selected hooks.
 
@@ -48,15 +48,13 @@ Start a fresh task to discover the skill. Run `python3 "$codex_config_home/skill
 
 ## Add Herdr
 
-With Herdr installed, create its skill from the CLI:
+With Herdr installed, run from the repository root:
 
 ```sh
-mkdir -p "$codex_config_home/skills/herdr"
-herdr --skill > "$codex_config_home/skills/herdr/SKILL.md"
-herdr integration install codex
+bash scripts/install-herdr.sh codex
 ```
 
-The integration command updates managed hook settings. For a redirected profile, verify that Herdr targets that profile before installing the integration.
+The script refreshes the CLI-owned skill and integration while preserving unrelated settings. Follow the [shared Herdr guide](../universal/README.md#herdr) after upgrades.
 
 ## Verify
 

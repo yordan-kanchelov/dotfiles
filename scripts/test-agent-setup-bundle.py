@@ -41,9 +41,9 @@ class SetupTests(unittest.TestCase):
                     skills = manifest.get("skills", "./skills/")
                     skills = [skills] if isinstance(skills, str) else skills
                     for relative in skills:
-                        self.assertTrue((plugin / relative).is_dir(), relative)
+                        self.assertTrue((plugin / relative).is_dir() or "skills" not in manifest, relative)
                         skill_count += len(list((plugin / relative).rglob("SKILL.md")))
-                    hooks = manifest.get("hooks", [])
+                    hooks = manifest.get("hooks", [r for r in ["./hooks/hooks.json"] if (plugin / r).is_file()])
                     hooks = [hooks] if isinstance(hooks, str) else hooks
                     for relative in hooks:
                         hook_file = plugin / relative
@@ -57,7 +57,7 @@ class SetupTests(unittest.TestCase):
                         self.assertEqual((plugin / ".claude/commands").exists(), harness == "claude")
             self.assertEqual((destination / "skills/unslop/SKILL.md").read_bytes(), (ROOT / "universal/skills/unslop/SKILL.md").read_bytes())
             self.assertEqual(skill_count, expected)
-            self.assertEqual(plugins, {"agent-skills", "mattpocock-skills", "ponytail", "chrome-devtools-mcp" if harness == "claude" else "mattpocock-extras"})
+            self.assertEqual(plugins, {"agent-skills", "mattpocock-skills", "ponytail", *(["chrome-devtools-mcp", "image-view"] if harness == "claude" else ["mattpocock-extras"])})
             before = {p.relative_to(destination): p.read_bytes() for p in destination.rglob("*") if p.is_file()}
             self.assertNotEqual(self.run_helper("--stage", harness, "--output", destination).returncode, 0)
             self.assertEqual(before, {p.relative_to(destination): p.read_bytes() for p in destination.rglob("*") if p.is_file()})
@@ -101,9 +101,16 @@ class SetupTests(unittest.TestCase):
         self.assertIn("Source drift", result.stderr)
         self.assertFalse(destination.exists())
 
-    def test_generated_references_are_current(self):
+    def test_sources_match_manifests(self):
         result = self.run_helper()
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_inventories_hold_no_home_paths(self):
+        for harness in ["claude", "codex", "hermes"]:
+            doc = json.loads((ROOT / harness / "inventory.json").read_text())
+            if harness != "hermes":
+                self.assertEqual(doc["schema_version"], 2, harness)
+            self.assertNotIn("/Users/", json.dumps(doc), harness)
 
     def test_git_preserves_pinned_line_endings(self):
         fixture = self.output / "git-fixture"

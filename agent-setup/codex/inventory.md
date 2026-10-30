@@ -6,14 +6,12 @@ Refreshed 2026-10-27 with Codex CLI 0.164.0. [inventory.json](inventory.json) re
 
 Native `codex plugin list --json` reports these local installations in this execution context:
 
-<!-- BEGIN plugins -->
 | Plugin | Version | User state | Skill files / candidates | Installed revision |
 | --- | --- | --- | --- | --- |
 | `agent-skills@agent-skills` | 0.6.13 | enabled | 25 / 25 | `aeac41d4d005999432bb7312f7ff06383a91d59d` |
 | `mattpocock-extras@engineering-adaptations` | 1.3.1-codex.1 | enabled | 9 / 9 | not recorded for payload |
 | `mattpocock-skills@mattpocock` | 1.3.1 | enabled | 38 / 27 | not recorded for payload |
 | `ponytail@ponytail` | 5.3.2 | enabled | 12 / 6 | not recorded for payload |
-<!-- END plugins -->
 
 Agent Skills 0.6.13 is installed and enabled from the pinned local source. Both Pstack plugins, their cache/source registrations, and the Pstack-only marketplace were removed.
 
@@ -23,7 +21,6 @@ The configured marketplaces are `agent-skills`, `mattpocock`, `ponytail`, and lo
 
 The following exact payload directories exist under `~/.codex/plugins/cache/openai-curated-remote/`. The native listing above omits them in this context, so their installed and enabled state is not inferred from cache presence.
 
-<!-- BEGIN cached-remote -->
 | Plugin | Version | Skill files / candidates |
 | --- | --- | --- |
 | `cloud-environment@openai-curated-remote` | 0.1.2 | 1 / 1 |
@@ -33,7 +30,6 @@ The following exact payload directories exist under `~/.codex/plugins/cache/open
 | `plugin-management@openai-curated-remote` | 0.1.0 | 1 / 1 |
 | `sites@openai-curated-remote` | 1.1.2 | 2 / 2 |
 | `work-pets@openai-curated-remote` | 0.1.6 | 3 / 3 |
-<!-- END cached-remote -->
 
 Their skill files are recorded separately from installed local-plugin files. Remote entitlements, app authorization, and source accessibility were not tested.
 

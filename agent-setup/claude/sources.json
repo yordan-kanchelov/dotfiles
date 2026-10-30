@@ -21,6 +21,27 @@
       "marketplaces": {
         "claude": "reviewed-agent-pins"
       }
+    },
+    {
+      "name": "image-view",
+      "version": "0.2.0",
+      "source": "https://github.com/jarrodwatts/claude-image-view",
+      "revision": "370b8e7bc0708bebe9762e63534f7ca18bc3e802",
+      "download_url": "https://codeload.github.com/jarrodwatts/claude-image-view/tar.gz/370b8e7bc0708bebe9762e63534f7ca18bc3e802",
+      "archive_sha256": "646c0f2b24382df6714cae874749d7845036eb984fbada3770ad5afd98a7215e",
+      "payload": "claude/mods/image-view",
+      "overlays": {},
+      "artifacts": [
+        {
+          "path": "claude/mods/image-view",
+          "tree_sha256": "a08357e3196672cf87b7b703e077e39cebd1f7dda8b053eaf68ff4163bfcd11c",
+          "file_count": 8
+        }
+      ],
+      "skill_count": 0,
+      "marketplaces": {
+        "claude": "reviewed-agent-pins"
+      }
     }
   ]
 }

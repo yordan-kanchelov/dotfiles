@@ -54,13 +54,13 @@ Run `pi mcp list` to check connections. Restart Pi after migration so it loads n
 
 ## Herdr
 
-With Herdr installed, generate its bridge using the installed CLI:
+With Herdr installed, run from the repository root:
 
 ```sh
-herdr integration install pi
+bash scripts/install-herdr.sh pi
 ```
 
-Herdr owns `extensions/herdr-agent-state.ts`; regenerate it through the CLI after Herdr updates. These extensions are installed through their native tools and are separate from the packages staged by the bundle script.
+The script refreshes the CLI-owned skill and integration while preserving unrelated settings. Follow the [shared Herdr guide](../universal/README.md#herdr) after upgrades.
 
 ## Install Sloptrim and Unslop
 
@@ -73,7 +73,7 @@ python3 scripts/agent-setup-bundle.py --stage pi --output "$pi_stage"
 
 Copy `$pi_stage/skills/sloptrim/` into `${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills/sloptrim/` as ordinary files. Preserve existing packages and settings. Keep the detector, pattern reference, and license files together. Also copy `$pi_stage/skills/unslop/` into the same profile's `skills/unslop/` directory. Use `unslop` to revise prose before checking it with Sloptrim. Pi loads these as skills; Claude hooks are not registered.
 
-Merge the prose and context rules from [Codex's AGENTS.md](../codex/AGENTS.md) into `${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/AGENTS.md`. Preserve other user guidance. Restart Pi or use `/reload`, then confirm `/skill:sloptrim` is available. Run `python3 "$HOME/.pi/agent/skills/sloptrim/scripts/detect.py" README.md`, adjusting for a redirected profile, and confirm a numeric `_metrics.ai_tell_score`.
+Merge all rules from [Codex's AGENTS.md](../codex/AGENTS.md) into `${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/AGENTS.md`. Preserve other user guidance. Restart Pi or use `/reload`, then confirm `/skill:sloptrim` is available. Run `python3 "$HOME/.pi/agent/skills/sloptrim/scripts/detect.py" README.md`, adjusting for a redirected profile, and confirm a numeric `_metrics.ai_tell_score`.
 
 ## Verify and refresh the inventory
 

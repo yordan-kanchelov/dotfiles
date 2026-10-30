@@ -1,6 +1,6 @@
 # Bundled skills
 
-Generated from the payloads and source manifests by `scripts/agent-setup-bundle.py`. Manual-only labels describe metadata; shared guidance can impose further limits.
+Maintained by hand from the payloads and source manifests. Update it when a skill is added, removed, or re-pinned. Manual-only labels describe metadata; shared guidance can impose further limits.
 
 Herdr's skill comes from `herdr --skill`. Blender, Unreal, account-managed plugins, and system skills are not bundled.
 

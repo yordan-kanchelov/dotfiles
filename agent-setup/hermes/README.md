@@ -13,9 +13,19 @@ python3 scripts/agent-setup-bundle.py --stage hermes --output "$hermes_stage"
 
 The result contains `plugins/agent-skills/`, `skills/unslop/`, and `skills/sloptrim/`. Keep the Agent Skills package intact so its root references resolve. Use the installed `hermes plugins --help` and native install/enable commands for the plugin. Place the standalone skill under `${HERMES_HOME:-$HOME/.hermes}/skills/unslop/` as ordinary files. Preserve existing skills, models, providers, permissions, and hooks.
 
+## Herdr
+
+With Herdr installed, run from the repository root:
+
+```sh
+bash scripts/install-herdr.sh hermes
+```
+
+The script refreshes the CLI-owned skill and integration while preserving unrelated settings. Follow the [shared Herdr guide](../universal/README.md#herdr) after upgrades.
+
 ## Install Sloptrim
 
-Copy staged `skills/sloptrim/` into `${HERMES_HOME:-$HOME/.hermes}/skills/sloptrim/` as ordinary files. Keep the detector, references, and license files together. Merge the prose rule from [Codex's AGENTS.md](../codex/AGENTS.md) into `${HERMES_HOME:-$HOME/.hermes}/SOUL.md`. Preserve existing guidance. Restart Hermes and confirm native skill discovery. Run `python3 "$HOME/.hermes/skills/sloptrim/scripts/detect.py" README.md`, adjusting for `HERMES_HOME`, and check `_metrics.ai_tell_score`. This is a portable skill install; Claude hooks are not registered.
+Copy staged `skills/sloptrim/` into `${HERMES_HOME:-$HOME/.hermes}/skills/sloptrim/` as ordinary files. Keep the detector, references, and license files together. Merge all rules from [Codex's AGENTS.md](../codex/AGENTS.md) into `${HERMES_HOME:-$HOME/.hermes}/SOUL.md`. Preserve existing guidance. Restart Hermes and confirm native skill discovery. Run `python3 "$HOME/.hermes/skills/sloptrim/scripts/detect.py" README.md`, adjusting for `HERMES_HOME`, and check `_metrics.ai_tell_score`. This is a portable skill install; Claude hooks are not registered.
 
 ## Review before activation
 

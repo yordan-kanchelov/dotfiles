@@ -172,7 +172,7 @@ The job runs `/usr/sbin/newsyslog -r -f ~/.headroom/newsyslog.conf` hourly. It r
 
 ## Start Headroom and its dashboard
 
-Source the environment file as shown above before this Bash or zsh block. To update a running profile, stop it with `headroom install stop --profile evaluation` and confirm it has stopped before applying. Read each exported value rather than passing the unexpanded assignment text to the service:
+Source the environment file as shown above before this Bash or zsh block. A proxy restart drops active Codex connections. Finish connected harness sessions and run service changes from an independent terminal. To update a running profile, stop it with `headroom install stop --profile evaluation` and confirm it has stopped before applying. Read each exported value rather than passing the unexpanded assignment text to the service:
 
 ```sh
 headroom_env_args=()
@@ -193,9 +193,13 @@ headroom dashboard --port 8787
 
 Omit every `--target` argument. Configure agent routing with the small merge snippets below instead. The native installer manages only the persistent service here. It does not write shell exports or introduce a custom Codex provider.
 
-[headroom.env](headroom.env) enables cache mode and lossless compaction. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics are on. Message logging defaults to on through `settings.json`. Built-in local compression-feedback statistics remain separate from traffic learning.
+[headroom.env](headroom.env) enables cache mode and CCR compression. It preserves source reads and system instructions. Image compression, outbound usage reporting, subscription polling, cross-session memory, traffic learning, and output shaping are off. Local dashboard metrics are on. Message logging defaults to on through `settings.json`. Built-in local compression-feedback statistics remain separate from traffic learning.
 
-CCR is disabled with `HEADROOM_NO_CCR=1`, so no retrieval MCP is needed. To test lossy compression later, set `HEADROOM_LOSSLESS=0` and `HEADROOM_NO_CCR=0`, reapply the service, and register Headroom retrieval tools together. The one-hour `HEADROOM_CCR_TTL_SECONDS` value applies when CCR is enabled. It does not control request-log or RTK retention.
+CCR is enabled with `HEADROOM_NO_CCR=0` and `HEADROOM_LOSSLESS=0`. Headroom 0.42 suppresses CCR markers and tool injection in lossless mode. Originals remain available for one hour through `HEADROOM_CCR_TTL_SECONDS=3600`. This value does not control request-log or RTK retention. Compression can omit details, so each routed harness needs a working retrieval tool.
+
+Register retrieval for Claude Code and Codex with `headroom mcp install --agent claude --agent codex`. Merge [headroom-mcp.json](headroom-mcp.json) into Pi's `mcp.json`, and merge the `mcp_servers.headroom` entry from [hermes.yaml](hermes.yaml) into Hermes's configuration. Resolve `command` to the installed Headroom executable if the harness's PATH does not include it. Keep Pi's retrieval tool directly exposed. Restart harness sessions to load the tools. OpenCode's routing remains unchanged.
+
+To return to lossless compression, set `HEADROOM_LOSSLESS=1` and `HEADROOM_NO_CCR=1`, then reapply the service. Leave retrieval configured while existing conversations still contain CCR references.
 
 Store future defaults in this repository, then reapply the matching live configuration. Use `settings.json` for message logging and `headroom.env` for the other managed settings. Dashboard logging changes need Save + Restart; mirror a lasting choice into the repository. Service environment exports can lock dashboard settings. There is no automatic dashboard-to-Git sync.
 
@@ -256,15 +260,23 @@ Pi 1.4 has no CLI base-URL bypass flag. For a direct comparison, change only `pr
 
 Check `rtk gain` and the dashboard alongside task completion, elapsed time, retries, and missing evidence. Output reduction is not the same as bill reduction. Headroom cannot recover content that RTK discarded before it reached the proxy. Local recovery databases can contain source or secrets even though outbound reporting is off.
 
-## Roll back
+## Roll back or uninstall
 
-Restore prior routing in Claude, Codex, Pi, and Hermes before stopping Headroom. Preserve unrelated changes made since the backups. For Pi, restore the direct xAI URL and remove only Headroom's header as described above. This Hermes profile previously had an empty base URL; restore it with:
+Restore direct routing before stopping Headroom. In Claude's user `settings.json`, remove only `env.ANTHROPIC_BASE_URL` if it points at this proxy. Remove only Codex's root `openai_base_url` override. Preserve other settings and credentials. For Pi, restore `providers.xai.baseUrl` to `https://api.x.ai/v1` and remove its `x-headroom-base-url` header. This Hermes profile previously had an empty base URL; restore it with:
 
 ```sh
 hermes config set model.base_url ''
 ```
 
-Otherwise ordinary agent launches will still point at a stopped proxy. Remove only the added Claude and Codex RTK hook commands to disable automatic filtering permanently, or use `RTK_DISABLED=1` for one session.
+Finish existing CCR conversations before removing retrieval. Start fresh harness sessions and verify direct requests work, then remove the Headroom MCP entries:
+
+```sh
+headroom mcp uninstall --agent claude --agent codex
+```
+
+Remove only `mcpServers.headroom` from Pi's `mcp.json` and `mcp_servers.headroom` from Hermes's `config.yaml`. OpenCode was not routed or changed by this setup. Keep other MCP servers. Otherwise ordinary agent launches may still point at a stopped proxy.
+
+RTK is independent. To remove it too, remove only the added Claude and Codex RTK hook commands and `~/.local/bin/dotfiles-rtk-hook`. Keep other hooks. `RTK_DISABLED=1` disables filtering for a single session.
 
 ```sh
 headroom install stop --profile evaluation
@@ -278,9 +290,18 @@ Remove the rotation job separately if it is no longer needed:
 
 ```sh
 launchctl bootout "gui/$(id -u)/com.dotfiles.headroom-logrotate"
+rm "$HOME/Library/LaunchAgents/com.dotfiles.headroom-logrotate.plist"
 ```
 
-Keep or delete local logs and recovery data according to their contents. Removing the service does not erase them.
+After removing the service and retrieval entries, uninstall the binaries if desired:
+
+```sh
+uv tool uninstall headroom-ai
+# Optional, if also removing RTK installed through Homebrew:
+brew uninstall rtk
+```
+
+Uninstalling Headroom also removes the RTK dashboard extension from its isolated environment. Logs, recovery databases, and evaluation metrics remain under `~/.headroom`; RTK's data remains separate. Keep these for comparison or delete them manually after checking their contents. Removing the service does not erase them. Repository snippets are opt-in; keeping them does not reinstall either tool through the main Ansible playbook.
 
 ## Checks
 

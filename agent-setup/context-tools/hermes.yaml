@@ -1,3 +1,8 @@
 # Merge into an existing openai-codex model block.
 model:
   base_url: http://127.0.0.1:8787/v1
+mcp_servers:
+  headroom:
+    command: headroom
+    args: [mcp, serve, --proxy-url, 'http://127.0.0.1:8787']
+    enabled: true

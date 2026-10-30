@@ -22,7 +22,7 @@ Keep existing model choices, native permission boundaries, and hook trust. Workf
 
 ## Global instructions
 
-Merge the global rules from the harness guide into the destination's instructions. Claude and Codex templates include both prose and context rules. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
+Merge all global rules from the harness guide into the destination's instructions. Claude and Codex templates include prose, context, and Herdr discussion rules. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
 
@@ -38,14 +38,24 @@ python3 /absolute/path/to/sloptrim/scripts/detect.py README.md
 
 Read `_metrics.ai_tell_score` and the flagged spans. Revise only prose that needs it, preserve facts and code, and score the saved file again. When writing docs, READMEs, or skills, pair the `unslop` skill with Sloptrim. Use `unslop` to revise prose, then score the saved files with Sloptrim before committing or sharing them. Instruction files and skills need this explicit check because the Claude save hook exempts them. Keep third-party skill bodies unchanged.
 
-## Get Herdr from its CLI
+## Herdr
 
-Herdr owns its skill and agent integrations. Inspect the installed CLI with:
+Herdr owns its skill and integrations. Keep generated skill files unchanged. Local instructions hold discussion permissions and context handoff preferences; the installed skill owns command syntax, caller resolution, and lifecycle handling.
+
+From the repository root, refresh every installed Claude, Codex, Pi and Hermes profile:
 
 ```sh
-herdr --version
-herdr --skill
-herdr integration install --help
+bash scripts/install-herdr.sh
 ```
 
-Use `herdr --skill` output to create the harness's loose `herdr` skill. Use `herdr integration install <target>` for managed hooks, after checking the destination profile. Regenerate from the installed CLI after updates instead of maintaining a second skill copy here.
+Run this after upgrading Herdr, or run `ansible-playbook setup.yml --tags herdr`. The updater reads `herdr --skill` and uses Herdr's native integration installer. It respects `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `PI_CODING_AGENT_DIR` and `HERMES_HOME`. Windows keeps its existing Claude/Codex setup. OpenCode's instruction and skill loading remain unverified.
+
+Inspect planned changes without writing:
+
+```sh
+bash scripts/install-herdr.sh --check
+```
+
+The check reports drift with `changed:` lines; its exit code alone is not a drift check. For exact skill verification, compare each generated `SKILL.md` with `herdr --skill` output. Use `herdr integration status` to check native integration revisions. After an upgrade, check `herdr status` for client/server compatibility. The installed skill matches the client binary; the running server may still be older.
+
+Pass new agents the IDs and working directory returned by Herdr, scoped to the same server and machine. Keep this snapshot in the conversation. Inherited environment variables can be stale when tools run through a shared daemon. If caller identity remains unclear, ask before changing panes. Automatic startup context needs a separate, verified integration for each harness.

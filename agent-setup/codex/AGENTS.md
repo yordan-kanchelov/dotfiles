@@ -1,3 +1,7 @@
 **Unslop agent prose** — use short sentences. When writing docs, READMEs, or skills, pair the `unslop` skill with [Sloptrim](https://github.com/seyedehsanhadi/sloptrim). Use `unslop` to revise prose, then run Sloptrim before the files leave the repo.
 
 **Guard the context.** When subagents are available, delegate bulk exploration and reviews. Handle trivial tasks in the main thread. Give each agent a clear question, scope, relevant files, and constraints. For reviews, include the review base and spec. Ask for concise findings with file and line evidence and checks run. Keep summaries and decisions in the main thread. Leave bulk reads and logs with the subagents.
+
+**Discuss through Herdr.** When `HERDR_ENV=1` and the user asks to discuss with another model or harness, use the `herdr` skill. Requests such as "ask Claude" or "discuss this with Pi" authorize starting that agent in a new sibling pane. Use the requested model and harness. Preserve the current directory and user focus. Send relevant context, read the reply, and report the findings here. If the requested agent is unavailable, explain the blocker.
+
+**Keep Herdr context.** Identify panes by IDs or known agent identities. Labels and focus can change. Pass new agents their workspace, tab and pane IDs and working directory from Herdr's responses. Reuse context within the same server and machine. Follow the installed skill for commands, caller resolution, and lifecycle handling. If caller identity remains unclear, ask before changing panes.

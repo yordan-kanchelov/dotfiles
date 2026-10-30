@@ -191,7 +191,7 @@ remain managed by `setup.yml`. Sign in to each CLI separately; no credentials ar
 
 The repository no longer ships or deploys Claude/Codex instructions, configuration,
 commands, rules, or skills. Separately, agent setup installs Herdr's bundled,
-release-matched `herdr` skill and the Claude Code and Codex integrations. It preserves
+release-matched `herdr` skill and native harness integrations. It preserves
 existing configuration while letting Herdr merge its hooks. Herdr setup converts
 whole-directory skills links to local copies and, when installing integrations,
 converts linked settings/config files to local copies so machine-specific hooks do
@@ -202,14 +202,16 @@ Removing the repository bundles does not automatically delete or migrate old pro
 links to them. Back up and replace those links separately. Herdr's migration requires
 readable link targets and does not repair dangling links to removed bundles.
 
-On macOS and Debian/Ubuntu (including WSL), `setup.yml` configures only harnesses
-available on the Linux/macOS PATH. It does not install Linux agents. To run just this
-step, or explicitly select harnesses:
+On macOS and Debian/Ubuntu (including WSL), `setup.yml` configures installed
+Claude, Codex, Pi and Hermes profiles. It does not install agent CLIs. After
+upgrading Herdr, refresh its generated skills and integrations. Run this step
+through Ansible, inspect planned changes, or select individual harnesses:
 
 ```bash
 ansible-playbook setup.yml --tags herdr
-bash scripts/install-herdr.sh --check claude codex
-bash scripts/install-herdr.sh claude codex
+bash scripts/install-herdr.sh --check
+bash scripts/install-herdr.sh
+bash scripts/install-herdr.sh pi hermes
 ```
 
 For native Windows, `install-agents.ps1` includes this step automatically. It can also

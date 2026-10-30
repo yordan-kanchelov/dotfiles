@@ -6,7 +6,6 @@ Refreshed 2026-10-27 with Claude Code 2.1.311. [inventory.json](inventory.json) 
 
 `~/.claude/plugins/installed_plugins.json` selects the exact payload roots. Native `claude plugin list --json` supplies user-enabled state. Cached directories alone do not establish installation.
 
-<!-- BEGIN plugins -->
 | Plugin | Version | User state | Skill files / candidates | Installed revision |
 | --- | --- | --- | --- | --- |
 | `agent-skills@addy-agent-skills` | 0.6.13 | enabled | 25 / 25 | `aeac41d4d005999432bb7312f7ff06383a91d59d` |
@@ -14,7 +13,6 @@ Refreshed 2026-10-27 with Claude Code 2.1.311. [inventory.json](inventory.json) 
 | `mattpocock-skills@reviewed-agent-pins` | 1.3.1 | enabled | 38 / 27 | `5beb35b040e3de97e54fa9e386d7e42d15c295c2` |
 | `ponytail@ponytail` | 5.3.2 | enabled | 12 / 6 | `09c434ab73ca43761c5d8b0c5d341926c2fba710` |
 | `unreal-engine-skills-for-claude-code@claude-plugins-official` | 3.1.1 | disabled | 3 / 3 | `a6aa73ada02a9fb1f5415bec491f9942c519b297` |
-<!-- END plugins -->
 
 The native list reports `projectEnabled=false` for every plugin in this repository while preserving the user states above. This is a scoped listing observation, not evidence that enabled plugins are disabled globally. Runtime loading was not tested. Chrome DevTools still reports `dependencies-refused` because installation does not apply its package overrides.
 

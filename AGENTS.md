@@ -53,7 +53,7 @@ Verify = run the playbook again and expect `changed=0`.
   .deb), Flameshot/xbindkeys/rofi/wmctrl, Cinnamon hot corners and custom hotkeys via `gsettings`, xbindkeys
   restart. Tagged `[desktop, never]`.
 - `brew_packages.yml` — `formulae:` grouped by category plus `casks:`; used on both OSes.
-- `scripts/install-herdr.sh` and `windows/install-herdr.ps1` — release-matched Herdr skills and integrations for Claude/Codex. Linux setup detects installed harnesses; Windows agent setup includes both.
+- `scripts/install-herdr.sh` and `windows/install-herdr.ps1` — release-matched Herdr skills and integrations. Unix setup detects installed Claude, Codex, Pi and Hermes; Windows agent setup includes Claude/Codex.
 - `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `fonts/` — the linked/copied content.
 
 ## Key Implementation Details

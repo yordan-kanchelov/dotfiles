@@ -18,8 +18,8 @@ Keep host-specific adaptations separate from shared upstream files. Herdr's skil
 
 Both scripts live in the repository's `scripts/` directory and resolve `agent-setup/` relative to their own location.
 
-- [agent-setup-bundle.py](../scripts/agent-setup-bundle.py) checks source integrity and generated references by default. `--write` regenerates inventory counts, reference tables, and the skill index. It does not update source pins or artifact hashes. `--stage <agent> --output <new-directory>` assembles packages using ordinary copies. It refuses existing output directories and never installs into a user profile or runs bundled hooks.
-- [test-agent-setup-bundle.py](../scripts/test-agent-setup-bundle.py) checks package completeness, detector execution, rejection of changed sources, preservation of existing output, generated references, and Git line endings. Fixtures use temporary directories and leave live agent profiles alone.
+- [agent-setup-bundle.py](../scripts/agent-setup-bundle.py) checks source integrity by default. It does not update source pins or artifact hashes. `--stage <agent> --output <new-directory>` assembles packages using ordinary copies. It refuses existing output directories and never installs into a user profile or runs bundled hooks.
+- [test-agent-setup-bundle.py](../scripts/test-agent-setup-bundle.py) checks package completeness, detector execution, rejection of changed sources, preservation of existing output, and Git line endings. Fixtures use temporary directories and leave live agent profiles alone.
 
 Use the scripts for repeatable checks and package assembly. Agents handle source selection, adapter review, setup prose, and inventory collection. Keep executable checks for the results.
 
@@ -28,11 +28,10 @@ Use the scripts for repeatable checks and package assembly. Agents handle source
 Run from the repository root after updating the source records:
 
 ```sh
-python3 scripts/agent-setup-bundle.py --write
 python3 scripts/agent-setup-bundle.py
 python3 scripts/test-agent-setup-bundle.py
 ```
 
-Check the diff for unintended payload or inventory changes. Keep generated blocks and `universal/skills.md` under script control. CI runs the checker and tests; its ShellCheck scan excludes pinned upstream plugins so their bytes stay unchanged.
+Check the diff for unintended payload or inventory changes. Update `universal/skills.md`, the inventories, and the README overview by hand. CI runs the checker and tests; its ShellCheck scan excludes pinned upstream plugins so their bytes stay unchanged.
 
 For changed docs and skills, use `unslop` to revise prose, then run the bundled Sloptrim detector on each saved file. Preserve quotations, code, and upstream skill bodies. Review flagged spans rather than changing text solely to lower a score. An install check should also confirm native skill discovery after restarting or reloading the affected agent.
