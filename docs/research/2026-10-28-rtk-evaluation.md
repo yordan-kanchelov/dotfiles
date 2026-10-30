@@ -4,7 +4,7 @@ Reviewed on 2026-10-28 against stable v1.1.0, released October 25, at commit `75
 
 For our command-heavy work, classic RTK filtering is a smaller first experiment than a provider proxy. Start with explicit commands and inspect the results. Keep Ansible verification, complete code reviews, exhaustive searches, and interpreter-sensitive tests unfiltered. Do not enable the Engine or RTK Proxy merely to try the command filters.
 
-This qualifies the earlier comparison with Headroom. The command filter is narrow, but the current RTK product also includes a pipeline engine and an optional API proxy. Those features already ship in stable v1.1.0.
+The command filter is narrow, but the current RTK product also includes a pipeline engine and an optional API proxy. Those features already ship in stable v1.1.0.
 
 | Download | What it includes | Recommendation |
 | --- | --- | --- |
@@ -38,7 +38,7 @@ Pytest filtering adds short-output flags when absent, removes captured sections,
 | Claude native hook | Global init merges a hook and awareness files into the Claude profile. | Consider after the explicit trial; preserve existing Herdr/Ponytail settings. |
 | Codex native hook | Init writes hook config, `RTK.md`, and an instruction reference at the chosen scope. | Current official hook format supports it; verify trust and approval behavior locally. |
 | Engine posthooks and delegation | Can process more tool outputs or send work to another model. | Leave off initially. Host output-replacement support varies. |
-| RTK Proxy | Redirects provider traffic through a daemon. | Evaluate as an alternative to Headroom, not an extra first layer. |
+| RTK Proxy | Redirects provider traffic through a daemon. | Not part of the first experiment. |
 
 Current Codex documentation normalizes `exec_command` to hook name `Bash` and `tool_input.command`, including nested code-mode calls. RTK's handler matches that contract. Its `allow` plus `updatedInput` response is the documented rewrite format. This does not establish approval transparency. Native rules inspect the rewritten `rtk ...` command, which can affect classification and prompts. Avoid broad `rtk *` allow rules. [Official OpenAI hooks documentation](https://learn.chatgpt.com/docs/hooks), [RTK Codex notes](https://github.com/rtk-ai/rtk/blob/v1.1.0/hooks/codex/README.md).
 
@@ -63,7 +63,6 @@ Use `rtk bypass <command> <args>` for an unfiltered invocation. `RTK_DISABLED=1`
 
 Recall and analytics databases contain local plaintext command/output data. Output can include secrets. Turning telemetry off does not disable these stores. Telemetry itself is opt-in and sends aggregate metrics at most daily. [Privacy](https://www.rtk-ai.app/docs/resources/telemetry/), [retriever source](https://github.com/rtk-ai/rtk/blob/v1.1.0/src/core/retriever.rs).
 
-RTK and Headroom can operate at different points. RTK filters output before the agent records it; Headroom transforms later provider requests. Headroom can retain only the output it receives from RTK. Missing details require RTK recall or a raw rerun. This is an inference from their data paths, not a tested incompatibility. Compare normal sessions, RTK alone, and Headroom alone before combining them.
 
 RTK's reported savings estimate tokens from output bytes divided by four. A smaller command result does not establish the same reduction in total tokens or bills. Measure task success, missing evidence, retries, and elapsed time alongside the byte reduction. [Savings definition](https://www.rtk-ai.app/docs/resources/savings-explained/).
 

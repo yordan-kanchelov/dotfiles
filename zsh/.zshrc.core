@@ -111,6 +111,18 @@ alias supd='sheldon lock --update'
 alias sw='sync-worktrees'
 alias c='claude -c'
 
+# CLIProxyAPI routes (see agent-setup/cliproxyapi). Plain claude/codex/pi/hermes stay direct.
+# The client key is read from the local stack's config, not stored in dotfiles.
+# .localhost resolves to loopback with no hosts entry; port 80 comes from the README's
+# docker-compose.port80.yml. Override with CPA_URL.
+_cpa_url() { printf '%s' "${CPA_URL:-http://local-cliproxyapi.localhost}"; }
+_cpa_key() { sed -n '/^api-keys:/{n;s/^ *- *"\(.*\)"$/\1/p;}' "$HOME/.local/share/cliproxyapi-dashboard/config.local.yaml"; }
+# Claude Code on the GPT model. Env goes through --settings so it beats the user settings.json env.
+codexx() {
+  ANTHROPIC_AUTH_TOKEN=$(_cpa_key) claude --model gpt-6.1-sol \
+    --settings '{"env":{"ANTHROPIC_BASE_URL":"'"$(_cpa_url)"'","CLAUDE_CODE_SUBAGENT_MODEL":"gpt-6.1-sol","CLAUDE_CODE_ALWAYS_ENABLE_EFFORT":"1","CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY":"3","ENABLE_TOOL_SEARCH":"false"}}' "$@"
+}
+
 # ============================================
 # FUNCTIONS
 # ============================================

@@ -30,3 +30,4 @@ shell_snapshots/
 # checkout. scripts/migrate-agent-links.sh copies them out; leftovers are not ours.
 claude/skills/synced/
 claude/skills/session-start-hook/
+__pycache__/

@@ -123,10 +123,9 @@ checks above used the existing CLI logins.
 
 ```sh
 python3 scripts/benchmarks/rtk.py
-# Use the RTK artifact directory printed by the first command.
-"$(uv tool dir)/headroom-ai/bin/python" scripts/benchmarks/headroom.py \
-  --rtk-fixtures /path/to/rtk-artifacts
 ```
+
+The Headroom benchmark ran from `scripts/benchmarks/headroom.py` at commit `611763b`. The script was removed with Headroom.
 
 The [sanitized results](2026-10-28-context-tools.json) include hashes, versions,
 timings, and fidelity checks. These synthetic samples do not measure task quality,
