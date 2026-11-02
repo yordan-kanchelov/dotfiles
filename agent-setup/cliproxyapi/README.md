@@ -6,20 +6,23 @@ Plain `claude`, `codex`, `pi` and `hermes` go straight to their providers. Only 
 
 ## Install
 
-The stack needs Docker Desktop running and lives outside this repo.
+Prerequisites: a Docker runtime with Compose (this machine uses OrbStack; Docker Desktop also works), `git`, `openssl`, Claude Code, and a shell that loads `~/.zshrc.core` (the Ansible run links it). The stack lives outside this repo.
 
 ```sh
 git clone https://github.com/itsmylife44/cliproxyapi-dashboard ~/.local/share/cliproxyapi-dashboard
 cd ~/.local/share/cliproxyapi-dashboard
 git checkout bf6c629   # reviewed dashboard revision
+# read docker-compose.local.yml first; see the two details below
 ./setup-local.sh       # answer n to the Perplexity sidecar
 ```
 
-The compose file defaults to CLIProxyAPI v8.0.29. The `CLIPROXYAPI_IMAGE_TAG` line in `.env` overrides it, and the dashboard's updater writes that line. This machine runs v8.0.47.
+The script prints the generated client key and asks questions, so run it in your own terminal (in Claude Code, type `! ./setup-local.sh`) and not through an agent that records output. Piping it through a filter hides the prompts. The key is in `config.local.yaml`.
+
+The compose file defaults to CLIProxyAPI v8.0.29. To match this machine, set `CLIPROXYAPI_IMAGE_TAG=v8.0.47` in `.env` and run `docker compose -f docker-compose.local.yml up -d`. The dashboard's updater writes that same line.
 
 The script writes `.env` and `config.local.yaml` (both mode 600) with random secrets, then starts four containers. Every port binds to `127.0.0.1`. The dashboard is at <http://localhost:3000> and the API at <http://127.0.0.1:8317>. The hostnames below replace both with port-free URLs.
 
-Before the first run, read `docker-compose.local.yml`. Two details matter:
+Two details in the compose file matter:
 
 - The `docker-socket-proxy` image is unpinned (`:latest`) and lets the dashboard create and stop containers.
 - `config.local.yaml` enables remote management on the container's port. The host mapping keeps it on localhost.
@@ -73,20 +76,22 @@ To use a name of your own, map it to loopback in `/etc/hosts`. This needs `sudo`
 
 ```sh
 grep -q 'local-cliproxyapi.test' /etc/hosts || echo '127.0.0.1 local-cliproxyapi.test' | sudo tee -a /etc/hosts
-curl -s -o /dev/null -w '%{http_code}\\n' http://local-cliproxyapi.test/
+curl -s -o /dev/null -w '%{http_code}\n' http://local-cliproxyapi.test/
 ```
 
-Add the same name to the two host lines in the [Caddyfile](Caddyfile) and recreate the proxy, or it answers 404. Use a reserved suffix such as `.test` or `.localhost`. A public suffix like `.com` can leak your key and prompts if the entry is ever missing. Then set `CPA_URL=http://local-cliproxyapi.test` in your shell and use the same host in Pi's `baseUrl`. To undo it, delete that line from `/etc/hosts`.
+Use two different names, one per site. Map both in `/etc/hosts` (for example `local-cliproxyapi.test` and `dashboard.local-cliproxyapi.test`), put each name on its own site line in the [Caddyfile](Caddyfile), and recreate the proxy. The same name on both lines makes Caddy fail with an ambiguous site definition, and an unmapped name gets the 404. Use a reserved suffix such as `.test` or `.localhost`. A public suffix like `.com` can leak your key and prompts if the entry is ever missing. Then set `CPA_URL=http://local-cliproxyapi.test` in your shell. To undo it, delete those lines from `/etc/hosts`.
 
-Without the proxy, set `CPA_URL=http://local-cliproxyapi.localhost:8317`, and use the same host and port in Pi's `baseUrl`.
+Without the proxy, set `CPA_URL=http://127.0.0.1:8317`.
 
 ## Alias
 
-[zsh/.zshrc.core](../../zsh/.zshrc.core) defines one function, `codexx`. It starts Claude Code on `gpt-6.1-sol` through the gateway (`/v1/messages`). It reads the client key from the stack's config, so no key sits in this repo.
+[zsh/.zshrc.core](../../zsh/.zshrc.core) defines one function, `codexx`. It starts Claude Code on `gpt-6.1-sol` through the gateway (`/v1/messages`). It reads the client key from the stack's config, so no key sits in this repo. A new shell loads it, or run `source ~/.zshrc`. It needs the `claude` CLI on `PATH`.
 
-The base URL is `http://local-cliproxyapi.localhost`. Set `CPA_URL` to change it. `codexx` passes its environment through `--settings`, which overrides the `env` map in `~/.claude/settings.json`. It also sets the subagent model, effort controls, a tool concurrency of 3, and turns tool search off. Extra arguments pass through, so `codexx --continue` works. Claude Code warns that it does not recognise `gpt-6.1-sol` and assumes a 200k window. The warning is harmless.
+The base URL is `http://local-cliproxyapi.localhost`. Set `CPA_URL` to change it. `codexx` passes its environment through `--settings`, which overrides the `env` map in `~/.claude/settings.json`. It also sets the subagent model, effort controls, a tool concurrency of 3, and turns tool search off. Extra arguments pass through, so `codexx --continue` works. It declares the model's full 872,000-token window with `CLAUDE_CODE_MAX_CONTEXT_TOKENS` and compacts at 500,000 with `CLAUDE_CODE_AUTO_COMPACT_WINDOW`. Both numbers come from Codex's own model list. It needs the first because Claude Code does not know `gpt-6.1-sol` and would assume 200k with a warning. The variable works only as an environment variable.
 
 Plain `claude`, `codex`, `pi` and `hermes` have no gateway route and use their native providers. Pi's `models.json` and Hermes's `model.base_url` hold no gateway settings.
+
+The gateway rejects requests without the client key. If `api-keys` in `config.local.yaml` is ever empty, it accepts anyone on loopback; add a key line and the gateway reloads it.
 
 ## Operate
 
@@ -94,12 +99,12 @@ Plain `claude`, `codex`, `pi` and `hermes` have no gateway route and use their n
 cd ~/.local/share/cliproxyapi-dashboard
 docker compose -f docker-compose.local.yml ps
 ./setup-local.sh --down    # stop
-./setup-local.sh           # start again; keeps the existing .env
+./setup-local.sh           # start again; answer n at the ".env already exists" prompt
 ```
 
-`./setup-local.sh --reset` deletes the volumes, which removes the OAuth logins.
+Answering y at that prompt rotates the secrets while the existing Postgres volume keeps its old password. `./setup-local.sh --reset` deletes the volumes, which removes the OAuth logins.
 
-Containers use `restart: unless-stopped`, so they return when Docker Desktop starts. Enable "Start Docker Desktop when you sign in" if you want that after a reboot.
+Containers use `restart: unless-stopped`, so they return when the runtime starts. The runtime must start at login for that: OrbStack and Docker Desktop both have a login-item setting.
 
 ## Limits
 

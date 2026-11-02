@@ -36,6 +36,7 @@ Back up the affected instruction and hook files, then apply:
 ```sh
 RTK_TELEMETRY_DISABLED=1 RTK_ONRAMP_DISABLED=1 rtk init -g --auto-patch --no-trust-filters
 RTK_TELEMETRY_DISABLED=1 RTK_ONRAMP_DISABLED=1 rtk init -g --codex --no-trust-filters
+mkdir -p "$HOME/.local/bin"
 install -m 755 agent-setup/context-tools/rtk-hook.sh "$HOME/.local/bin/dotfiles-rtk-hook"
 ```
 
@@ -58,7 +59,7 @@ To compare, run a comparable session with `RTK_DISABLED=1 claude` or `RTK_DISABL
 Remove only the added Claude and Codex RTK hook commands and `~/.local/bin/dotfiles-rtk-hook`. Keep other hooks. Then uninstall the binary if desired:
 
 ```sh
-brew uninstall rtk
+brew uninstall rtk-oss
 ```
 
 RTK's data stays under its own config and data directories. Keep it for comparison or delete it after checking its contents. Repository snippets are opt-in; keeping them does not reinstall RTK through the main Ansible playbook. `RTK_DISABLED=1` disables filtering for a single session.
