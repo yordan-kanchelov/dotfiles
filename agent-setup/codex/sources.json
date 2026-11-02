@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "components": [
+    {
+      "name": "mattpocock-extras",
+      "version": "1.3.1-codex.1",
+      "source": "https://github.com/mattpocock/skills",
+      "revision": null,
+      "origin": "Installed local Codex adapter; upstream revision and adapter patch recipe are unresolved.",
+      "payload": "codex/plugins/mattpocock-extras",
+      "overlays": {},
+      "artifacts": [
+        {
+          "path": "codex/plugins/mattpocock-extras",
+          "tree_sha256": "97a1446afb23516c80a21f56808da5ac740c25ad6efc0c2a3161596320eae8e4",
+          "file_count": 21
+        }
+      ],
+      "skill_count": 9,
+      "marketplaces": {
+        "codex": "engineering-adaptations"
+      }
+    }
+  ]
+}

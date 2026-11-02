@@ -1,0 +1,8 @@
+{
+  "name": "open-in-editor",
+  "description": "Click a file path in Claude's reply to open it in VS Code, with the file's git root as the workspace",
+  "version": "0.1.0",
+  "author": { "name": "Yordan Kanchelov" },
+  "license": "MIT",
+  "keywords": ["editor", "links", "mod", "claude-code"]
+}

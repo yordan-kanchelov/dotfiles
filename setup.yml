@@ -100,6 +100,24 @@
       when: is_legacy_platform and ansible_facts['os_family'] == 'Darwin'
       tags: packages
 
+    # Skipped until duti (packages) and VS Code (installed by hand) are both present.
+    - name: VS Code as the default app for code and text files
+      ansible.builtin.shell: |
+        set -o pipefail
+        command -v duti >/dev/null && [ -d "/Applications/Visual Studio Code.app" ] || exit 0
+        for uti in {{ vscode_utis | join(' ') }}; do
+          if [ "$(duti -d "$uti" 2>/dev/null)" != com.microsoft.VSCode ]; then
+            duti -s com.microsoft.VSCode "$uti" all || exit 1
+            echo "set $uti"
+          fi
+        done
+      args:
+        executable: /bin/bash
+      register: vscode_defaults
+      changed_when: "'set ' in vscode_defaults.stdout"
+      environment: "{{ tool_env }}"
+      when: is_legacy_platform and ansible_facts['os_family'] == 'Darwin'
+
     # fnm picks its data dir itself (legacy ~/.fnm, XDG_DATA_HOME, per-OS default), so ask it
     # what is installed instead of guessing the path for `creates`. grep without -q: it must
     # drain fnm's output, or pipefail turns fnm's EPIPE panic into a bogus failure. `fnm

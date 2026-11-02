@@ -17,6 +17,9 @@ next_workspace = "prefix+)"
 goto = "prefix+s"
 settings = "prefix+shift+s"
 
+[ui]
+agent_panel_sort = "spaces"
+
 [ui.toast]
 delivery = "herdr"
 

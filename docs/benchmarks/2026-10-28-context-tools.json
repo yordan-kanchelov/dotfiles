@@ -1,0 +1,1289 @@
+{
+  "schema_version": 1,
+  "scope": "Synthetic offline component benchmarks plus separate native hook/storage probes and a baseline live metadata snapshot. No billing or agent-quality measurement.",
+  "benchmark_sources_sha256": {
+    "rtk.py": "ebb19bbc0dcd936a94e66ba612efb65125f3df299079517f46eabed0c9057cc8",
+    "headroom.py": "9d66c5ae6fcebe9ec249f21fc181ed375e88dba1ff670eb345453e4af3a7f42b"
+  },
+  "rtk": {
+    "created_at": "2026-10-28T15:18:45.827453+00:00",
+    "versions": {
+      "git": "git version 2.54.0 (Apple Git-157)",
+      "cargo": "cargo 1.99.1 (5f94df478 2026-08-27) (Homebrew)",
+      "eslint": "v9.39.3",
+      "rtk": "rtk 1.1.0"
+    },
+    "rtk_version": "rtk 1.1.0",
+    "reference_rtk_revision": "753a3b0e939f2e4490fc24e3a1984010f40a103c",
+    "benchmark_sha256": "ebb19bbc0dcd936a94e66ba612efb65125f3df299079517f46eabed0c9057cc8",
+    "estimator": "ceil(UTF8_bytes / 4), native RTK text module",
+    "iterations": "one warm-up each then 3 measured runs each",
+    "config": "Existing RTK configuration read-only; tracking and recall paths overridden by environment",
+    "scope": "Synthetic command-output reduction; not a native-hook or provider-billing benchmark",
+    "native_tracking_note": "Native counters can differ: RTK requests ESLint JSON instead of the baseline's stylish format, and may append recall hints after recording filtered output. Saved output files and their hashes define the visible-output comparison.",
+    "native_tracking_last_run": {
+      "git_status": {
+        "input_estimated_tokens": 521,
+        "output_estimated_tokens": 460,
+        "saved_estimated_tokens": 61
+      },
+      "cargo_test": {
+        "input_estimated_tokens": 513,
+        "output_estimated_tokens": 130,
+        "saved_estimated_tokens": 383
+      },
+      "eslint": {
+        "input_estimated_tokens": 5936,
+        "output_estimated_tokens": 179,
+        "saved_estimated_tokens": 5757
+      }
+    },
+    "results": [
+      {
+        "case": "git_status",
+        "raw_command": [
+          "git",
+          "status"
+        ],
+        "rtk_command": [
+          "rtk",
+          "git",
+          "status"
+        ],
+        "raw_exit_codes": [
+          0,
+          0,
+          0
+        ],
+        "rtk_exit_codes": [
+          0,
+          0,
+          0
+        ],
+        "expected_exit": 0,
+        "raw_bytes": 2084,
+        "rtk_bytes": 1839,
+        "raw_estimated_tokens": 521,
+        "rtk_estimated_tokens": 460,
+        "byte_reduction_pct": 11.75623800383877,
+        "raw_run_times_ms": [
+          14.821041986579075,
+          15.215708990581334,
+          14.729624992469326
+        ],
+        "rtk_run_times_ms": [
+          37.47224999824539,
+          40.00633399118669,
+          40.02129100263119
+        ],
+        "raw_warm_median_ms": 14.821041986579075,
+        "rtk_warm_median_ms": 40.00633399118669,
+        "key_diagnostics": {
+          "tracked-000.txt": {
+            "baseline": true,
+            "rtk": true
+          },
+          "tracked-005.txt": {
+            "baseline": true,
+            "rtk": true
+          }
+        },
+        "selected_diagnostics_preserved": true,
+        "stdout_sha256": {
+          "baseline": "35f42743a547d00728e395f731b3e470c0fcf05f0c56295a37bfeaf5a4c305f0",
+          "rtk": "91320dfb908232777b18ccf4bd1e58f03bb6047ece5baab7ddab8623ccac588d"
+        }
+      },
+      {
+        "case": "cargo_test",
+        "raw_command": [
+          "cargo",
+          "test",
+          "--color",
+          "never"
+        ],
+        "rtk_command": [
+          "rtk",
+          "cargo",
+          "test",
+          "--color",
+          "never"
+        ],
+        "raw_exit_codes": [
+          101,
+          101,
+          101
+        ],
+        "rtk_exit_codes": [
+          101,
+          101,
+          101
+        ],
+        "expected_exit": 101,
+        "raw_bytes": 2051,
+        "rtk_bytes": 560,
+        "raw_estimated_tokens": 513,
+        "rtk_estimated_tokens": 140,
+        "byte_reduction_pct": 72.6962457337884,
+        "raw_run_times_ms": [
+          32.12229200289585,
+          32.67083299579099,
+          30.005375010659918
+        ],
+        "rtk_run_times_ms": [
+          37.561708013527095,
+          36.114417016506195,
+          36.36533301323652
+        ],
+        "raw_warm_median_ms": 32.12229200289585,
+        "rtk_warm_median_ms": 36.36533301323652,
+        "key_diagnostics": {
+          "diagnostic_missing_cache_key": {
+            "baseline": true,
+            "rtk": true
+          },
+          "diagnostic_invalid_schema": {
+            "baseline": true,
+            "rtk": true
+          },
+          "40 passed; 2 failed": {
+            "baseline": true,
+            "rtk": true
+          }
+        },
+        "selected_diagnostics_preserved": true,
+        "stdout_sha256": {
+          "baseline": "56c6d92f82bfe1adf21198030069432d407deaf1b50fe65792de85cd1c7e0761",
+          "rtk": "a17f5f9e1cc36cee809088318311871806a59779a7c5bac6b5d5e3ddbb7b877f"
+        }
+      },
+      {
+        "case": "eslint",
+        "raw_command": [
+          "eslint",
+          ".",
+          "--no-color"
+        ],
+        "rtk_command": [
+          "rtk",
+          "lint",
+          ".",
+          "--no-color"
+        ],
+        "raw_exit_codes": [
+          1,
+          1,
+          1
+        ],
+        "rtk_exit_codes": [
+          1,
+          1,
+          1
+        ],
+        "expected_exit": 1,
+        "raw_bytes": 6581,
+        "rtk_bytes": 715,
+        "raw_estimated_tokens": 1646,
+        "rtk_estimated_tokens": 179,
+        "byte_reduction_pct": 89.13538975839538,
+        "raw_run_times_ms": [
+          171.5693750011269,
+          179.89387499983422,
+          175.80145798274316
+        ],
+        "rtk_run_times_ms": [
+          186.86295798397623,
+          180.8947499957867,
+          184.20937500195578
+        ],
+        "raw_warm_median_ms": 175.80145798274316,
+        "rtk_warm_median_ms": 184.20937500195578,
+        "key_diagnostics": {
+          "no-undef": {
+            "baseline": true,
+            "rtk": true
+          },
+          "missing_fixture_name": {
+            "baseline": true,
+            "rtk": false
+          },
+          "2 errors, 35 warnings": {
+            "baseline": true,
+            "rtk": true
+          }
+        },
+        "selected_diagnostics_preserved": false,
+        "stdout_sha256": {
+          "baseline": "079aa2ad7b86381bb5e5370347bb374f91f33899bf66590e06f6b2b0c9cd1bf9",
+          "rtk": "9e68ab7132ce165fa38f1758bc37ab3e1f2fed84af2649a21a4dd5f9c34c6a68"
+        }
+      }
+    ]
+  },
+  "headroom": {
+    "generated_at": "2026-10-28T15:22:23.979858+00:00",
+    "headroom_version": "0.42.0",
+    "model": "gpt-6.1-sol",
+    "token_counter": "EstimatingTokenCounter",
+    "encoding_name": null,
+    "counter_units": "Installed model-specific local counter; fallback estimates are not BPE or RTK ceil(bytes/4).",
+    "network_attempts_blocked": 0,
+    "scope": "Offline message TransformPipeline/ContentRouter, not the current service or full Responses transport.",
+    "scenarios": {
+      "initial_lossless_baseline_9b40bc2": "Initial lossless/no-CCR coding baseline from commit 9b40bc2.",
+      "offline_structural_ccr_no_ml": "Lossless disabled, CCR permitted, structural compressors only."
+    },
+    "scope_overrides": [
+      "Kompress and image optimizer disabled; no model loading. Kompress is unreachable in strict lossless mode.",
+      "Relevance split disabled and BM25 selected. No embedding models are loaded.",
+      "New router and in-memory CCR/cache state per fixture. Four identical calls: first call plus three warm calls.",
+      "First-call times across scenarios share imported libraries; do not compare them as cold startup costs.",
+      "No native Responses unit extraction, HTTP routing, provider prefix-cache behavior, billing, quota, or task-quality measurement.",
+      "Frozen-prefix equality compares message objects, not native HTTP wire bytes."
+    ],
+    "pipeline_kwargs": {
+      "compress_user_messages": true,
+      "compress_system_messages": false,
+      "protect_recent": 0,
+      "protect_analysis_context": true,
+      "min_tokens_to_compress": 10,
+      "max_items_after_crush": 15,
+      "smart_crusher_with_compaction": true,
+      "force_kompress": false,
+      "read_protection_window": 0,
+      "min_chars_for_block_compression": 25,
+      "model_limit": 1000000,
+      "record_metrics": false
+    },
+    "fixtures": [
+      {
+        "case": "repeated_build_log",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 5462,
+        "tokens_after": 104,
+        "saved": 5358,
+        "whole_message_reduction_pct": 98.096,
+        "output_tokens_before": 5390,
+        "output_tokens_after": 32,
+        "first_call_ms": 43.604,
+        "warm3_ms": [
+          1.463,
+          1.35,
+          1.274
+        ],
+        "warm3_median_ms": 1.35,
+        "transforms": [
+          "router:log:0.01"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "expand_runs",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "unique_build_log",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 1384,
+        "tokens_after": 1384,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1312,
+        "output_tokens_after": 1312,
+        "first_call_ms": 0.381,
+        "warm3_ms": [
+          0.143,
+          0.135,
+          0.133
+        ],
+        "warm3_median_ms": 0.135,
+        "transforms": [
+          "router:protected:error_output"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "pretty_json_records",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 4046,
+        "tokens_after": 4046,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 3973,
+        "output_tokens_after": 3973,
+        "first_call_ms": 5.384,
+        "warm3_ms": [
+          0.576,
+          0.516,
+          0.431
+        ],
+        "warm3_median_ms": 0.516,
+        "transforms": [
+          "router:noop"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 100,
+        "record_ids_visible": 100,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "source_read",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 1306,
+        "tokens_after": 1306,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1237,
+        "output_tokens_after": 1237,
+        "first_call_ms": 0.211,
+        "warm3_ms": [
+          0.086,
+          0.08,
+          0.077
+        ],
+        "warm3_median_ms": 0.08,
+        "transforms": [
+          "router:excluded:tool"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "source_cat",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 1311,
+        "tokens_after": 1311,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1237,
+        "output_tokens_after": 1237,
+        "first_call_ms": 1.073,
+        "warm3_ms": [
+          1.071,
+          0.963,
+          1.041
+        ],
+        "warm3_median_ms": 1.041,
+        "transforms": [
+          "router:read_protected"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "search_results",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 1613,
+        "tokens_after": 713,
+        "saved": 900,
+        "whole_message_reduction_pct": 55.797,
+        "output_tokens_before": 1539,
+        "output_tokens_after": 639,
+        "first_call_ms": 0.753,
+        "warm3_ms": [
+          0.471,
+          0.458,
+          0.542
+        ],
+        "warm3_median_ms": 0.471,
+        "transforms": [
+          "router:bash:lossless_search"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "search_unheading",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "ansible_recap",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 116,
+        "tokens_after": 116,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 38,
+        "output_tokens_after": 38,
+        "first_call_ms": 0.699,
+        "warm3_ms": [
+          0.513,
+          0.437,
+          0.44
+        ],
+        "warm3_median_ms": 0.44,
+        "transforms": [
+          "router:noop"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "PLAY RECAP": true,
+          "changed=0": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "python_error",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 108,
+        "tokens_after": 108,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 34,
+        "output_tokens_after": 34,
+        "first_call_ms": 0.14,
+        "warm3_ms": [
+          0.121,
+          0.116,
+          0.113
+        ],
+        "warm3_median_ms": 0.116,
+        "transforms": [
+          "router:protected:error_output"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true,
+          "ValueError": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "system_prompt_protected",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 5456,
+        "tokens_after": 5456,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1,
+        "output_tokens_after": 1,
+        "first_call_ms": 0.432,
+        "warm3_ms": [
+          0.378,
+          0.334,
+          0.322
+        ],
+        "warm3_median_ms": 0.334,
+        "transforms": [
+          "router:protected:system_message"
+        ],
+        "warnings": [],
+        "critical_needles": {},
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "frozen_history_new_log",
+        "arm": "initial_lossless_baseline_9b40bc2",
+        "tokens_before": 32990,
+        "tokens_after": 27632,
+        "saved": 5358,
+        "whole_message_reduction_pct": 16.241,
+        "output_tokens_before": 5390,
+        "output_tokens_after": 32,
+        "first_call_ms": 9.858,
+        "warm3_ms": [
+          4.366,
+          4.254,
+          4.127
+        ],
+        "warm3_median_ms": 4.254,
+        "transforms": [
+          "router:log:0.01"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "expand_runs",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "repeated_build_log",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 5462,
+        "tokens_after": 104,
+        "saved": 5358,
+        "whole_message_reduction_pct": 98.096,
+        "output_tokens_before": 5390,
+        "output_tokens_after": 32,
+        "first_call_ms": 3.795,
+        "warm3_ms": [
+          1.413,
+          1.385,
+          1.517
+        ],
+        "warm3_median_ms": 1.413,
+        "transforms": [
+          "router:log:0.01"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "expand_runs",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "unique_build_log",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 1384,
+        "tokens_after": 1384,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1312,
+        "output_tokens_after": 1312,
+        "first_call_ms": 0.202,
+        "warm3_ms": [
+          0.145,
+          0.136,
+          0.159
+        ],
+        "warm3_median_ms": 0.145,
+        "transforms": [
+          "router:protected:error_output"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "pretty_json_records",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 4046,
+        "tokens_after": 1118,
+        "saved": 2928,
+        "whole_message_reduction_pct": 72.368,
+        "output_tokens_before": 3973,
+        "output_tokens_after": 1045,
+        "first_call_ms": 175.066,
+        "warm3_ms": [
+          0.977,
+          0.897,
+          0.842
+        ],
+        "warm3_median_ms": 0.897,
+        "transforms": [
+          "router:mixed:0.27"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 100,
+        "record_ids_visible": 100,
+        "roundtrip_proof": "fixture_csv_schema_data_equal",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "source_read",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 1306,
+        "tokens_after": 1306,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1237,
+        "output_tokens_after": 1237,
+        "first_call_ms": 0.123,
+        "warm3_ms": [
+          0.086,
+          0.082,
+          0.082
+        ],
+        "warm3_median_ms": 0.082,
+        "transforms": [
+          "router:excluded:tool"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "source_cat",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 1311,
+        "tokens_after": 1311,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1237,
+        "output_tokens_after": 1237,
+        "first_call_ms": 1.087,
+        "warm3_ms": [
+          1.028,
+          1.063,
+          1.144
+        ],
+        "warm3_median_ms": 1.063,
+        "transforms": [
+          "router:read_protected"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "search_results",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 1613,
+        "tokens_after": 713,
+        "saved": 900,
+        "whole_message_reduction_pct": 55.797,
+        "output_tokens_before": 1539,
+        "output_tokens_after": 639,
+        "first_call_ms": 0.522,
+        "warm3_ms": [
+          0.491,
+          0.463,
+          0.451
+        ],
+        "warm3_median_ms": 0.463,
+        "transforms": [
+          "router:bash:lossless_search"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "search_unheading",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "ansible_recap",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 116,
+        "tokens_after": 116,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 38,
+        "output_tokens_after": 38,
+        "first_call_ms": 0.678,
+        "warm3_ms": [
+          0.465,
+          0.441,
+          0.467
+        ],
+        "warm3_median_ms": 0.465,
+        "transforms": [
+          "router:noop"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "PLAY RECAP": true,
+          "changed=0": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "python_error",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 108,
+        "tokens_after": 108,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 34,
+        "output_tokens_after": 34,
+        "first_call_ms": 0.129,
+        "warm3_ms": [
+          0.104,
+          0.102,
+          0.1
+        ],
+        "warm3_median_ms": 0.102,
+        "transforms": [
+          "router:protected:error_output"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true,
+          "ValueError": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "system_prompt_protected",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 5456,
+        "tokens_after": 5456,
+        "saved": 0,
+        "whole_message_reduction_pct": 0.0,
+        "output_tokens_before": 1,
+        "output_tokens_after": 1,
+        "first_call_ms": 2.172,
+        "warm3_ms": [
+          0.394,
+          0.404,
+          0.394
+        ],
+        "warm3_median_ms": 0.394,
+        "transforms": [
+          "router:protected:system_message"
+        ],
+        "warnings": [],
+        "critical_needles": {},
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "byte_identical_utf8_content",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      },
+      {
+        "case": "frozen_history_new_log",
+        "arm": "offline_structural_ccr_no_ml",
+        "tokens_before": 32990,
+        "tokens_after": 27632,
+        "saved": 5358,
+        "whole_message_reduction_pct": 16.241,
+        "output_tokens_before": 5390,
+        "output_tokens_after": 32,
+        "first_call_ms": 6.54,
+        "warm3_ms": [
+          4.334,
+          4.228,
+          4.057
+        ],
+        "warm3_median_ms": 4.228,
+        "transforms": [
+          "router:log:0.01"
+        ],
+        "warnings": [],
+        "critical_needles": {
+          "ERROR_SENTINEL_001": true,
+          "ID_SENTINEL_042": true
+        },
+        "record_ids_total": 0,
+        "record_ids_visible": 0,
+        "roundtrip_proof": "expand_runs",
+        "ccr_marker": false,
+        "frozen_prefix_messages_equal": true,
+        "system_prompt_message_equal": true
+      }
+    ],
+    "rtk_chain_included": true,
+    "rtk_chain": [
+      {
+        "case": "git",
+        "fixture_hashes_verified": true,
+        "stdout_sha256": {
+          "baseline": "35f42743a547d00728e395f731b3e470c0fcf05f0c56295a37bfeaf5a4c305f0",
+          "rtk": "91320dfb908232777b18ccf4bd1e58f03bb6047ece5baab7ddab8623ccac588d"
+        },
+        "output_bytes": {
+          "raw": 2084,
+          "rtk": 1839,
+          "headroom_only": 2084,
+          "both": 1839
+        },
+        "output_estimated_tokens": {
+          "raw": 521,
+          "rtk": 460,
+          "headroom_only": 521,
+          "both": 460
+        },
+        "whole_message_tokens": {
+          "raw": 593,
+          "rtk": 532,
+          "headroom_only": 593,
+          "both": 532
+        },
+        "raw_needles_by_arm": {
+          "tracked-000.txt": {
+            "raw": true,
+            "rtk": true,
+            "headroom_only": true,
+            "both": true
+          }
+        },
+        "headroom_only_warm3_median_ms": 0.144,
+        "headroom_after_rtk_warm3_median_ms": 0.978,
+        "headroom_only_roundtrip": "byte_identical_utf8_content",
+        "headroom_after_rtk_roundtrip": "byte_identical_utf8_content"
+      },
+      {
+        "case": "cargo",
+        "fixture_hashes_verified": true,
+        "stdout_sha256": {
+          "baseline": "56c6d92f82bfe1adf21198030069432d407deaf1b50fe65792de85cd1c7e0761",
+          "rtk": "a17f5f9e1cc36cee809088318311871806a59779a7c5bac6b5d5e3ddbb7b877f"
+        },
+        "output_bytes": {
+          "raw": 2051,
+          "rtk": 560,
+          "headroom_only": 2051,
+          "both": 560
+        },
+        "output_estimated_tokens": {
+          "raw": 513,
+          "rtk": 140,
+          "headroom_only": 513,
+          "both": 140
+        },
+        "whole_message_tokens": {
+          "raw": 585,
+          "rtk": 212,
+          "headroom_only": 585,
+          "both": 212
+        },
+        "raw_needles_by_arm": {
+          "diagnostic_missing_cache_key": {
+            "raw": true,
+            "rtk": true,
+            "headroom_only": true,
+            "both": true
+          },
+          "diagnostic_invalid_schema": {
+            "raw": true,
+            "rtk": true,
+            "headroom_only": true,
+            "both": true
+          }
+        },
+        "headroom_only_warm3_median_ms": 0.108,
+        "headroom_after_rtk_warm3_median_ms": 0.104,
+        "headroom_only_roundtrip": "byte_identical_utf8_content",
+        "headroom_after_rtk_roundtrip": "byte_identical_utf8_content"
+      },
+      {
+        "case": "lint",
+        "fixture_hashes_verified": true,
+        "stdout_sha256": {
+          "baseline": "079aa2ad7b86381bb5e5370347bb374f91f33899bf66590e06f6b2b0c9cd1bf9",
+          "rtk": "9e68ab7132ce165fa38f1758bc37ab3e1f2fed84af2649a21a4dd5f9c34c6a68"
+        },
+        "output_bytes": {
+          "raw": 6581,
+          "rtk": 715,
+          "headroom_only": 6581,
+          "both": 715
+        },
+        "output_estimated_tokens": {
+          "raw": 1645,
+          "rtk": 204,
+          "headroom_only": 1645,
+          "both": 204
+        },
+        "whole_message_tokens": {
+          "raw": 1719,
+          "rtk": 278,
+          "headroom_only": 1719,
+          "both": 278
+        },
+        "raw_needles_by_arm": {
+          "missing_fixture_name": {
+            "raw": true,
+            "rtk": false,
+            "headroom_only": true,
+            "both": false
+          },
+          "no-undef": {
+            "raw": true,
+            "rtk": true,
+            "headroom_only": true,
+            "both": true
+          }
+        },
+        "headroom_only_warm3_median_ms": 0.962,
+        "headroom_after_rtk_warm3_median_ms": 0.76,
+        "headroom_only_roundtrip": "byte_identical_utf8_content",
+        "headroom_after_rtk_roundtrip": "byte_identical_utf8_content"
+      }
+    ],
+    "tool_schema_pass": {
+      "before_tokens": 2016,
+      "after_tokens": 1516,
+      "modified": true,
+      "names_preserved": true,
+      "required_preserved": true,
+      "property_names_preserved": true,
+      "warm3_median_ms": 0.273,
+      "fidelity_scope": "Selected schema fields checked; annotations may be removed. No agent accuracy test."
+    }
+  },
+  "baseline_live_snapshot": {
+    "captured_at": "2026-10-28T14:59:11.839929+00:00",
+    "stats": {
+      "tokens": {
+        "input": 1096437,
+        "input_provider_reported": 1096437,
+        "input_estimated": 0,
+        "input_provider_reported_percent": 100.0,
+        "requests_input_provider_reported": 12,
+        "requests_input_estimated": 0,
+        "output": 4004,
+        "output_saved": 0,
+        "output_reduction_percent": 0.0,
+        "output_reduction": {
+          "available": true,
+          "active": false,
+          "method": "inactive",
+          "band_is_ci": null,
+          "tokens_saved": 0,
+          "baseline_tokens": 0,
+          "reduction_percent": 0.0,
+          "ci_low_percent": null,
+          "ci_high_percent": null,
+          "requests": 0
+        },
+        "saved": 488,
+        "proxy_compression_saved": 488,
+        "proxy_total_before_compression": 1096925,
+        "total_before_compression": 1096925,
+        "all_layers_saved": 488,
+        "proxy_attempted_tokens": 67420,
+        "active_savings_percent": 0.72,
+        "proxy_savings_percent": 0.04,
+        "new_input_tokens": 65397,
+        "new_input_savings_percent": 0.74,
+        "savings_percent": 0.04,
+        "all_layers_savings_percent": 0.04,
+        "cost_weighted_savings_percent": 0.0
+      },
+      "requests": {
+        "total": 12,
+        "cached": 12,
+        "rate_limited": 0,
+        "rate_limited_by_source": {
+          "headroom": 0,
+          "upstream": 0
+        },
+        "failed": 0,
+        "failed_by_provider": {
+          "unknown": 0
+        },
+        "by_provider": {
+          "openai": 12
+        },
+        "by_model": {
+          "gpt-6.1-sol": 8,
+          "codex-auto-review": 4
+        },
+        "by_stack": {}
+      },
+      "config": {
+        "savings_profile": "coding",
+        "target_ratio": null,
+        "target_savings_percent": null,
+        "compress_user_messages": true,
+        "compress_system_messages": false,
+        "protect_recent": 0,
+        "protect_analysis_context": null,
+        "min_tokens_to_crush": 10,
+        "max_items_after_crush": 15,
+        "smart_crusher_with_compaction": true,
+        "force_kompress": false,
+        "accuracy_guard": null
+      },
+      "compressions_by_strategy": {
+        "smart_crusher": 29,
+        "passthrough": 1,
+        "code_aware": 1
+      },
+      "tokens_saved_by_strategy": {},
+      "prefix_cache": {
+        "attribution": "Prefix caching is performed by the LLM provider (Anthropic, OpenAI). Headroom reports cache stats as observed from API responses. CacheAligner and prefix freeze improve cache hit rates by stabilizing the message prefix, but baseline caching happens without Headroom. Observed TTL bucket metrics reflect provider-reported cache write usage (for example Anthropic 5m vs 1h), not configured or remaining TTL."
+      }
+    },
+    "lifetime": {
+      "scope": "lifetime",
+      "started_at": "2026-10-28T10:05:52Z",
+      "last_activity_at": "2026-10-28T14:46:33Z",
+      "tokens": {
+        "input": 25864508,
+        "output": 117881,
+        "attempted_input": 1004976,
+        "saved": 16079,
+        "token_savings_percent": 1.599939
+      },
+      "requests": {
+        "total": 329,
+        "cached": 279,
+        "failed": 1,
+        "rate_limited": 1,
+        "failed_by_provider": {
+          "openai": 1
+        },
+        "rate_limited_by_source": {
+          "upstream": 1
+        },
+        "by_provider": {
+          "compress": 3,
+          "anthropic": 17,
+          "openai": 309
+        },
+        "by_stack": {}
+      },
+      "prefix_cache": {
+        "requests": 329,
+        "hit_requests": 279,
+        "cache_read_tokens": 24419571,
+        "cache_write_tokens": 293204,
+        "cache_write_5m_tokens": 1210,
+        "cache_write_1h_tokens": 291994,
+        "uncached_input_tokens": 1145619,
+        "bust_count": 0,
+        "bust_tokens": 0,
+        "misses_by_reason": {},
+        "by_provider": {
+          "compress": 3,
+          "anthropic": 17,
+          "openai": 309
+        },
+        "cache_hit_rate": 84.802432,
+        "ttl_1h_percent": 99.587318,
+        "ttl_5m_percent": 0.412682
+      }
+    },
+    "settings": {
+      "mode": {
+        "value": "cache",
+        "stored": null,
+        "env_override": true
+      },
+      "savings_profile": {
+        "value": "coding",
+        "stored": null,
+        "env_override": true
+      },
+      "disable_kompress": {
+        "value": false,
+        "stored": null,
+        "env_override": false
+      },
+      "lossless": {
+        "value": true,
+        "stored": null,
+        "env_override": true
+      },
+      "no_ccr": {
+        "value": true,
+        "stored": null,
+        "env_override": true
+      },
+      "log_messages": {
+        "value": true,
+        "stored": true,
+        "env_override": false
+      },
+      "compressors": {
+        "value": "code_aware,config,html,kompress,log,search,smart_crusher,tabular",
+        "stored": null,
+        "env_override": true
+      },
+      "read_maturation": {
+        "value": false,
+        "stored": null,
+        "env_override": false
+      }
+    }
+  },
+  "initial_rtk_dashboard": {
+    "executions": 8,
+    "input_estimated_tokens": 1139,
+    "output_estimated_tokens": 1139,
+    "saved_estimated_tokens": 0,
+    "oversized_excluded": 0,
+    "database_totals_match_dashboard": true
+  },
+  "native_hook_probes": [
+    {
+      "host": "codex",
+      "exit_code": 0,
+      "before": {
+        "commands": 0,
+        "input_est_tokens": 0,
+        "output_est_tokens": 0,
+        "saved_est_tokens": 0,
+        "hook_decisions": {}
+      },
+      "after": {
+        "commands": 0,
+        "input_est_tokens": 0,
+        "output_est_tokens": 0,
+        "saved_est_tokens": 0,
+        "hook_decisions": {}
+      },
+      "reply_marker": true,
+      "mentions_untrusted_hook": false,
+      "counter_scope": "Only rows whose project_path equals the synthetic Git fixture; not global totals.",
+      "rtk_database_environment_overrides": false
+    },
+    {
+      "host": "claude",
+      "exit_code": 0,
+      "before": {
+        "commands": 0,
+        "input_est_tokens": 0,
+        "output_est_tokens": 0,
+        "saved_est_tokens": 0,
+        "hook_decisions": {}
+      },
+      "after": {
+        "commands": 1,
+        "input_est_tokens": 469,
+        "output_est_tokens": 468,
+        "saved_est_tokens": 1,
+        "hook_decisions": {
+          "ask": 1
+        }
+      },
+      "reply_marker": true,
+      "mentions_untrusted_hook": false,
+      "counter_scope": "Only rows whose project_path equals the synthetic Git fixture; not global totals.",
+      "rtk_database_environment_overrides": false
+    }
+  ],
+  "codex_storage_probe": {
+    "history.db": {
+      "exists": true,
+      "mode": "0o600",
+      "read": "allowed",
+      "write_access_without_writing": {
+        "errno": 1,
+        "error": "Operation not permitted"
+      }
+    },
+    "recall.db": {
+      "exists": true,
+      "mode": "0o600",
+      "read": "allowed",
+      "write_access_without_writing": {
+        "errno": 1,
+        "error": "Operation not permitted"
+      }
+    }
+  },
+  "fidelity_audit_initial_fixture": {
+    "git_status": {
+      "raw_distinct_paths": 88,
+      "rtk_distinct_paths": 88,
+      "lost_paths": []
+    },
+    "eslint": {
+      "raw_distinct_files": 35,
+      "rtk_distinct_files": 10,
+      "hidden_file_count": 25,
+      "undefined_identifier_in_compact_view": false,
+      "recovery_restores_identifier_in_isolated_writable_database": true
+    }
+  },
+  "limitations": [
+    "Native hook probes used ordinary installed Claude and Codex defaults; no trust, sandbox or model overrides.",
+    "RTK direct benchmarks used private writable tracking/recall databases. They do not prove the default Codex database paths work.",
+    "Headroom service later became unavailable while unrelated CCR configuration edits appeared. Current CCR deployment and other harnesses were not benchmarked.",
+    "Source hashes identify saved helpers. Headroom final provenance/input-validation edits received syntax/guard checks after the full independent compression run."
+  ]
+}

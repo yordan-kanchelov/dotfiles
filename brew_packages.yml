@@ -10,7 +10,6 @@ formulae:
 
   shell:
     - atuin          # Shell history sync & search
-    - nushell        # Structured data shell
     - sheldon        # Zsh plugin manager
     - starship
     - zoxide         # Smarter cd (tracks frecency)
@@ -18,6 +17,7 @@ formulae:
   terminal:
     - bat            # cat with syntax highlighting
     - btop
+    - duti           # macOS default-app associations (setup.yml)
     - eza
     - fd             # Fast find alternative
     - fzf
@@ -30,7 +30,6 @@ formulae:
     - tmux
     - tree
     - tree-sitter    # Parser generator (used by neovim)
-    - viu            # Terminal image viewer
     - yazi           # Terminal file manager
 
   development:
@@ -45,13 +44,11 @@ formulae:
 
   api-and-testing:
     - ghz            # gRPC benchmarking tool
-    - grpcurl        # curl for gRPC services
     - jq             # JSON processor
     - jqp            # Interactive jq playground
     - k6             # Load testing tool (Grafana)
 
   devops:
-    - act            # Run GitHub Actions locally
     - awscli
     - telnet
 
@@ -60,10 +57,7 @@ formulae:
     - pandoc
 
 casks:
-  - bitwarden
   - cap            # Screen recording
-  - drawio
   - ghostty
   - oracle-jdk
   - postman
-  - xquartz        # X11 server for macOS

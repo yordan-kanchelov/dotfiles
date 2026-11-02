@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-27",
+  "harness": "Hermes",
+  "cli_version": "0.22.5",
+  "agent_skills": {
+    "version": "0.6.13",
+    "revision": "aeac41d4d005999432bb7312f7ff06383a91d59d",
+    "installed": true,
+    "enabled": true,
+    "skill_count": 25,
+    "root": "<USER_HOME>/.hermes/plugins/agent-skills",
+    "adapted_tree_fingerprint": "5a683d143863f9da39b18af598390d4d0b5dc2e73630ee680b26d319ae0de31d",
+    "native_namespace": "agent-plugin-agent-skills-1aa32d1a"
+  },
+  "standalone_unslop": {
+    "installed": true,
+    "root": "<USER_HOME>/.hermes/skills/unslop",
+    "sha256": "0503149a9b85dad02bbc747a3aeb534e2ba07f53c5fd57e491ea3d1e67659aa3"
+  },
+  "removed": [
+    "pstack plugin",
+    "Pstack routing",
+    "Obsolete Pstack references in the local Matt adapter"
+  ],
+  "guard": {
+    "enabled": true,
+    "verdict": "dangerous",
+    "reviewed": true,
+    "user_authorized_activation": true,
+    "scope": "This exact reviewed package only; no helper execution, hooks, future revisions, or blanket scanner exception."
+  },
+  "runtime_repair": {
+    "status": "applied and verified",
+    "hermes_commit": "bf0203a794a07aac3ff764972ab9087baa4e4f4e",
+    "changed_paths": [
+      "<USER_HOME>/.hermes/hermes-agent/pm/refactor.py",
+      "<USER_HOME>/.hermes/hermes-agent/pm/environments.py",
+      "<USER_HOME>/.hermes/hermes-agent/tests/pm/test_refactor_parser.py"
+    ],
+    "tests_passed": 16,
+    "scope": "Read-only launcher parser and one import substitution; version, dependencies, and existing launchers unchanged. Deleted _launchers.py was not restored.",
+    "evidence_root": "<USER_HOME>/.hermes/backups/pm-parser-repair-bf0203a794a"
+  },
+  "limitations": [
+    "Broader launcher/update completion remains outside the repair scope.",
+    "No source helper or new startup hook was registered or executed."
+  ],
+  "verification": [
+    "Native activation succeeded with all 25 skills discoverable and shared references intact.",
+    "Native doctor passed with zero plugin tools/hooks.",
+    "Standalone unslop matches the bundled source, license, and provenance.",
+    "Guard remains enabled; only this exact reviewed revision was authorized.",
+    "Models, native permissions, unrelated skills and hooks remain unchanged."
+  ]
+}

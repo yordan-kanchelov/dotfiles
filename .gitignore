@@ -13,10 +13,6 @@
 # ansible-galaxy/ansible-lint scratch dir, created next to the playbook
 .ansible/
 
-# This repo IS the source of these files, but the user's global gitignore
-# ignores CLAUDE.md everywhere — re-include the one we deliberately track.
-!/CLAUDE.md
-
 # AI tool machine state — must never be committed even if copied in by accident
 auth.json
 .credentials*
@@ -34,3 +30,4 @@ shell_snapshots/
 # checkout. scripts/migrate-agent-links.sh copies them out; leftovers are not ours.
 claude/skills/synced/
 claude/skills/session-start-hook/
+__pycache__/

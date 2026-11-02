@@ -1,0 +1,21 @@
+# Publishes the gateway and its dashboard on 127.0.0.1:80, routed by hostname:
+#   http://local-cliproxyapi.localhost            -> API (cliproxyapi:8317)
+#   http://dashboard.local-cliproxyapi.localhost  -> dashboard (dashboard:3000)
+# Needs the cliproxyapi-dashboard stack to be running first.
+# Run: docker compose -p cliproxyapi-edge -f docker-compose.port80.yml up -d
+services:
+  http80:
+    image: caddy@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
+    container_name: cliproxyapi-http80
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    external: true
+    name: cliproxyapi_frontend

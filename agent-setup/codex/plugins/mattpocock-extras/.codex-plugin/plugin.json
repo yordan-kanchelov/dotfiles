@@ -1,0 +1,16 @@
+{
+  "name": "mattpocock-extras",
+  "skills": [
+    "./skills/migrate-to-shoehorn",
+    "./skills/scaffold-exercises",
+    "./skills/setup-pre-commit",
+    "./skills/chief-of-staff",
+    "./skills/loop-me",
+    "./skills/setup-ts-deep-modules",
+    "./skills/writing-beats",
+    "./skills/writing-fragments",
+    "./skills/writing-shape"
+  ],
+  "version": "1.3.1-codex.1",
+  "description": "Reviewed Codex compatibility package; see user AGENTS.md for tool mappings."
+}

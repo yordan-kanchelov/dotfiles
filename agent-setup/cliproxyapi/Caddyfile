@@ -1,0 +1,19 @@
+{
+	auto_https off
+	admin off
+}
+
+# The API serves streamed replies, so flush each chunk as it arrives.
+http://local-cliproxyapi.localhost {
+	reverse_proxy cliproxyapi:8317 {
+		flush_interval -1
+	}
+}
+
+http://dashboard.local-cliproxyapi.localhost {
+	reverse_proxy dashboard:3000
+}
+
+http:// {
+	respond "Unknown host" 404
+}
