@@ -16,7 +16,7 @@ git checkout bf6c629   # reviewed dashboard revision
 ./setup-local.sh       # answer n to the Perplexity sidecar
 ```
 
-The script prints the generated client key and asks questions, so run it in your own terminal (in Claude Code, type `! ./setup-local.sh`) and not through an agent that records output. Piping it through a filter hides the prompts. The key is in `config.local.yaml`.
+The script prints the generated client key and asks questions, so run it in a separate terminal, not through an agent or Claude Code's `!` shell mode. Both record the output, and the key is in it. Piping it through a filter hides the prompts. The key is in `config.local.yaml`.
 
 The compose file defaults to CLIProxyAPI v8.0.29. To match this machine, set `CLIPROXYAPI_IMAGE_TAG=v8.0.47` in `.env` and run `docker compose -f docker-compose.local.yml up -d`. The dashboard's updater writes that same line.
 
