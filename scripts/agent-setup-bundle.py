@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent / "agent-setup"
 
 
 def components():
-    return [component for folder in ["universal", "claude", "codex"]
+    return [component for folder in ["universal", "claude", "codex", "herdr"]
             for component in json.loads((ROOT / folder / "sources.json").read_text())["components"]]
 
 

@@ -1,0 +1,5 @@
+{
+  "global": { "ctrl-shift-space": "mod.open:float-space" },
+  "terminal": { "ctrl-shift-space": "mod.open:float-space" },
+  "mod:float-space": { "ctrl-shift-space": "mod.open:float-space" }
+}

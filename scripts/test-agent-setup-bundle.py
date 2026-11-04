@@ -91,7 +91,7 @@ class SetupTests(unittest.TestCase):
         script = fixture / "scripts/agent-setup-bundle.py"
         script.parent.mkdir()
         shutil.copyfile(SCRIPTS / "agent-setup-bundle.py", script)
-        for folder in ["universal", "claude", "codex", "hermes"]:
+        for folder in ["universal", "claude", "codex", "hermes", "herdr"]:
             shutil.copytree(ROOT / folder, bundle / folder)
         source = bundle / "universal/plugins/agent-skills/skills/context-engineering/SKILL.md"
         source.write_text(source.read_text() + "\nchanged fixture\n")

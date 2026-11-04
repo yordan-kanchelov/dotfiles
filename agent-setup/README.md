@@ -37,6 +37,7 @@ agent-setup/
     inventory.md             Machine reference
   hermes/                    Hermes plugin setup and manifest adaptation
   pi/                        Pi extension inventory and prose-skill setup
+  herdr/                     Pinned Herdr App mods (float-space, t3-focus, open-vscode, git-graph)
   context-tools/             Optional RTK command filters
   cliproxyapi/               CLIProxyAPI gateway and dashboard setup
 scripts/
