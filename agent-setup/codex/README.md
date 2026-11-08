@@ -56,6 +56,8 @@ bash scripts/install-herdr.sh codex
 
 The script refreshes the CLI-owned skill and integration while preserving unrelated settings. Follow the [shared Herdr guide](../universal/README.md#herdr) after upgrades.
 
+For Herdr App/core, copy the staged `skills/herdr-core/` to `$codex_config_home/skills/herdr-core/`, backing up an existing directory first. Merge the matching routing rules from [AGENTS.md](AGENTS.md). See the [App skill setup](../herdr-app/README.md#install-the-agent-skill).
+
 ## Verify
 
 Run `codex plugin list --json` and `codex plugin marketplace list --json`. Compare enabled states and payload manifest versions. A local install can use `local` as its cache version; check the manifest and source hashes instead of relying on that directory name. See [Codex's marketplace format](https://developers.openai.com/plugins/build/plugins). The commands above were checked against CLI 0.164.0 help.

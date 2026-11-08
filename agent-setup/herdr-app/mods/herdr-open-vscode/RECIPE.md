@@ -1,12 +1,6 @@
 # Open in VS Code (Local & SSH)
 
-Open the folder of your focused terminal in VS Code with a key or a button.
-
-Works with:
-
-- Folders on this computer
-- Folders on any machine connected to Herdr over SSH, through the Remote - SSH extension
-- Folders in WSL, when it's connected to Herdr over SSH like any other machine
+A key or a button that opens the folder of your focused terminal in VS Code. It works with folders on this computer, on any machine connected to Herdr over SSH (through the Remote - SSH extension), and in WSL when it's connected over SSH like any other machine.
 
 ![Open in VS Code](preview.png)
 

@@ -69,6 +69,12 @@ class SetupTests(unittest.TestCase):
                 result = self.run_helper("--stage", harness, "--output", destination)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual((destination / "skills/unslop/SKILL.md").read_bytes(), (ROOT / "universal/skills/unslop/SKILL.md").read_bytes())
+                core = destination / "skills/herdr-core"
+                if harness in ["claude", "codex"]:
+                    for relative in ["SKILL.md", "LICENSE"]:
+                        self.assertEqual((core / relative).read_bytes(), (ROOT / "universal/skills/herdr-core" / relative).read_bytes())
+                else:
+                    self.assertFalse(core.exists())
                 skill = destination / "skills/sloptrim"
                 for relative in ["SKILL.md", "scripts/detect.py", "references/patterns.md", "LICENSE.txt", "NOTICE"]:
                     self.assertEqual((skill / relative).read_bytes(), (ROOT / "universal/skills/sloptrim" / relative).read_bytes())
@@ -91,7 +97,7 @@ class SetupTests(unittest.TestCase):
         script = fixture / "scripts/agent-setup-bundle.py"
         script.parent.mkdir()
         shutil.copyfile(SCRIPTS / "agent-setup-bundle.py", script)
-        for folder in ["universal", "claude", "codex", "hermes", "herdr"]:
+        for folder in ["universal", "claude", "codex", "hermes", "herdr-app"]:
             shutil.copytree(ROOT / folder, bundle / folder)
         source = bundle / "universal/plugins/agent-skills/skills/context-engineering/SKILL.md"
         source.write_text(source.read_text() + "\nchanged fixture\n")

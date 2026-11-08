@@ -1,8 +1,8 @@
 // The right-click menu, opened as a popup at the pointer with props
 // { role: "menu", target, ctx }. Styled like Herdr's own menu.
-import { div, svg } from "gpui-kit";
+import { div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { props, closeOverlay, notify, theme } from "herdr";
+import { props, closeOverlay, notify, theme, run } from "herdr";
 import { menuFor } from "./git.js";
 import { perform, openDialog, showChanges } from "./act.js";
 
@@ -22,7 +22,14 @@ export class Menu {
     const it = this.items[i], { overlay, ctx } = props();
     if (!it || it.separator || this.busy) return;
     const a = it.action;
-    if (a.type === "copy") {
+    if (a.type === "newTab") {
+      // As Herdr's + menu: a tab in the selected space, here in the repository.
+      closeOverlay(overlay);
+      run("tab.new", { folder: a.folder, ...(a.argv ? { name: a.name, argv: a.argv } : {}) });
+    } else if (a.type === "openUrl") {
+      closeOverlay(overlay);
+      cx.open_url(a.url);
+    } else if (a.type === "copy") {
       cx.write_to_clipboard(a.text);
       closeOverlay(overlay);
       notify({ title: "Copied", body: a.text, level: "success", timeout: 2000 });
@@ -65,7 +72,8 @@ export class Menu {
           .text_color(it.action.type.startsWith("delete") ? t.ansi1 : t.foreground)
           .when(i === this.at || this.busy === i, (el) => el.bg(t.selected)).hover((s) => s.bg(t.hover))
           .on_click((_e, cx) => this.choose(i, cx))
-          .child(svg(icon(it.icon)).size(14).flex_none().text_color(it.action.type.startsWith("delete") ? t.ansi1 : t.muted))
+          // An agent's own icon keeps its colors when it isn't drawn tinted.
+          .child(it.image ? image(it.icon).size(14).flex_none() : svg(icon(it.icon)).size(14).flex_none().text_color(it.action.type.startsWith("delete") ? t.ansi1 : t.muted))
           .child(div().flex_1().min_w(0).truncate().child(this.busy === i ? "Working…" : it.label))));
   }
 }

@@ -1,0 +1,5 @@
+{
+  "global": {
+    "cmd-shift-s": "t3-inbox.settle"
+  }
+}

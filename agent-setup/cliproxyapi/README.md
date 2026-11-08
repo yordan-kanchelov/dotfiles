@@ -117,7 +117,7 @@ Containers use `restart: unless-stopped`, so they return when the runtime starts
 
 - Claude Code features tuned for Claude models, such as tool search and effort, behave differently on GPT models.
 - The gateway uses your subscription logins. Check the provider's terms before relying on it for heavy automation.
-- The gateway has no compression. Headroom was removed because this setup needs routing, not token compression. RTK still filters command output; see [context-tools](../context-tools/README.md).
+- The gateway has no compression. Headroom was removed because this setup needs routing, not token compression.
 
 ## Retire Headroom
 

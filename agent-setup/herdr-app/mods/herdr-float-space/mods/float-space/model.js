@@ -1,10 +1,13 @@
 export const STATE_KEY = "float-space.v1";
 export const MAX_TERMINALS = 12;
 export const DEFAULT_SIZE = { width: 0.50, height: 0.60 };
+// A window's width and height, as fractions of the app's.
+export const MIN_SIZE = 0.15;
+export const MAX_SIZE = 0.95;
 // One click sizes: a small window for notes or a quick command, the default,
-// and room for an agent.
+// and room for an agent. Custom, beside them, is the last other size used.
 export const PRESETS = [
-  { id: "small", label: "Small", width: 0.20, height: 0.50 },
+  { id: "small", label: "Small", width: 0.25, height: 0.50 },
   { id: "normal", label: "Normal", ...DEFAULT_SIZE },
   { id: "large", label: "Large", width: 0.85, height: 0.88 },
 ];
@@ -16,9 +19,29 @@ function fraction(value, fallback, min, max) {
 
 export function readSize(value) {
   return {
-    width: fraction(value?.width, DEFAULT_SIZE.width, 0.20, 0.95),
-    height: fraction(value?.height, DEFAULT_SIZE.height, 0.30, 0.95),
+    width: fraction(value?.width, DEFAULT_SIZE.width, MIN_SIZE, MAX_SIZE),
+    height: fraction(value?.height, DEFAULT_SIZE.height, MIN_SIZE, MAX_SIZE),
   };
+}
+
+export function sameSize(a, b) {
+  return a === b || (Boolean(a && b) && a.width === b.width && a.height === b.height);
+}
+
+export function isPreset(size) {
+  return PRESETS.some(preset => sameSize(preset, size));
+}
+
+// The Custom size: saved, or the current size when it is no preset (state
+// from before Custom existed); null until a size other than a preset is used.
+function readCustom(value, size) {
+  const custom = value?.custom;
+  if (typeof custom?.width === "number" && Number.isFinite(custom.width)
+    && typeof custom?.height === "number" && Number.isFinite(custom.height)) {
+    const read = readSize(custom);
+    return isPreset(read) ? null : read;
+  }
+  return isPreset(size) ? null : size;
 }
 
 export function ownedTerminals(terminals, appHome) {
@@ -43,9 +66,12 @@ export function readState(value) {
     version: 2,
     tabs,
     active: tabs.some(tab => tab.address === value?.active) ? value.active : tabs[0]?.address ?? null,
-    notes: typeof value?.notes === "string" ? value.notes : "",
+    // Notes live in their own file now (notes.js). The single page an earlier
+    // version kept here rides along untouched until it has been moved there.
+    ...(typeof value?.notes === "string" && value.notes !== "" ? { notes: value.notes } : {}),
     page: value?.page === "notes" ? "notes" : "terminal",
     size,
+    custom: readCustom(value, size),
     sequence: Math.max(tabs.length, Number.isSafeInteger(value?.sequence) ? value.sequence : 0),
   };
 }
@@ -97,20 +123,45 @@ export function nextTitle(tabs) {
 
 // Agent changes worth telling the person about, given the statuses seen last
 // time (null: nothing seen yet, so this only takes note). Finishing is working
-// → idle or done; blocked and error need them. `lookingAt` is the terminal
+// → idle or done; becoming blocked or hitting an error needs them, one alert
+// as in Herdr, which says "needs you" for both. `lookingAt` is the terminal
 // they're watching, which never alerts.
 export function agentAlerts(previous, terminals, lookingAt) {
   const statuses = {};
   const alerts = [];
+  const needs = status => status === "blocked" || status === "error";
   for (const terminal of terminals) {
-    const now = terminal.status ?? null;
+    const now = liveStatus(terminal);
     statuses[terminal.address] = now;
     const before = previous?.[terminal.address];
     if (before === undefined || before === now || terminal.address === lookingAt) continue;
-    if (now === "blocked" || now === "error") alerts.push({ address: terminal.address, kind: now });
+    if (needs(now) && !needs(before)) alerts.push({ address: terminal.address, kind: "blocked" });
     else if (before === "working" && (now === "idle" || now === "done")) alerts.push({ address: terminal.address, kind: "done" });
   }
   return { statuses, alerts };
+}
+
+// Finishes the person hasn't seen yet, for the status-bar button's dot. A
+// finish (a "done" alert) stays unseen until its tab shows in the open window,
+// as Herdr keeps a tab "done" until you look at it; working or needing the
+// person again clears it. A terminal a lagging snapshot doesn't list keeps its
+// finish but doesn't light the dot.
+export function unseenFinishes(unseen, alerts, terminals, showing) {
+  const live = new Map(terminals.map(terminal => [terminal.address, liveStatus(terminal)]));
+  const busy = status => status === "working" || status === "blocked" || status === "error";
+  const finished = alerts.filter(alert => alert.kind === "done").map(alert => alert.address);
+  const pending = [...new Set([...(unseen ?? []), ...finished])]
+    .filter(address => address !== showing && !busy(live.get(address)));
+  return { unseen: pending, dot: pending.some(address => live.has(address)) };
+}
+
+// What a terminal tab shows beside its name: Herdr's spinner while working,
+// its blocked dot, and its done dot only for a finish not yet seen, since
+// Herdr keeps "done" until you look at it. An agent can keep reporting
+// "done" long after; the tab then shows nothing, as Herdr's tabs do.
+export function tabStatus(status, unseen) {
+  if (status === "working" || status === "blocked") return status;
+  return status === "done" && unseen ? "done" : null;
 }
 
 // Only accept terminals returned by the core's exact ownership-label query.
@@ -154,7 +205,39 @@ export function shownTerminal(state) {
 
 // Agents show their own name, as in Herdr's tab bar; shells keep their tab title.
 export function tabName(tab, terminal) {
-  return terminal?.program?.agent ? terminal.program.name : tab.title;
+  return terminal?.program?.agent && !agentLeft(terminal) ? terminal.program.name : tab.title;
+}
+
+function sameWords(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((word, i) => word === b[i]);
+}
+
+// The core keeps an agent's last report after the agent quits, and Herdr goes
+// on showing the terminal as that agent (Antigravity, idle, over a bare fish).
+// The terminal's own shell back in the foreground, the same process with the
+// same argv, means the agent is gone. `exec agent` keeps the pid, not the argv.
+export function agentLeft(terminal) {
+  const front = terminal?.foreground;
+  return Boolean(terminal?.program?.agent)
+    && front?.pid != null && front.pid === terminal.pid && sameWords(front.argv, terminal.argv);
+}
+
+// Herdr's status word for a terminal, or none once its agent left.
+export function liveStatus(terminal) {
+  return agentLeft(terminal) ? null : terminal?.status ?? null;
+}
+
+// Herdr's built-in shell entry (defaults/programs.json), for when no listed
+// terminal shows the person's own.
+const SHELL = { key: "shell", name: "Shell", icon: "icons/shell.svg", tint: true, tile: "#16241a", color: "#4ec95f" };
+
+// How a tab draws its terminal: Herdr's program, or the shell again once the
+// agent left. `shell` is the shell entry another terminal shows, so a
+// programs.json override of it applies here too.
+export function tabProgram(terminal, shell) {
+  if (!agentLeft(terminal)) return terminal?.program ?? null;
+  const name = terminal.foreground.name || String(terminal.argv[0] ?? "").split(/[\\/]/).pop() || "Shell";
+  return { ...(shell ?? SHELL), name, shell: true, agent: false };
 }
 
 // `generation` tells the header which mount it belongs to, so it can tell a

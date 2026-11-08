@@ -222,7 +222,7 @@ be run separately, with optional `-Targets claude` or `-Targets codex`:
 .\windows\install-herdr.ps1
 ```
 
-Herdr App, the desktop app, is separate from the `herdr` client. Its pinned mods and install steps are in [agent-setup/herdr](agent-setup/herdr/README.md).
+Herdr App uses `herdr-core` and `hc`, with a separate server from standalone `herdr`. Its pinned mods and install steps are in [agent-setup/herdr-app](agent-setup/herdr-app/README.md). Agents use [backend-specific guides](agent-setup/universal/README.md#herdr); the `herdr` skill above covers the standalone TUI.
 
 Start new agent sessions inside Herdr after installation. The skill requires
 `HERDR_ENV=1`, which Herdr sets in its managed panes. See the upstream

@@ -6,7 +6,7 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
 import { props, shared, setShared, closeOverlay, openOverlay, theme, settings } from "herdr";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.2";
 const CHECK = true;
 const REPO = "rabeeh-ta/herdr-git-graph";
 const DAY = 24 * 60 * 60 * 1000;

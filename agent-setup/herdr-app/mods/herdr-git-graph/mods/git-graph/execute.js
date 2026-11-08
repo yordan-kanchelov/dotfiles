@@ -21,6 +21,13 @@ export async function executeAction(action, values, ctx, exec) {
       return { ok: false, stale: true, message: "The repository's branch or HEAD changed. Close this action, refresh the graph, and review it again." };
     }
   }
+  // Staging everything would mark unresolved conflicts resolved and commit their markers.
+  if (action.type === "commit" && values.all) {
+    const unmerged = await git([...READ, "ls-files", "--unmerged"]);
+    if (unmerged.code !== 0 || unmerged.stdout.trim()) {
+      return { ok: false, message: "There are unresolved merge conflicts. Resolve them first, or untick \"Stage every change\" to let git decide." };
+    }
+  }
   // Git has no transaction spanning these commands and other terminals. This
   // preflight detects an already changed context; it cannot lock out future edits.
   for (const args of commands) {

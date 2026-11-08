@@ -3,39 +3,39 @@
   "components": [
     {
       "name": "herdr-float-space",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "license": "MIT",
       "source": "https://github.com/thuanlm215/herdr-float-space",
-      "revision": "5830139ba3faeeffdc064c1ffbb0999ab6d89b03",
-      "download_url": "https://codeload.github.com/thuanlm215/herdr-float-space/tar.gz/5830139ba3faeeffdc064c1ffbb0999ab6d89b03",
-      "archive_sha256": "b4da83b36ad9ce4abd70eb363ca7309ab8a6072bb9b0ea834edffccb2d306ce3",
-      "payload": "herdr/mods/herdr-float-space",
+      "revision": "6ffd377cf126301a5e61b19395aba939ae39131c",
+      "download_url": "https://codeload.github.com/thuanlm215/herdr-float-space/tar.gz/6ffd377cf126301a5e61b19395aba939ae39131c",
+      "archive_sha256": "81d71b981f34542622130d4c47ff36b41e58e2b323549e8135539ca1e2d356ee",
+      "payload": "herdr-app/mods/herdr-float-space",
       "overlays": {},
       "artifacts": [
         {
-          "path": "herdr/mods/herdr-float-space",
-          "tree_sha256": "e526f9ab9f75ed5dad86664c8e927859e7ea55bc871a42a8f5c5c77fcc724d04",
-          "file_count": 15
+          "path": "herdr-app/mods/herdr-float-space",
+          "tree_sha256": "a67d42bad2899d40f89c01ac9a55c714dd934f485f783a888da437038c294bd4",
+          "file_count": 19
         }
       ],
       "skill_count": 0,
       "marketplaces": {}
     },
     {
-      "name": "herdr-t3-focus",
-      "version": "git-84c7c72",
+      "name": "herdr-t3-inbox",
+      "version": "git-c954053",
       "license": "Apache-2.0",
-      "source": "https://github.com/JinJieBeWater/herdr-t3-focus",
-      "revision": "84c7c7280e7c1ff6c815ee9aa314e32f2bdec32b",
-      "download_url": "https://codeload.github.com/JinJieBeWater/herdr-t3-focus/tar.gz/84c7c7280e7c1ff6c815ee9aa314e32f2bdec32b",
-      "archive_sha256": "a9d4debc0ffa64690c2fe71084b16f0af83fc253ce92182bc8c4317224e9d74d",
-      "payload": "herdr/mods/herdr-t3-focus",
+      "source": "https://github.com/JinJieBeWater/herdr-t3-inbox",
+      "revision": "c95405318db41645cc7901f147af00d0c1ffb15e",
+      "download_url": "https://codeload.github.com/JinJieBeWater/herdr-t3-inbox/tar.gz/c95405318db41645cc7901f147af00d0c1ffb15e",
+      "archive_sha256": "d3823758ed335f79bf12dfab2c75d35aae02f970cd5b02c17beb636263f5bc7c",
+      "payload": "herdr-app/mods/herdr-t3-inbox",
       "overlays": {},
       "artifacts": [
         {
-          "path": "herdr/mods/herdr-t3-focus",
-          "tree_sha256": "1dc2e71be176701642462efc36025bf35d35489bff47a2558c502331319e32d8",
-          "file_count": 10
+          "path": "herdr-app/mods/herdr-t3-inbox",
+          "tree_sha256": "021c5ac1311bcace20dfe351fee83004971f04a28e6fed645c385cccb12fcbd3",
+          "file_count": 47
         }
       ],
       "skill_count": 0,
@@ -43,18 +43,18 @@
     },
     {
       "name": "herdr-open-vscode",
-      "version": "git-11940a7",
+      "version": "git-1dfa209",
       "license": "MIT",
       "source": "https://github.com/CacaoRick/herdr-open-vscode",
-      "revision": "11940a71dda0c809d50ddedb3b257c12a27c0317",
-      "download_url": "https://codeload.github.com/CacaoRick/herdr-open-vscode/tar.gz/11940a71dda0c809d50ddedb3b257c12a27c0317",
-      "archive_sha256": "3d1923230f4327ee9c60da76b1384cd6be5edb17d6c33801e54a4f6de6f44ba5",
-      "payload": "herdr/mods/herdr-open-vscode",
+      "revision": "1dfa20974f6da63b195660b68dd120bed2412184",
+      "download_url": "https://codeload.github.com/CacaoRick/herdr-open-vscode/tar.gz/1dfa20974f6da63b195660b68dd120bed2412184",
+      "archive_sha256": "052705236f34b6ffccf6255eb6bdb3149a6a50c772eebc5bbb9b7eb8322d4ab6",
+      "payload": "herdr-app/mods/herdr-open-vscode",
       "overlays": {},
       "artifacts": [
         {
-          "path": "herdr/mods/herdr-open-vscode",
-          "tree_sha256": "8931fe05e662dd0b710cb63e800c44194902a40192cd45b5631cecdafa7a2a74",
+          "path": "herdr-app/mods/herdr-open-vscode",
+          "tree_sha256": "b810d05e84e031da3a7eb1464b2941b01a5a94bfa73cee7a2c7e932f862c6448",
           "file_count": 9
         }
       ],
@@ -63,19 +63,19 @@
     },
     {
       "name": "herdr-git-graph",
-      "version": "git-9513f15",
+      "version": "0.3.2",
       "license": "MIT",
       "source": "https://github.com/rabeeh-ta/herdr-git-graph",
-      "revision": "9513f15355387d88da499e9e24238260bedc039e",
-      "download_url": "https://codeload.github.com/rabeeh-ta/herdr-git-graph/tar.gz/9513f15355387d88da499e9e24238260bedc039e",
-      "archive_sha256": "09bdf085c25b7bf8ac9276e64b9beb4af608a77a02069177cac6f20aebff420e",
-      "payload": "herdr/mods/herdr-git-graph",
+      "revision": "2f4fe0fc22e7cc726f3c1a2a654887c96227c37b",
+      "download_url": "https://codeload.github.com/rabeeh-ta/herdr-git-graph/tar.gz/2f4fe0fc22e7cc726f3c1a2a654887c96227c37b",
+      "archive_sha256": "22c6d9d03c2a900c95689febab76397961e03da5d6adaea5dfda0b98f5e3404d",
+      "payload": "herdr-app/mods/herdr-git-graph",
       "overlays": {},
       "artifacts": [
         {
-          "path": "herdr/mods/herdr-git-graph",
-          "tree_sha256": "9b1dd9d0059beffe0a09d4df68de3747418efd1987eb304d5b7197ee42d9892d",
-          "file_count": 34
+          "path": "herdr-app/mods/herdr-git-graph",
+          "tree_sha256": "23044b0e1e2fb2d3fd8ef17aef7444f39229d28efee81dd4a837f9540acc13aa",
+          "file_count": 38
         }
       ],
       "skill_count": 0,

@@ -61,6 +61,8 @@ bash scripts/install-herdr.sh claude
 
 The script refreshes the CLI-owned skill and integration while preserving unrelated settings. Follow the [shared Herdr guide](../universal/README.md#herdr) after upgrades.
 
+For Herdr App/core, copy the staged `skills/herdr-core/` to `$claude_config_home/skills/herdr-core/`, backing up an existing directory first. Merge the matching routing rules from [CLAUDE.md](CLAUDE.md). See the [App skill setup](../herdr-app/README.md#install-the-agent-skill).
+
 ## Verify
 
 Run `claude plugin list --json` and compare versions, namespaces, and user-enabled state with the staged selection. Start a fresh Claude session and confirm that shared defaults and plugin skills are available. Runtime hook execution, Chrome connectivity, and external providers need separate checks in their intended environment.

@@ -16,13 +16,72 @@ commit shows its details and files, and a file its diff. It fills a side panel
 One column on the `background` color, radius 10, 1px `border`, base type 12.5px.
 Top to bottom:
 
-- **Header**, 42px, 14px side padding, bottom border. "Graph" at 13px semibold.
-  Beside it the current branch as a chip: 22px tall, radius 6, `accent` at 15%
-  (`accent` + `26`) behind `accent` text, a 12px branch icon and the name at
-  11.5px semibold; detached HEAD reads `detached at <8 chars>` with a commit icon.
-  On the right, 24px icon buttons in `muted`: Fetch (arrow down, only when the
-  repo has remotes; it says `Fetching…` while running) and Refresh. No commit
-  count, as in Git Graph.
+- **Header**, 42px, 14px side padding, bottom border. The tool's name at 13px
+  semibold: "Git" for a repository, "Manygit" for a folder of them (see
+  **Manygit** below). A repository opened from the Manygit list shows a back
+  chevron and "Manygit" (back to the list), then the repository's name as a
+  chip (folder icon, `raised`, `selected` while open) that drops the list's
+  rows down under the header, over the graph: `raised`, at most 260px with
+  scrolling, the open repository `selected` with its name in `accent`, every
+  row read again on opening. Picking one opens it; `Esc` closes the dropdown.
+  Beside it, the current branch appears as a chip: 22px tall, radius
+  6, `accent` at 15% (`accent` + `26`) behind `accent` text, a 12px branch icon
+  and the name at 11.5px semibold; detached HEAD reads `detached at <8 chars>`
+  with a commit icon. On the right, 24px icon buttons in `muted`: Fetch (arrow
+  down, only when the repo has remotes; it says `Fetching…` while running) and
+  Refresh, and Settings (a gear) on the Manygit list and when a folder holds
+  none. No commit count, as in
+  Git Graph.
+- **Manygit**, when the folder isn't a repository but holds some, after
+  [manygit](https://github.com/rabeeh-ta/manygit)'s repository pane, in place of
+  the toolbar and table. The header reads `Manygit`, `N repos` in `dim`. Rows
+  grouped by the folder they're in (a 26px `dim` 11px heading, `group/`, `./`
+  for the top; no headings when every repo is at the top), each 34px, indented
+  28px under a heading (14px otherwise) to read as inside it: the name at 11.5px
+  (`accent` for the open one), right after it the uncommitted count as a 6px dot
+  and number in `blocked` and how it stands against its upstream, and on the right, as PR #2's
+  picker, the branch in `muted`
+  with a 12px branch icon (`detached`; git's error in `ansi1` when status
+  fails), at most 200px. Against its upstream, at
+  11.5px as Herdr's Spaces list draws it: `↑N` in `ansi2`, `↓N` in `ansi1`
+  (both when it has diverged), nothing when it's in sync; then manygit's
+  states Herdr has no mark for: `not pushed` in `ansi1` (a remote, but the
+  branch has no upstream; nothing on a detached HEAD), `no remote` `dim`, `…` while loading. A click opens the repository's graph with everything above;
+  "‹ Manygit" or `Esc` (with nothing else open) returns to the list.
+  **Right-click a row**: its remotes (`git config --get-regexp
+  '^remote\..*\.url$'`) and the machine's agents (`knownAgents`, kept per
+  machine and asked again after) are read, then a 268px menu opens at the
+  pointer. First Herdr's own: `New <agent> tab` for up to 3 installed agents,
+  most picked first as Herdr's + menu (their icon, in color unless tinted), and
+  `New terminal tab`, each `tab.new` with the repository as its folder. Then
+  what the row's token asks for first: behind, Pull, Fetch, Push; ahead, Push,
+  Fetch, Pull; no upstream, `Push and set upstream…`, Fetch; otherwise Fetch,
+  Pull, Push (all need a remote; Pull an upstream). Pull asks first and runs
+  `git pull --ff-only --quiet`; Push is the graph's dialog (remote, set
+  upstream); Fetch runs at once. With uncommitted changes: Commit, Stash, Reset
+  uncommitted changes, the graph's dialogs. Last: `Open on <host>` (origin's
+  web page: https without credentials, or an scp/ssh URL on its host), Copy
+  path, Copy branch name. Actions check the row's HEAD and branch as the
+  graph's do, and the list reads again after one. A row still loading, or that
+  git can't read, has no menu.
+  Fetch all (the fetch arrow and `Fetch all`, `Fetching 3/12…` while it runs)
+  fetches every repository with a remote (or not read yet), 8 at a time, as
+  manygit does: `env GCM_INTERACTIVE=0 GIT_TERMINAL_PROMPT=0 GIT_ASKPASS= git
+  fetch --quiet`, so saved credentials and SSH's configuration work but nothing
+  stops to ask for a login. Each row reads its status again as its fetch ends;
+  a failure shows git's last line in `ansi1` where the branch goes and `fetch
+  failed` as its token, until a later fetch of it works. It goes on if a
+  repository is opened, and ends with a toast (`Fetched 12 repositories`, or
+  `Fetched 10 of 12 repositories`, a warning).
+  Settings opens a 240px popup with two 30px rows and no other text: `Scan
+  depth` and a 56px input holding the depth (1 to 5, 3 by default, manygit's;
+  `shared("git-graph.depth")`), and `Show tags` with a checkbox, off by
+  default (`shared("git-graph.tags")`), as manygit's `t`. A valid depth applies
+  as it's typed and searches again; anything else turns the box `ansi1`.
+  With tags on, each row reads its newest tag too (`for-each-ref --count=1
+  --sort=-creatordate refs/tags`, beside the status call) and shows it just
+  before the branch: a tag icon and the name in `dim`, at most 120px. Enter or Esc
+  closes it.
 - **Toolbar**, 34px, 10px side padding, bottom border: a segmented control
   `All branches | Current` (22px segments, 11.5px, the chosen one `raised` with a
   border) and a `Remotes` checkbox (13px box, `accent` filled with a check when
@@ -75,8 +134,11 @@ Top to bottom:
   numbers in a 34px `dim` column.
 - **In place of the table**: centered, a 46px `raised` tile with a 22px icon, a
   14px semibold title and a 12px `muted` line: `No folder`, `Not a git repository`
-  (`<folder, ~-shortened> isn't inside a git repository. Focus a terminal in a
-  repository to see its history.`), `No commits yet`, `Can't read the history`
+  (`<folder, ~-shortened> isn't inside a git repository, and holds none within N
+  levels. Focus a terminal in one, or search deeper in settings.`; for a folder
+  that isn't searched, `… isn't a repository, and is too big to search for
+  them. Focus a terminal in a repository, or in a folder that holds some.`),
+  `No commits yet`, `Can't read the history`
   (git's error, icon in `ansi1`), `Loading history…`.
 
 **The menu** is a 268px popup at the pointer on `popover`, 5px padding, 30px rows
@@ -96,25 +158,57 @@ or `ansi1` when the action or the chosen mode destroys something.
   Nothing animates.
 - **Which repository**: the focused pane's live folder (`panes()[i].cwd`), else
   `focused().cwd`, else the space's folder, on the space's machine. Opened with
-  `props.folder` (as a pane), always that folder, here. A new folder starts
-  clean (selection, page size, details) and loads at once; a slower load for the
-  previous folder drops its result.
+  `props.folder` (as a pane), always that folder, here. If it's a repository,
+  use it; otherwise it's a Manygit folder when it holds repositories. A home
+  folder and any folder above it aren't searched (too big, and on macOS walking
+  home asks for Desktop, Documents and Downloads): this machine's `home()`, and
+  for another machine, whose home isn't known, `/`, `/root`, `/home/<name>` and
+  `/Users/<name>`. They say so.
+  A new folder starts clean (selection, page size, details) and loads at once; a
+  slower load for the previous folder drops its result.
 - **Switching fast**: leaving a folder keeps it as it was (the last 24 folders).
   Coming back shows that in the same frame, then reads it again in the background
   and redraws only if something changed (the log, HEAD, branches, remotes or the
   uncommitted files). Like manygit, the folders open in other spaces' panes are
   read ahead, one at a time, this machine's first: 1.5 s after start, then every
-  15 s for new ones. A commit's details are kept too (the last 200): clicking it
-  again shows them at once.
-- **Loading**: one round of git calls, all together, from the pane's folder (each
-  answers from a subfolder too, and status names paths from the repository
-  root): `git rev-parse --show-toplevel`, `git log` (all refs except `refs/stash`
-  with All branches, or `HEAD` with Current; `--exclude=refs/remotes/*` too when
-  Remotes is off; `--date-order --decorate=full -n301`: one past the page says
-  whether there are more, as Git Graph asks), `rev-parse HEAD`, `symbolic-ref
-  --short HEAD`, `for-each-ref refs/heads`, `git remote` and `git status
-  --porcelain=v1 -z --no-renames --untracked-files=all`. Reads pass `--no-optional-locks -c core.fsmonitor=false
-  -c diff.autoRefreshIndex=false`, so they write nothing under `.git`.
+  15 s for new ones. Read-ahead leaves out `git status` (it runs the clean
+  filters a repository's own config defines): the uncommitted row comes with
+  the read when the folder is shown. A commit's details are kept too (the last
+  200): clicking it again shows them at once.
+- **Manygit loading**: one `find -H <folder> -mindepth 1 -maxdepth <depth+1>`
+  walk (on the space's machine too; `-H` follows the folder itself when it's a
+  symlink, since macOS's find lists nothing under one, and no symlink below it)
+  prints each `.git`
+  and prunes there, and prunes hidden folders, `node_modules`, `vendor`,
+  `venv`, `__pycache__`, `dist`, `build`, `target`, `site-packages` and
+  `Library` (a repository whose own folder has one of those names isn't found);
+  its output counts even when it exits 1 (an unreadable folder), at most 500
+  repositories. Each row's status is one `git status --porcelain=v2
+  --branch -z --no-renames --untracked-files=normal` (branch, upstream,
+  ahead/behind and the changed count; manygit needs six to eight calls), plus
+  `git remote` only when there's no upstream, at most 8 at a time, each row
+  drawing as it comes, each read on the machine the list was read on and
+  skipped once the panel has left it (a load id, new for each load, so opening
+  a repository and coming back can't revive an older one). Locally, each
+  repository's `.git` is watched by one loop for as long as it's listed
+  (opening one and coming back keeps them; a loop whose repository isn't listed
+  any more ends at its next change), and a ref or index change re-reads that
+  row; the list re-reads every 15 s for working tree edits, keeping the old
+  values on screen until new ones differ. A folder that held none isn't
+  searched again by the 15 s re-read, only by Refresh, a new depth or coming
+  back to it. An upstream that's configured but gone from the remote (git
+  prints `branch.upstream` and no `branch.ab`) reads `upstream gone` in
+  `ansi1`, and has no Pull.
+- **Loading**: resolve the root with `git rev-parse --show-toplevel`; for the
+  repository, together run `git log` (`--branches --tags --ignore-missing HEAD`, plus
+  `--remotes` when Remotes is on, with All branches, or `HEAD` with Current; not
+  `--all`, which also walks other tools' refs such as `refs/t3/checkpoints/*`;
+  `--date-order --decorate=full -n301`: one past the page says whether there
+  are more, as Git Graph asks), `rev-parse HEAD`, `symbolic-ref --short HEAD`,
+  `for-each-ref refs/heads`, `git remote` and `git status --porcelain=v1 -z
+  --no-renames --untracked-files=all`. Reads pass
+  `--no-optional-locks -c core.fsmonitor=false -c diff.autoRefreshIndex=false`,
+  so they write nothing under `.git`.
 - **Staying live**: `watchFolder` on the repository root (and on the main
   checkout's `.git` for a linked worktree). A change to `HEAD`, `packed-refs` or
   anything under `refs/` inside the git folder reloads the history; any other
@@ -140,7 +234,7 @@ or `ansi1` when the action or the chosen mode destroys something.
   a tag, Delete, Push, Copy name; anywhere else, the commit menu (Add tag,
   Create branch, Checkout, Cherry pick, Revert, Merge, Rebase, Reset, Copy hash,
   Copy subject; Checkout, Cherry pick, Merge and Rebase left out on HEAD); on the
-  uncommitted row: Stash, Reset uncommitted changes, Show in Changes panel.
+  uncommitted row: Commit, Stash, Reset uncommitted changes, Show in Changes panel.
   Push needs a remote.
 - **Actions** run as argv, stopping at the first failure. With no dialog
   (checkout of a local branch, copy, show Changes) the menu runs it, then closes.
@@ -149,23 +243,34 @@ or `ansi1` when the action or the chosen mode destroys something.
   (`push <remote> --delete <branch>`), delete tag, merge (`--no-edit`, optional
   `--no-ff`), rebase, cherry pick and revert (`-m 1` for merges; revert
   `--no-edit`), reset (soft / mixed / hard, mixed chosen), push (remote, set
-  upstream), push tag (`refs/tags/<name>`), stash (message, include untracked),
-  reset uncommitted (mixed / hard), checkout commit (`--detach`). Names must be
-  non-empty, without spaces, and not start with `-`. Success posts a toast
-  (`Checked out fix`); a failure keeps the dialog open with git's last lines
-  (hints dropped), or toasts from the menu.
+  upstream), push tag (`refs/tags/<name>`), commit (message; "Stage every
+  change first (untracked too)" runs `add --all` before `commit -m`, ticked
+  unless something is already staged, and refused while `ls-files --unmerged`
+  lists conflicts, since it would commit their markers), stash (message,
+  include untracked), reset uncommitted (mixed / hard), checkout commit
+  (`--detach`). Checkout of a local branch is `checkout <name> --`, so a branch
+  deleted since the graph was drawn fails instead of naming a path. Names must
+  be non-empty, without spaces, and not start with `-`; a commit message is
+  free text, given as `-m`'s own argument. Success posts a toast (`Checked out
+  fix`); a failure keeps the dialog open with git's last lines (hints dropped),
+  or toasts from the menu.
 - **Fetch** runs `git fetch --all` and reloads.
 - **Copy** writes the clipboard and toasts `Copied`.
 
 ## Built from
 
 - `mods/git-graph/`, `mod.json` `{ "place": "none" }`: nothing docks by itself.
-- `main.js`: one `View` with four roles by `props().role`: none, the graph;
+- `main.js`: one `View` with five roles by `props().role`: none, the graph;
   `"menu"`, the popup (`openOverlay({ mod: "git-graph", kind: "popup", at:
   "pointer", width: 268, height, props: { role: "menu", target, ctx } })`);
   `"dialog"` (`kind: "dialog", width: 420, height` computed from its fields).
   `ctx` carries root, machine, current branch, HEAD, local branches, remotes.
   `"update"` (`kind: "dialog", width: 460, height: 400`): the update window.
+  `"settings"` (`kind: "popup", at: "pointer", width: 240, height: 92`): the
+  Manygit scan depth and Show tags (`settings.js`).
+- `repos.js`: Manygit's `find` arguments, its output as grouped repositories,
+  the one-call status and its parse, and the sync token; pure, so the tests
+  run them on real folders.
 - `update.js`: `VERSION` (this copy's release) and the update check. At most
   once a day (`checked` in `shared("git-graph.update")`, set before asking so
   other copies skip), one `fetch` of GitHub's `releases/latest`; a newer
@@ -229,13 +334,21 @@ or `ansi1` when the action or the chosen mode destroys something.
   is switched away and back. A hidden or fully covered window draws nothing, so
   `herdr-app shot` then returns the last frame.
 - The Show in Changes item assumes the main layout's `panel` / `panel-body` ids.
-- `paint_path` takes screen pixels and ignores the zoom; elements are scaled by it.
-  The lines multiply their coordinates, width and dash by the zoom (`unit()`) to
-  match the dots, and a row is a whole number of screen pixels (`rowPx()`; 24 ×
-  0.9 = 21.6 left a hairline gap at every row edge). The list's row height must
-  be that same `rowPx()`, or the rows and the list's cells disagree.
-- Seen at zoom 0.9 and 0.8 only. Untested: Linux, Windows, zoom above 1, the
-  diff list at a zoom other than 1, a remote machine's repository.
+- The zoom, in a list: a row is a whole number of screen pixels (`rowPx()`; 24 ×
+  0.9 = 21.6 left a hairline gap at every row edge), `rowH()` the same in the
+  units elements take. Herdr 0.1.12 zooms lists itself ("Lists in mods follow
+  the zoom"), and the two versions differ (`updates().app.version`, asked once):
+  - 0.1.12 and later: the list's row height is `rowH()` and the lines are drawn
+    in units, like the dots. Scaling them as before put every line 1.2× further
+    out than its dot at zoom 1.2, and every row 1.2× too tall.
+  - Before: `paint_path` in a list took screen pixels and ignored the zoom, so
+    the lines multiply their coordinates, width and dash by it (`unit()`), and
+    the list's row height is `rowPx()`.
+- Seen at zoom 0.9 and 0.8 before 0.1.12. Untested: Linux, Windows, the diff
+  list at a zoom other than 1 before 0.1.12. Manygit needs `find` and `env`, so
+  not Windows.
+- Herdr's `exec` stops a command after 30 s: a fetch, pull or push over a slow
+  network, or a slow pre-commit hook, fails there.
 
 ## Done when
 

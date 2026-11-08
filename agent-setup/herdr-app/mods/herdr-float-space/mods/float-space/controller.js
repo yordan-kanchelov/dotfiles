@@ -1,4 +1,4 @@
-import { readState, readSize, reconcile, returnPane, shownTerminal, windowSpec, nextTitle, MAX_TERMINALS } from "./model.js";
+import { readState, readSize, sameSize, isPreset, reconcile, returnPane, shownTerminal, windowSpec, nextTitle, MAX_TERMINALS } from "./model.js";
 
 // The one floating window's lifecycle. Copies share one controller and run its
 // commands one at a time, so rapid toggles cannot spawn duplicate shells.
@@ -10,6 +10,7 @@ export class FloatController {
     this.previous = null;
     this.generation = 0;
     this.key = null;
+    this.reconciled = null;
   }
 
   state(host) { return readState(host.getState()); }
@@ -62,6 +63,32 @@ export class FloatController {
     const tabs = this.state(host).tabs.filter(tab => tab.address !== ended);
     const next = tabs.find(tab => live.some(terminal => terminal.address === tab.address));
     this.mount(host, this.patch(host, next ? { tabs, active: next.address, page: "terminal" } : { tabs, page: "notes" }));
+  }
+
+  // Remember only snapshots core has successfully confirmed. A failed query
+  // leaves the same mismatch eligible at the next poll.
+  needsReconcile(host) {
+    if (!this.overlay) return false;
+    const live = host.liveOwned?.();
+    if (!live) return false;
+    const tabs = this.state(host).tabs;
+    if (live.length === tabs.length && tabs.every(tab => live.some(t => t.address === tab.address))) {
+      this.reconciled = null;
+      return false;
+    }
+    return this.snapshotKey(live) !== this.reconciled;
+  }
+
+  snapshotKey(live) { return live?.map(t => t.address).sort().join(" ") ?? null; }
+
+  async reveal(address, host) {
+    // A toast can outlive its window or terminal. Confirm ownership again,
+    // and never create a replacement shell for a stale notification.
+    const owned = await host.listOwned();
+    if (!owned.some(t => t.address === address)) throw new Error("That Float Space terminal is no longer running.");
+    if (!this.overlay) this.previous = host.focused();
+    const state = reconcile(this.state(host), owned);
+    this.mount(host, this.save(host, { ...state, active: address, page: "terminal" }));
   }
 
   async refresh(host) {
@@ -118,8 +145,8 @@ export class FloatController {
     // Forget the window first: closing it closes the header, which must not
     // take this for Herdr's close. Focus the pane while the caller still lives.
     this.overlay = this.mounted = null;
-    if (restore && pane) host.focusPane(pane);
     host.close(overlay);
+    if (restore && pane) host.focusPane(pane);
   }
 
   async handle(command, host) {
@@ -128,6 +155,8 @@ export class FloatController {
       else await this.show(host);
     } else if (command === "show") {
       await this.show(host);
+    } else if (/^reveal-t[0-9a-z]+$/.test(command)) {
+      await this.reveal(command.slice(7), host);
     } else if (command === "hide") {
       this.hide(host);
     } else if (command === "new") {
@@ -141,13 +170,24 @@ export class FloatController {
       if (this.state(host).page === "notes") return;
       this.patch(host, { page: "notes" });
       if (this.overlay) this.mount(host);
+    } else if (command === "next" || command === "prev") {
+      if (!this.overlay) return;
+      const live = host.liveOwned?.();
+      const state = live?.length ? this.save(host, reconcile(this.state(host), live)) : await this.refresh(host);
+      const pages = ["notes", ...state.tabs.map(tab => tab.address)];
+      const index = state.page === "notes" ? 0 : Math.max(0, pages.indexOf(state.active));
+      const next = pages[(index + (command === "next" ? 1 : pages.length - 1)) % pages.length];
+      await this.handle(next === "notes" ? "notes" : `select-${next}`, host);
     } else if (/^resize-\d+-\d+$/.test(command)) {
       const [width, height] = command.slice(7).split("-").map(value => Number(value) / 100);
       const state = this.state(host);
       const size = readSize({ width, height });
-      if (JSON.stringify(size) === JSON.stringify(state.size)) return;
-      this.patch(host, { size });
-      if (this.overlay) this.mount(host);
+      // Any size other than a preset becomes the Custom one.
+      const custom = isPreset(size) ? state.custom : size;
+      const resized = !sameSize(size, state.size);
+      if (!resized && sameSize(custom, state.custom)) return;
+      this.patch(host, { size, custom });
+      if (resized && this.overlay) this.mount(host);
     } else if (command.startsWith("select-")) {
       const address = command.slice(7);
       if (address === this.state(host).active && this.state(host).page === "terminal") return;
@@ -181,7 +221,9 @@ export class FloatController {
       const live = host.liveOwned?.();
       if (live && !this.ended(live) && live.length === before.tabs.length
         && before.tabs.every(tab => live.some(terminal => terminal.address === tab.address))) return;
+      const snapshot = this.snapshotKey(live);
       let after = await this.refresh(host);
+      this.reconciled = snapshot;
       if (!after.active) after = this.patch(host, { page: "notes" });
       if (shownTerminal(after) !== this.mounted) this.mount(host, after);
     }
