@@ -121,11 +121,7 @@ and reject output locations inside the repository. Headroom blocks network calls
 The component benchmarks make no provider requests; the separate native hook
 checks above used the existing CLI logins.
 
-```sh
-python3 scripts/benchmarks/rtk.py
-```
-
-The Headroom benchmark ran from `scripts/benchmarks/headroom.py` at commit `611763b`. The script was removed with Headroom.
+The RTK benchmark ran from `scripts/benchmarks/rtk.py`, last present at commit `b07f312`. The Headroom benchmark ran from `scripts/benchmarks/headroom.py` at commit `611763b`. Both scripts were removed with their tools.
 
 The [sanitized results](2026-10-28-context-tools.json) include hashes, versions,
 timings, and fidelity checks. These synthetic samples do not measure task quality,
