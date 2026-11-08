@@ -2,7 +2,7 @@
 
 Maintained by hand from the payloads and source manifests. Update it when a skill is added, removed, or re-pinned. Manual-only labels describe metadata; shared guidance can impose further limits.
 
-Herdr's skill comes from `herdr --skill`. Blender, Unreal, account-managed plugins, and system skills are not bundled.
+Standalone Herdr's skill comes from `herdr --skill`. The App/core router is bundled below. Blender, Unreal, account-managed plugins, and system skills are not bundled.
 
 ## agent-skills (25)
 
@@ -82,6 +82,12 @@ Version 5.3.2. Used by claude, codex.
 Version 1.16.0. Used by claude, codex, hermes, pi.
 
 - `unslop`
+
+## herdr-core (1)
+
+Revision `2e8ebb3cdc236a679d4e9ccdaa3a28c5098b8fe9`. Used by claude and codex for App/core work. The router loads `hc --skill` and `herdr-app --skill` from the installed binaries. Global instructions keep App/core use scoped to an explicit request or a verified core caller.
+
+- `herdr-core`
 
 ## sloptrim (1)
 

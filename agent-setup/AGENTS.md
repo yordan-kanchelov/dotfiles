@@ -12,7 +12,7 @@ This folder holds portable packages and setup instructions. The Ansible playbook
 4. Calculate hashes from the reviewed source. `archive_sha256` hashes the downloaded archive bytes. Artifact hashes follow `check_sources` in [the bundle script](../scripts/agent-setup-bundle.py): sort retained files by path, then hash each relative POSIX path, a NUL byte, and the binary SHA-256 digest of its contents. Keep payloads as ordinary files. A hash mismatch requires investigating the source or an intentional version update; do not change a pin merely to accept unexplained drift.
 5. Update the shared package list and affected agent READMEs. Preserve any existing plugin namespace and document intentional changes. Extend staging tests for the new package or affected agents. Adjust expected counts only for intentional additions or removals. Machine inventories are dated snapshots; update them only when taking a new inventory.
 
-Keep host-specific adaptations separate from shared upstream files. Herdr's skill comes from its installed CLI. Account-managed plugins, synced skills, and system skills remain managed by their hosts.
+Keep host-specific adaptations separate from shared upstream files. Standalone Herdr's skill comes from its installed CLI. The bundled `herdr-core` router loads the installed core and App manuals on demand. Account-managed plugins, synced skills, and system skills remain managed by their hosts.
 
 ## What the scripts do
 

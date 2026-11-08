@@ -1,0 +1,5 @@
+{
+  "global": {
+    "cmd-g": "mod.open:open-vscode"
+  }
+}

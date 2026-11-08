@@ -1,5 +1,7 @@
 # RTK evaluation for Claude Code and Codex
 
+Removed on 2026-11-07. Over ten days of hook use, RTK reported 69.1K tokens saved across 665 commands, about 1K per session. That did not justify rewritten output, approval side effects, and plaintext output storage. The setup was deleted from `agent-setup/context-tools/`.
+
 Reviewed on 2026-10-28 against stable v1.1.0, released October 25, at commit `753a3b0e939f2e4490fc24e3a1984010f40a103c`. RTK was not found on this shell's PATH. No software was installed or agent profile changed. [Release](https://github.com/rtk-ai/rtk/releases/tag/v1.1.0).
 
 For our command-heavy work, classic RTK filtering is a smaller first experiment than a provider proxy. Start with explicit commands and inspect the results. Keep Ansible verification, complete code reviews, exhaustive searches, and interpreter-sensitive tests unfiltered. Do not enable the Engine or RTK Proxy merely to try the command filters.

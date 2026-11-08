@@ -19,7 +19,8 @@ printf '%s\n' '[user]' '  name = WSL bootstrap test' '  email = bootstrap@exampl
   '[core]' '  autocrlf = false' > "$GIT_CONFIG_GLOBAL"
 mkdir -p "$fixture/bin" "$fixture/source"
 if command -v cygpath >/dev/null; then
-  export PATH="$(cygpath -u "$fixture/bin"):$PATH"
+  fixture_bin=$(cygpath -u "$fixture/bin")
+  export PATH="$fixture_bin:$PATH"
 else
   export PATH="$fixture/bin:$PATH"
 fi

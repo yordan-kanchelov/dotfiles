@@ -12,7 +12,7 @@ For an agent preparing a machine, start with [universal/](universal/README.md), 
 
 Use ordinary files and native plugin management. Keep credentials, account connections, transcripts, project trust, and hook-trust records on the destination. Model choices and external provider setup remain user decisions.
 
-[context-tools/](context-tools/README.md) contains an optional RTK command-filter setup. [cliproxyapi/](cliproxyapi/README.md) covers the CLIProxyAPI gateway and dashboard setup. Both are installed independently of the staged skill bundles.
+[cliproxyapi/](cliproxyapi/README.md) covers the CLIProxyAPI gateway and dashboard setup. It is installed independently of the staged skill bundles.
 
 ## Folder layout
 
@@ -20,7 +20,7 @@ Use ordinary files and native plugin management. Keep credentials, account conne
 agent-setup/
   universal/                 Shared plugin payloads and source pins
     plugins/                 Agent Skills, Matt Pocock, and Ponytail
-    skills/                  Standalone unslop and Sloptrim packages
+    skills/                  Standalone unslop, Sloptrim and Herdr core router
     sources.json             Revisions and payload integrity hashes
     skills.md                Hand-maintained index of bundled skills
   claude/                    Claude setup, manifests, hooks, and Chrome DevTools
@@ -37,14 +37,15 @@ agent-setup/
     inventory.md             Machine reference
   hermes/                    Hermes plugin setup and manifest adaptation
   pi/                        Pi extension inventory and prose-skill setup
-  context-tools/             Optional RTK command filters
+  herdr/                     Herdr TUI config pointer (prefix and keybindings)
+  herdr-app/                 Pinned Herdr App mods (float-space, t3-inbox, open-vscode, git-graph)
   cliproxyapi/               CLIProxyAPI gateway and dashboard setup
 scripts/
   agent-setup-bundle.py       Verify sources or stage marketplaces
   test-agent-setup-bundle.py  Bundle and staging checks
 ```
 
-Blender and Unreal are excluded from this setup. Herdr supplies its own skill through `herdr --skill`; no separate Herdr payload is maintained here. Account-managed plugins, synced skills, and Codex system skills remain managed by their hosts.
+Blender and Unreal are excluded from this setup. Standalone Herdr supplies its skill through `herdr --skill`. The shared `herdr-core` router loads the App/core manuals from their installed binaries. Account-managed plugins, synced skills, and Codex system skills remain managed by their hosts.
 
 ## Maintain this bundle
 

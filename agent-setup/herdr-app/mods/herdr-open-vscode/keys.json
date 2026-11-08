@@ -1,0 +1,5 @@
+{
+  "global": {
+    "ctrl-shift-g": "mod.open:open-vscode"
+  }
+}

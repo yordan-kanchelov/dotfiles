@@ -173,6 +173,32 @@
         "pi"
       ],
       "notes": "Unchanged upstream skill, detector, references, hooks, command wrapper, Cursor rule, and Claude marketplace. Claude registers the staged skill root as a native marketplace; other hosts install it as a loose skill."
+    },
+    {
+      "name": "herdr-core",
+      "kind": "skill",
+      "version": "git-2e8ebb3",
+      "license": "Apache-2.0",
+      "source": "https://github.com/herdrdev/herdr-core",
+      "revision": "2e8ebb3cdc236a679d4e9ccdaa3a28c5098b8fe9",
+      "download_url": "https://codeload.github.com/herdrdev/herdr-core/tar.gz/2e8ebb3cdc236a679d4e9ccdaa3a28c5098b8fe9",
+      "archive_sha256": "40b2f8381904fbf861f89b285bb61c86db165461c012343693155d7a7e937934",
+      "payload": "universal/skills/herdr-core",
+      "overlays": {},
+      "artifacts": [
+        {
+          "path": "universal/skills/herdr-core",
+          "tree_sha256": "64ade13de17602fe9b5104538780e6bf02262c9d2679bf09c09428d7d6c51e40",
+          "file_count": 2
+        }
+      ],
+      "skill_count": 1,
+      "marketplaces": {},
+      "hosts": [
+        "claude",
+        "codex"
+      ],
+      "upstream_path": "skills/herdr-core"
     }
   ]
 }
