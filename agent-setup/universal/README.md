@@ -22,7 +22,7 @@ Keep existing model choices, native permission boundaries, and hook trust. Workf
 
 ## Global instructions
 
-Merge all global rules from the harness guide into the destination's instructions. Claude and Codex templates include prose, context, and Herdr discussion rules. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
+Merge all global rules from the harness guide into the destination's instructions. Claude and Codex templates include prose, context, and external agent rules. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
 
@@ -37,6 +37,51 @@ python3 /absolute/path/to/sloptrim/scripts/detect.py README.md
 ```
 
 Read `_metrics.ai_tell_score` and the flagged spans. Revise only prose that needs it, preserve facts and code, and score the saved file again. When writing docs, READMEs, or skills, pair the `unslop` skill with Sloptrim. Use `unslop` to revise prose, then score the saved files with Sloptrim before committing or sharing them. Instruction files and skills need this explicit check because the Claude save hook exempts them. Keep third-party skill bodies unchanged.
+
+## External agents
+
+When the user requests another agent, use the requested harness and model. Prefer its native headless CLI for reviews, second opinions, and results to parse. Interactive Herdr agents suit open discussion with the user watching. Keep review isolation on each invocation; the Codex profile's interactive approval and sandbox defaults stay unchanged.
+
+The following flow was tested with Codex 0.166.0 and Herdr 0.9.5 on macOS in November 2026. Check the installed CLI help before using it on another version.
+
+Write `prompt.md` with the question, repository, review base, scope, relevant files, and constraints. Ask for concise findings with file and line evidence and checks run. Require substantive text followed by a final line containing only `REVIEW_COMPLETE`, including when there are no findings. An empty prompt can exit 0, so exit status alone does not prove a review happened.
+
+Run from Bash. Replace the repository and model values. Use the user's requested reasoning effort when specified. Each turn needs fresh result, log, and status files:
+
+```sh
+review_repo=/absolute/path/to/repo
+review_model=MODEL
+review_dir=$(mktemp -d)
+review_status=0
+codex exec --ignore-user-config --ignore-rules \
+  -c 'approval_policy="never"' -c 'model_reasoning_effort="high"' \
+  --sandbox read-only -C "$review_repo" -m "$review_model" \
+  -o "$review_dir/result.md" --color never - < prompt.md \
+  > "$review_dir/run.log" 2>&1 || review_status=$?
+printf '%s\n' "$review_status" > "$review_dir/exit-code"
+```
+
+The isolation flags kept project config and execution rules from overriding review policy in the test. Login still worked. They do not disable instruction files. Put the review boundaries in the prompt. Ignoring config dropped reasoning effort to `none`, so set it explicitly. The read-only sandbox blocked writes by the agent; Codex still writes its own session and result files. The web tool remained available.
+
+Read `run.log` and save its `session id:` value. Omit `--ephemeral` when follow-ups need the earlier context. Resume the exact ID from the same repository. `resume` has no `--sandbox` or `-C` option, so set the sandbox through `-c`:
+
+```sh
+review_session=SESSION_ID
+review_next_prompt="$PWD/next.md"
+review_status=0
+(
+  cd "$review_repo" || exit
+  codex exec resume --ignore-user-config --ignore-rules \
+    -c 'approval_policy="never"' -c 'model_reasoning_effort="high"' \
+    -c 'sandbox_mode="read-only"' -m "$review_model" \
+    -o "$review_dir/follow-up.md" "$review_session" - < "$review_next_prompt"
+) > "$review_dir/follow-up.log" 2>&1 || review_status=$?
+printf '%s\n' "$review_status" > "$review_dir/follow-up-exit-code"
+```
+
+Require exit code 0, a final `REVIEW_COMPLETE` line, and substantive text before it for every turn. Read the final response file and summarize the findings. Missing files, a missing marker, or a marker alone mean the review is incomplete. Use fresh paths again for later turns so stale results cannot pass this check.
+
+Under `HERDR_ENV=1`, use the installed `herdr` skill for caller resolution and pane commands. Create a sibling pane with `herdr pane split --current --cwd "$PWD" --no-focus` and the direction chosen by the skill. Run the same headless command through `herdr pane run <returned-pane-id> "bash <script>"`. Have the script write the exit status to a file. If output goes through `tee`, enable `set -o pipefail` before the pipeline and capture its status. A successful `pane run` only confirms command submission. Read the result files for completion; narrow panes can wrap interactive screen output badly.
 
 ## Herdr
 
