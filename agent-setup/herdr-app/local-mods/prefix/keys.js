@@ -43,5 +43,8 @@ export const KEYS = {
 for (let index = 1; index <= 9; index++) KEYS[index] = ["tab.select", { index }];
 
 // Shifted punctuation arrives as e.g. keystroke "shift-5" with key_char "%".
+// Only unmodified or Shift-only keys fall back to key_char, so ctrl-x cancels.
+const modified = (keystroke = "") => /(^|-)(ctrl|alt|cmd|super|fn)-/.test(keystroke);
 export const commandFor = (event) =>
-  KEYS[event.keystroke] ?? (event.key_char ? KEYS[event.key_char] : undefined);
+  KEYS[event.keystroke] ??
+  (event.key_char && !modified(event.keystroke) ? KEYS[event.key_char] : undefined);

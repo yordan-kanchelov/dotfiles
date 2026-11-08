@@ -5,7 +5,7 @@ The `herdr` terminal client reads [`.config/herdr/config.toml`](../../.config/he
 ## Apply on a machine
 
 - macOS and Linux: `setup.yml` symlinks `~/.config/herdr/config.toml` to the repo file (tag `symlinks`). Run `ansible-playbook setup.yml --tags symlinks`.
-- Windows: agent setup copies it to `%APPDATA%\herdr\config.toml`.
+- Windows: [`bootstrap.ps1`](../../bootstrap.ps1) copies it to `%APPDATA%\herdr\config.toml`.
 - Manual: back up any existing `~/.config/herdr/config.toml`, then run `ln -s "$PWD/.config/herdr/config.toml" ~/.config/herdr/config.toml` from the repo root.
 
 Reload a running server with prefix, then `shift+r`, or restart Herdr. Skills and agent integrations are installed separately by `scripts/install-herdr.sh`; see the main [README](../../README.md).

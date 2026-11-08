@@ -14,4 +14,6 @@ test("plain, shifted, punctuation, digit and modified keys resolve", () => {
 test("unknown keys and escape cancel", () => {
   assert.equal(commandFor({ keystroke: "y", key_char: "y" }), undefined);
   assert.equal(commandFor({ keystroke: "escape" }), undefined);
+  assert.equal(commandFor({ keystroke: "ctrl-x", key_char: "x" }), undefined);
+  assert.equal(commandFor({ keystroke: "alt-shift-5", key_char: "%" }), undefined);
 });

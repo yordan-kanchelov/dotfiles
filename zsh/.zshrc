@@ -31,7 +31,3 @@ fi
 if [ -d "$HOME/.antigravity-ide/antigravity-ide/bin" ]; then # Added by Antigravity IDE
   export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
 fi
-
-
-# Added by Antigravity CLI installer
-export PATH="/Users/yordan.kanchelov/.local/bin:$PATH"

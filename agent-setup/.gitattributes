@@ -1,3 +1,4 @@
 # Preserve pinned payload bytes across host line-ending settings.
 **/plugins/** -text -whitespace
 universal/skills/** -text -whitespace
+herdr-app/mods/** -text -whitespace
