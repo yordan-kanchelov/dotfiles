@@ -17,14 +17,19 @@ try {
 }
 $changed = $false
 $planned = @()
+# The same redirects scripts/install-herdr.sh honours; Herdr and the agents read them too.
+$profiles = @{ claude = $env:CLAUDE_CONFIG_DIR; codex = $env:CODEX_HOME }
 foreach ($target in $Targets) {
-    $skillsDirectory = Join-Path $env:USERPROFILE ".$target\skills"
+    $profileDirectory = $profiles[$target]
+    if (-not $profileDirectory) { $profileDirectory = Join-Path $env:USERPROFILE ".$target" }
+    $skillsDirectory = Join-Path $profileDirectory 'skills'
     # Older dotfiles linked the entire Claude skills directory into the checkout.
     if ((Test-Path -LiteralPath $skillsDirectory) -and (Get-Item -LiteralPath $skillsDirectory).LinkType) {
         $planned += "Make $target skills a local directory"
         if ($PSCmdlet.ShouldProcess($skillsDirectory, 'Replace directory link with a local copy')) {
-            # Directory moves in Windows PowerShell 5.1 must stay on the profile drive.
-            $temporary = Join-Path $env:USERPROFILE ('.dotfiles-skills-' + [guid]::NewGuid().ToString('N'))
+            # Directory moves in Windows PowerShell 5.1 must stay on one drive, so stage
+            # inside the profile directory itself (a redirected one may sit on another drive).
+            $temporary = Join-Path $profileDirectory ('.dotfiles-skills-' + [guid]::NewGuid().ToString('N'))
             New-Item -ItemType Directory -Path $temporary | Out-Null
             $stagedSkills = Join-Path $temporary 'skills'
             Copy-Item -LiteralPath $skillsDirectory -Destination $stagedSkills -Recurse
@@ -48,8 +53,8 @@ foreach ($target in $Targets) {
     if (-not ($status -match "^${target}: current\b")) {
         $planned += "Install $target Herdr integration"
         if ($PSCmdlet.ShouldProcess($target, 'Install Herdr integration')) {
-            $relativeConfig = if ($target -eq 'claude') { '.claude\settings.json' } else { '.codex\config.toml' }
-            $config = Join-Path $env:USERPROFILE $relativeConfig
+            $configName = if ($target -eq 'claude') { 'settings.json' } else { 'config.toml' }
+            $config = Join-Path $profileDirectory $configName
             if ((Test-Path -LiteralPath $config) -and (Get-Item -LiteralPath $config).LinkType) {
                 $content = [IO.File]::ReadAllBytes($config)
                 Remove-Item -LiteralPath $config -Force

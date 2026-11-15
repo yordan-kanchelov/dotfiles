@@ -2,7 +2,7 @@
 # Exercise the real Herdr binary against an isolated profile, without touching user hooks.
 $ErrorActionPreference = 'Stop'
 $original = @{}
-foreach ($name in @('USERPROFILE', 'HOME', 'APPDATA', 'LOCALAPPDATA')) {
+foreach ($name in @('USERPROFILE', 'HOME', 'APPDATA', 'LOCALAPPDATA', 'CLAUDE_CONFIG_DIR', 'CODEX_HOME')) {
     $original[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 $taskProfile = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-herdr-test-' + [guid]::NewGuid().ToString('N'))
@@ -12,6 +12,9 @@ try {
     $env:HOME = $taskProfile
     $env:APPDATA = Join-Path $taskProfile 'Roaming'
     $env:LOCALAPPDATA = Join-Path $taskProfile 'Local'
+    # An inherited redirect would send the installer outside the isolated profile.
+    $env:CLAUDE_CONFIG_DIR = $null
+    $env:CODEX_HOME = $null
     $installer = Join-Path $PSScriptRoot 'install-herdr.ps1'
     $preview = & $installer -WhatIf -OutputJson | Select-Object -Last 1 | ConvertFrom-Json
     if ($preview.changed -or $preview.planned.Count -ne 4) { throw 'Invalid initial preview.' }

@@ -4,9 +4,12 @@ $ErrorActionPreference = 'Stop'
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-migration-' + [guid]::NewGuid().ToString('N'))
 $originalProfile = $env:USERPROFILE
 $originalPath = $env:Path
+$originalClaudeHome = $env:CLAUDE_CONFIG_DIR
 New-Item -ItemType Directory -Path $fixture | Out-Null
 try {
     $env:USERPROFILE = Join-Path $fixture 'profile'
+    # An inherited redirect would send the installer outside the fixture profile.
+    $env:CLAUDE_CONFIG_DIR = $null
     $bin = Join-Path $fixture 'bin'
     $source = Join-Path $fixture 'repo-skills'
     New-Item -ItemType Directory -Path $bin, $source, (Join-Path $env:USERPROFILE '.claude') -Force | Out-Null
@@ -64,6 +67,7 @@ public class HerdrMigrationFixture {
     Remove-Item Function:\Move-Item -ErrorAction SilentlyContinue
     $env:USERPROFILE = $originalProfile
     $env:Path = $originalPath
+    $env:CLAUDE_CONFIG_DIR = $originalClaudeHome
     # Never recurse through a junction left behind by a failed regression run.
     $link = Join-Path $fixture 'profile\.claude\skills'
     if ((Test-Path -LiteralPath $link) -and (Get-Item -LiteralPath $link).LinkType) { [IO.Directory]::Delete($link) }
