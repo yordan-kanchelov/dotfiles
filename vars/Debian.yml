@@ -41,7 +41,6 @@ apt_packages:
   - zoxide
   - zsh
   # build essentials
-  - apt-transport-https
   - build-essential
   - ca-certificates
   - curl

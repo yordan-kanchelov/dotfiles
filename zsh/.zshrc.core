@@ -99,7 +99,6 @@ alias tren="tmux rename-session -t"
 alias tnw="tmux new-window"
 alias th="tmux split-window -h"
 alias tv="tmux split-window -v"
-# alias tkp="tmux kill-pane"
 alias tkp="exit"
 alias vim="nvim"
 alias ':q'='exit'
@@ -197,8 +196,9 @@ fvim() {
 }
 
 cat() {
-  # When piped or redirected, behave like plain cat to avoid bat's pager/color escapes
-  if [ ! -t 1 ]; then
+  # When piped or redirected, behave like plain cat to avoid bat's pager/color escapes.
+  # Same without bat (configs-only run): every branch below falls back to it.
+  if [ ! -t 1 ] || ! command -v bat &> /dev/null; then
     command cat "$@"
     return
   fi
@@ -214,8 +214,13 @@ cat() {
     local mime=$(file --mime-type -b "$file" 2>/dev/null)
     case "$mime" in
         image/*)
-            local term_width=$(tput cols)
-            viu -w $((term_width - 2)) "$@"
+            # viu is optional (not in brew_packages.yml); say so instead of "command not found".
+            if command -v viu &> /dev/null; then
+                local term_width=$(tput cols)
+                viu -w $((term_width - 2)) "$@"
+            else
+                echo "Install viu to preview images"
+            fi
             ;;
         application/pdf)
             if command -v termpdf &> /dev/null; then
@@ -228,10 +233,10 @@ cat() {
             fi
             ;;
         video/*)
-            if command -v ffmpeg &> /dev/null; then
+            if command -v ffmpeg &> /dev/null && command -v viu &> /dev/null; then
                 ffmpeg -i "$file" -ss 00:00:01.000 -vframes 1 -f image2pipe -vcodec png - 2>/dev/null | viu -
             else
-                echo "Install ffmpeg to preview videos"
+                echo "Install ffmpeg and viu to preview videos"
             fi
             ;;
         *)

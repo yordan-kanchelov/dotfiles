@@ -3,7 +3,7 @@
 # ============================================
 # ZSH PROFILE - Login Shell Configuration
 # Runs once at login, before .zshrc
-# Contains: Environment variables, PATH, SSH agent
+# Contains: Homebrew, PATH, environment variables, fnm, secrets
 # ============================================
 
 # Deduplicate PATH entries (installers love re-appending)
