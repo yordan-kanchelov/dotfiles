@@ -41,9 +41,14 @@ jobs:
       - name: Verify PowerShell 7 agent results
         shell: pwsh
         run: ./windows/test-agents.ps1
+      # A step keeps the PATH the runner started with; the installer above put
+      # Herdr on the persistent user PATH, so read that back first.
       - name: Verify Herdr skills and integrations against the installed Herdr
         shell: powershell
-        run: ./windows/test-herdr.ps1
+        run: |
+          $persistent = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+          $env:Path = $env:Path + ';' + [Environment]::ExpandEnvironmentVariables($persistent)
+          ./windows/test-herdr.ps1
   ansible-syntax:
     runs-on: ubuntu-latest
     steps:
