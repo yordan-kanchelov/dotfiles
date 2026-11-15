@@ -48,8 +48,9 @@ jobs:
           # .zshrc.core is pulled in by a runtime `source`, so parsing .zshrc alone proves nothing about it
           zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
           # First start bootstraps every LazyVim plugin (+ Mason, treesitter); bound it, don't fail on it.
+          # 300s: compiling the 40 treesitter parsers alone takes about two minutes on the macOS runner.
           # perl's alarm, not timeout(1): macOS has no timeout, so the check never ran there.
-          perl -e 'alarm shift; exec @ARGV' 120 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 120s"
+          perl -e 'alarm shift; exec @ARGV' 300 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 300s"
           tmux -f ~/.tmux.conf list-keys >/dev/null
           # The launcher must start the real CLI on its own Node, not the default one.
           ~/.local/bin/sync-worktrees --version
