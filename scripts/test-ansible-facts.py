@@ -67,7 +67,7 @@ changed_when: windows_agents.stdout is defined
 
     root = Path(__file__).resolve().parents[1]
     paths = sorted([
-        root / "setup.yml", root / "windows.yml", root / ".github/sudo-compat.yml",
+        root / "setup.yml", root / "windows.yml", *root.glob(".github/*.yml"),
         *root.glob("tasks/*.yml"), *root.glob("vars/*.yml"),
     ])
     failures = []
