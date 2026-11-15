@@ -117,19 +117,4 @@ Containers use `restart: unless-stopped`, so they return when the runtime starts
 
 - Claude Code features tuned for Claude models, such as tool search and effort, behave differently on GPT models.
 - The gateway uses your subscription logins. Check the provider's terms before relying on it for heavy automation.
-- The gateway has no compression. Headroom was removed because this setup needs routing, not token compression.
-
-## Retire Headroom
-
-Headroom listened on `127.0.0.1:8787`. A session started before the config change keeps using that port until you restart it. Stopping the service is safe only after every open Claude, Codex, Pi and Hermes session has restarted.
-
-Live configs were backed up to `~/.dotfiles_backup/<timestamp>-headroom-removal/`. To undo a change, copy the file back from that folder.
-
-```sh
-launchctl bootout "gui/$(id -u)/com.headroom.evaluation"
-launchctl bootout "gui/$(id -u)/com.dotfiles.headroom-logrotate"
-rm ~/Library/LaunchAgents/com.headroom.evaluation.plist ~/Library/LaunchAgents/com.dotfiles.headroom-logrotate.plist
-uv tool uninstall headroom-ai
-```
-
-`~/.headroom` holds about 160 MB of savings history and the CCR store. Delete it only when you no longer want that data.
+- The gateway has no compression.

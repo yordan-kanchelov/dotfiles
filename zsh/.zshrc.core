@@ -25,7 +25,11 @@ setopt inc_append_history hist_ignore_dups hist_ignore_space
 # ============================================
 # PLUGIN MANAGER (sheldon)
 # ============================================
-eval "$(sheldon source)"
+# Guarded like every tool init below: after a configs-only run
+# (--skip-tags packages) a missing tool must not print an error in every new shell.
+if command -v sheldon &> /dev/null; then
+  eval "$(sheldon source)"
+fi
 
 # ============================================
 # COMPLETIONS
@@ -76,20 +80,29 @@ _init_fzf() {
   return 0
 }
 
+_init_atuin() {
+  if command -v atuin &> /dev/null; then
+    eval "$(atuin init zsh)"
+  fi
+}
+
 if [[ -n ${zvm_after_init_commands+x} ]]; then
-  zvm_after_init_commands+=('_init_fzf; eval "$(atuin init zsh)"')
+  zvm_after_init_commands+=('_init_fzf; _init_atuin')
 else
   _init_fzf
-  eval "$(atuin init zsh)"
+  _init_atuin
 fi
-eval "$(starship init zsh)"
-eval "$(zoxide init zsh)"
+if command -v starship &> /dev/null; then
+  eval "$(starship init zsh)"
+fi
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
+fi
 
 # ============================================
 # ALIASES
 # ============================================
 alias lg='lazygit'
-alias ghcs='gh copilot suggest'
 alias ta="tmux attach-session -t"
 alias tn="tmux new -s"
 alias tls="tmux list-sessions"
@@ -100,10 +113,15 @@ alias tnw="tmux new-window"
 alias th="tmux split-window -h"
 alias tv="tmux split-window -v"
 alias tkp="exit"
-alias vim="nvim"
+if command -v nvim &> /dev/null; then
+  alias vim="nvim"
+fi
 alias ':q'='exit'
-alias l='eza -l -b --all --header --git --icons --group-directories-first'
-alias ls='eza -l -b --all --header --git --icons --group-directories-first'
+# Only with eza present: an unconditional alias would leave no working `ls` without it.
+if command -v eza &> /dev/null; then
+  alias l='eza -l -b --all --header --git --icons --group-directories-first'
+  alias ls='eza -l -b --all --header --git --icons --group-directories-first'
+fi
 alias cleanc='clean_dev_caches'
 alias cleanp='clean_project'
 alias supd='sheldon lock --update'
