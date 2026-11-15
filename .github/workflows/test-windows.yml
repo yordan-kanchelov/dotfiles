@@ -41,6 +41,9 @@ jobs:
       - name: Verify PowerShell 7 agent results
         shell: pwsh
         run: ./windows/test-agents.ps1
+      - name: Verify Herdr skills and integrations against the installed Herdr
+        shell: powershell
+        run: ./windows/test-herdr.ps1
   ansible-syntax:
     runs-on: ubuntu-latest
     steps:
@@ -125,3 +128,6 @@ jobs:
       - name: Verify font registration on PowerShell 7
         shell: pwsh
         run: ./windows/test-fonts.ps1
+      - name: Verify the font download from the Nerd Fonts release
+        shell: powershell
+        run: ./windows/test-fonts.ps1 -Download

@@ -27,6 +27,12 @@ Merge all global rules from the harness guide into the destination's instruction
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
 
+## sync-worktrees MCP
+
+`scripts/install-sync-worktrees.sh` installs [sync-worktrees](https://github.com/yordan-kanchelov/sync-worktrees) and registers its stdio MCP server, `sync-worktrees-mcp`, with Claude Code and Codex when their CLIs are installed. It uses `claude mcp add --scope user` and `codex mcp add`, and skips a harness that already has a server named `sync-worktrees`. `ansible-playbook setup.yml --tags sync-worktrees` runs it; `--check` previews the changes.
+
+The CLI needs Node 24, so the script installs that version through fnm beside the default Node. Its launchers go in `~/.local/bin`, and the registrations point at the launcher's absolute path. Pi, Hermes, and OpenCode are not configured. Add the same command to their own MCP settings by hand.
+
 ## Sloptrim
 
 [Sloptrim](https://github.com/seyedehsanhadi/sloptrim) is pinned at `9b3e2efe6ab64d9b60c214ad1213b2b30bbddb27` (0.9.6). The package keeps the upstream skill, Python detector, pattern reference, Claude hooks and marketplace, command wrapper, Cursor rule, and license files unchanged. Tests, recordings, images, and research tools are omitted. Source and payload hashes are in `sources.json`.

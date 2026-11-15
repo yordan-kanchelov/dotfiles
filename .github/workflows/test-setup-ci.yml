@@ -28,8 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Herdr installer regression checks
-        run: bash scripts/test-herdr.sh
+      - name: Herdr and sync-worktrees installer regression checks
+        run: |
+          bash scripts/test-herdr.sh
+          bash scripts/test-sync-worktrees.sh
 
       # ollama: a 1.4 GB download and a user systemd the runner does not have.
       - name: Bootstrap and run the playbook
@@ -48,6 +50,8 @@ jobs:
           # First start bootstraps every LazyVim plugin (+ Mason, treesitter); bound it, don't fail on it.
           timeout 120 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 120s"
           tmux -f ~/.tmux.conf list-keys >/dev/null
+          # The launcher must start the real CLI on its own Node, not the default one.
+          ~/.local/bin/sync-worktrees --version
 
   # Mint is the reason several tasks branch: it reports its own codename
   # ("zena", which no PPA publishes) and keeps the Ubuntu release it derives

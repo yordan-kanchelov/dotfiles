@@ -61,7 +61,9 @@ Node 22 is installed through fnm to match the Unix setup, but an existing defaul
 preserved. Use `fnm use 22` or `fnm default 22` explicitly if wanted. Use `-SkipPackages`,
 `-SkipNode`, `-SkipFonts`, `-SkipTerminal`, or `-SkipWsl` to omit individual steps. A native configs-only run is
 `.\bootstrap.ps1 -SkipPackages -SkipNode -SkipWsl` (including font registration);
-also add `-SkipFonts` to omit font installation. Native path overrides do not sandbox WSL;
+also add `-SkipFonts` to omit font installation. The 0xProto faces are downloaded from the
+[Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) release on first run; faces that are already
+installed are kept. Native path overrides do not sandbox WSL;
 always use `-SkipWsl` when testing only native configuration.
 
 WSL defaults are `-WslDistribution Ubuntu`,
@@ -82,7 +84,8 @@ Validate Windows config installation with `powershell.exe -NoProfile -File .\win
 This checks dry runs, backup preservation, junctions and repeated installation in temporary folders,
 explicitly using `-SkipWsl` to avoid WSL/OS changes.
 `windows/test-fonts.ps1` checks font registration in an isolated HKCU key, preserving unrelated
-values across repeated runs, also with `-SkipWsl`. Run
+values across repeated runs, also with `-SkipWsl`. It installs from a local fixture archive; add
+`-Download` to fetch the real one. Run
 `powershell.exe -NoProfile -File .\windows\test-bootstrap-wsl.ps1` (or use `pwsh` instead)
 to check bootstrap orchestration in a copied, minimal repository with a harmless WSL stub;
 it does not invoke real WSL, install packages or restart Windows. After installing, run
@@ -273,6 +276,7 @@ personal config on top, so Omarchy updates keep working:
   (`ta tn tls tk tkill tren tnw th tv tkp`), `l`, `lg`, `vim`, `sw`, `:q`, `reload`, `y`, `fvim`, `cat`
   (bat/glow/viu), `clear` (also drops tmux scrollback), the `claude` session-id wrapper tmux-resurrect relies
   on, `cleanc`/`cleanp`, `PNPM_HOME`, `~/.secrets`, and Atuin on Ctrl-R and Up (via `bash-preexec`).
+  `sw` expects `sync-worktrees` on `PATH`; the playbook installs it on macOS and Debian/Ubuntu only.
   Omarchy's `ls`, `c` and prompt are left alone.
 - **tmux** — `omarchy/tmux/tmux.conf`, linked to `~/.config/dotfiles/tmux/` and sourced from a marked block
   at the end of Omarchy's `~/.config/tmux/tmux.conf`. It adds the plugins (TPM in
@@ -308,6 +312,9 @@ To undo a layer, delete its marked block.
 - **Lazygit** - Terminal UI for git
 - **GitHub CLI** (`gh`) - GitHub from the command line
 - **fnm** - Fast Node.js version manager
+- **[sync-worktrees](https://github.com/yordan-kanchelov/sync-worktrees)** (`sw`) - one checkout per remote
+  branch. It runs on its own Node 24 while the default stays 22, and its MCP server is registered with
+  Claude Code and Codex when they are installed
 - Language support: Go, Python, Rust
 
 ### Modern CLI Utilities
@@ -320,9 +327,11 @@ To undo a layer, delete its marked block.
 - **zoxide** - Smarter `cd` command
 
 ### Fonts
+Downloaded from the [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) release on first run, not stored
+in this repository. A family that is already installed is left as it is.
 - 0xProto Nerd Font
-- FiraCode Nerd Font
-- RobotoMono Nerd Font
+- FiraCode Nerd Font (macOS and Linux)
+- RobotoMono Nerd Font (macOS and Linux)
 
 ## Running the Playbook
 
@@ -333,6 +342,7 @@ To undo a layer, delete its marked block.
 | Just the symlinks / fonts / tmux / secrets | `ansible-playbook setup.yml --tags symlinks` (or `fonts`, `tmux`, `secrets`) |
 | Skip the 1.4 GB ollama build (Linux) | `ansible-playbook setup.yml -K --skip-tags ollama` |
 | Refresh Herdr's skill and integrations for installed agents | `ansible-playbook setup.yml --tags herdr` |
+| sync-worktrees and its MCP server for Claude Code and Codex | `ansible-playbook setup.yml --tags sync-worktrees` |
 | WSL settings only (`/etc/wsl.conf`: systemd, default user) | `ansible-playbook setup.yml -K --tags wsl` |
 | Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
 | Dry run (on an already set-up machine; `-K` on Linux) | `ansible-playbook setup.yml --check --diff` |
@@ -370,9 +380,9 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   └── Omarchy.yml       # Omarchy links
 ├── brew_packages.yml     # Homebrew formulae & casks
 ├── windows/              # WinGet package list, PowerShell profile, WSL launcher, agent installers, tests
-├── scripts/              # Herdr installer, retired-link migration, agent-setup bundle tool, regression tests
+├── scripts/              # Herdr and sync-worktrees installers, retired-link migration, agent-setup bundle tool, regression tests
 ├── agent-setup/          # Agent plugins, skills and setup guides (not deployed by the playbook)
-├── docs/                 # Dated research notes and benchmarks
+├── docs/                 # Dated research notes
 ├── .github/              # CI workflows, plus the Mint and sudo-compatibility plays they run
 ├── .config/              # Modern tool configs
 │   ├── nvim/             # LazyVim configuration
@@ -385,8 +395,7 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
 ├── omarchy/              # Bash and tmux layers on top of Omarchy's defaults
 ├── tmux/                 # .tmux.conf
-├── xbindkeys/            # Linux mouse-button / tiling bindings
-└── fonts/                # Nerd Font collections
+└── xbindkeys/            # Linux mouse-button / tiling bindings
 ```
 
 ### Backup Location

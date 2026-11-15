@@ -48,5 +48,6 @@ apt_packages:
   - gnupg
   - lsb-release
   - software-properties-common
+  - unzip # the Nerd Fonts archives
   - wget
   - zstd # tar needs it for ollama's .tar.zst

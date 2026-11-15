@@ -67,8 +67,12 @@ Verify = run the playbook again and expect `changed=0`.
   `set-terminal-default.ps1` through `powershell.exe` interop.
 - `agent-setup/` — pinned agent plugins/skills, per-harness guides, Herdr App mods and the CLIProxyAPI
   notes. `scripts/agent-setup-bundle.py` verifies the pins and stages marketplaces.
+- `scripts/install-sync-worktrees.sh` (tags `packages`, `sync-worktrees`) — installs `sync-worktrees` on its
+  own Node 24 through fnm, with launchers in `~/.local/bin`, because the CLI needs a newer Node than
+  `node_version`. Registers its MCP server through `claude mcp add` and `codex mcp add` when those CLIs
+  are installed. A copy already on `PATH` is left alone. Pi, Hermes and OpenCode are not configured.
 - `scripts/install-herdr.sh` and `windows/install-herdr.ps1` — release-matched Herdr skills and integrations. Unix setup detects installed Claude, Codex, Pi and Hermes; Windows agent setup includes Claude/Codex.
-- `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/`, `fonts/` — the linked/copied content.
+- `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/` — the linked content.
 
 ## Key Implementation Details
 
@@ -97,8 +101,8 @@ Play default is `become: false`. Only the apt, login-shell and Linuxbrew-prefix 
 tasks) use `become: true`; run with `-K` on Linux. macOS needs no sudo.
 
 ### Tags
-`packages`, `ollama` (subset of packages), `fonts`, `tmux`, `secrets`, `symlinks`, `herdr`, `wsl`,
-`desktop` (+ `never`).
+`packages`, `ollama` and `sync-worktrees` (subsets of packages), `fonts`, `tmux`, `secrets`, `symlinks`,
+`herdr`, `wsl`, `desktop` (+ `never`).
 `--skip-tags packages` is the configs-only run.
 
 ### Testing
@@ -107,7 +111,8 @@ checks that Claude and Codex configuration stays absent or unchanged. The Window
 Ansible syntax job runs this regression check without installing tools through setup.
 
 The other regression scripts need no provisioning either: `scripts/test-herdr.sh` (installer against a mock
-`herdr`), `scripts/test-agent-migration.sh`, `scripts/test-bootstrap-sudo.sh` and
+`herdr`), `scripts/test-sync-worktrees.sh` (installer against mock `fnm`, `claude` and `codex`),
+`scripts/test-agent-migration.sh`, `scripts/test-bootstrap-sudo.sh` and
 `scripts/test-wsl-bootstrap.sh` (both need `TMPDIR` set), `scripts/test-ansible-facts.py` (rejects injected
 `ansible_*` fact aliases in every play, including the ones under `.github/`), and
 `scripts/test-agent-setup-bundle.py`. `windows/test-*.ps1` cover the PowerShell side.
@@ -123,8 +128,9 @@ tasks are not exercised in CI.
 
 ## Important Notes
 
-- Fonts in `fonts/` are copied (not linked) to `~/Library/Fonts` on macOS or `~/.local/share/fonts` (plus
-  `fc-cache`) on Linux
+- Fonts are not vendored. `setup.yml` unpacks the 0xProto, FiraCode and RobotoMono archives from the Nerd
+  Fonts release into `~/Library/Fonts` on macOS or `~/.local/share/fonts` (plus `fc-cache`) on Linux, and
+  skips a family that is already there. `bootstrap.ps1` fetches the 0xProto faces on Windows
 - On Linux, Homebrew supplies current builds of the CLI tools; apt covers the base system and build deps.
   `ollama` comes from the upstream tarball because brew's Linux bottle is CPU-only
 - Shell configs carry their own runtime OS branching (`zsh/.zprofile` probes the brew prefixes); the playbook

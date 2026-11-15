@@ -2,7 +2,7 @@
 # Dotfiles setup. bootstrap.sh runs this on macOS, Debian and Omarchy.
 #   ansible-playbook setup.yml -K      # Linux — apt/pacman/usermod need sudo
 #   ansible-playbook setup.yml         # macOS
-# Tags:  --skip-tags packages | --tags desktop | --tags symlinks,fonts,tmux,secrets,herdr,wsl | --skip-tags ollama
+# Tags:  --skip-tags packages | --tags desktop | --tags symlinks,fonts,tmux,secrets,herdr,sync-worktrees,wsl | --skip-tags ollama
 # Verify: run it again and expect changed=0, or --check --diff.
 - name: Dotfiles
   hosts: localhost
@@ -14,6 +14,7 @@
     dotfiles: "{{ playbook_dir }}"
     backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_facts['date_time']['iso8601_basic_short'] }}"
     node_version: "22"
+    nerd_fonts: [0xProto, FiraCode, RobotoMono] # archive names in the Nerd Fonts release
     is_wsl: "{{ ansible_facts['system'] == 'Linux' and 'microsoft' in (ansible_facts['kernel'] | lower) }}"
     # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
     is_omarchy: >-
@@ -137,18 +138,7 @@
       when: is_legacy_platform
       tags: packages
 
-    # Families live in subdirectories next to licences and READMEs, so recurse
-    # and keep only the faces.
-    - name: Font faces in repo
-      ansible.builtin.find:
-        paths: "{{ dotfiles }}/fonts"
-        patterns: ["*.ttf", "*.otf", "*.ttc"]
-        recurse: true
-      register: font_faces
-      when: is_legacy_platform
-      tags: fonts
-
-    # copy does not create parent dirs. No mode: ~/Library/Fonts pre-exists as 0700.
+    # copy/unarchive do not create parent dirs. No mode: ~/Library/Fonts pre-exists as 0700.
     - name: Fonts dir # noqa: risky-file-permissions
       ansible.builtin.file:
         path: "{{ fonts_dir }}"
@@ -156,15 +146,19 @@
       when: is_legacy_platform
       tags: fonts
 
-    # Copied, not linked: macOS CoreText is unreliable about symlinked faces in ~/Library/Fonts.
-    - name: Fonts
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: "{{ fonts_dir }}/{{ item | basename }}"
-        mode: "0644"
-      loop: "{{ (font_faces.files | default([])) | map(attribute='path') | sort }}"
-      loop_control:
-        label: "{{ item | basename }}"
+    # Fetched from the Nerd Fonts release instead of vendored: the three families are
+    # ~150 MB of binaries. Real files, not links: macOS CoreText is unreliable about
+    # symlinked faces in ~/Library/Fonts. `creates` keys on one face per family, so a
+    # family that is already installed is neither downloaded nor replaced. .zip, not
+    # .tar.xz: unarchive needs GNU tar for tarballs and macOS ships bsdtar.
+    - name: Nerd Fonts
+      ansible.builtin.unarchive:
+        src: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/{{ item }}.zip"
+        dest: "{{ fonts_dir }}"
+        remote_src: true
+        include: ["*.ttf"] # the archives also carry a README and a licence that would collide
+        creates: "{{ fonts_dir }}/{{ item }}NerdFont-Regular.ttf"
+      loop: "{{ nerd_fonts }}"
       register: fonts
       when: is_legacy_platform
       tags: fonts
@@ -239,6 +233,20 @@
       check_mode: false
       when: is_legacy_platform
       tags: herdr
+
+    # Needs Node 24+, so the script gives it its own Node through fnm beside
+    # node_version, then registers its MCP server with the installed Claude Code and
+    # Codex through their own CLIs. After "Node via fnm": the first Node fnm installs
+    # becomes the default.
+    - name: Sync-worktrees CLI and MCP server
+      ansible.builtin.command:
+        argv: "{{ ['/bin/bash', dotfiles ~ '/scripts/install-sync-worktrees.sh'] + (['--check'] if ansible_check_mode else []) }}"
+      environment: "{{ tool_env | combine({'HOME': home}) }}"
+      register: sync_worktrees
+      changed_when: "'changed:' in sync_worktrees.stdout"
+      check_mode: false
+      when: is_legacy_platform
+      tags: [packages, sync-worktrees]
 
     # tpm's installer shells out to tmux, so a configs-only run (--skip-tags
     # packages) on a box without tmux must skip, not fail.
