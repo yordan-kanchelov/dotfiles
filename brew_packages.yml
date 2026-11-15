@@ -29,7 +29,7 @@ formulae:
     - tlrc           # Rust client for tldr pages
     - tmux
     - tree
-    - tree-sitter    # Parser generator (used by neovim)
+    - tree-sitter-cli # The `tree-sitter` command nvim-treesitter needs; the tree-sitter formula is only the library
     - yazi           # Terminal file manager
 
   development:
