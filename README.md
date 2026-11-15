@@ -11,7 +11,7 @@ For agent plugins, skills, and global prose instructions, start at [agent-setup/
 - 🔁 **Idempotent** - Re-run any time; a second run reports `changed=0`
 - 📦 **Modern CLI tools** - Curated collection of productivity-enhancing utilities
 - 🎨 **Beautiful terminal** - Pre-configured with Nerd Fonts and modern themes
-- ⚡ **Performance focused** - Fast shell startup with lazy-loaded plugins
+- ⚡ **Performance focused** - Fast shell startup: three plugins through sheldon, and the completion dump is rebuilt at most once a day
 - 📝 **LazyVim IDE** - Full-featured Neovim setup with LSP, debugging, and more
 
 ## Quick Start
@@ -110,9 +110,9 @@ ansible-playbook setup.yml -K    # Linux
 ansible-playbook setup.yml       # macOS
 ```
 
-The run also creates `~/.secrets` (mode 600) from a template of placeholder tokens, which `.zprofile`
-sources on login — fill in the ones you use. It is written only when missing, so re-runs never
-overwrite it.
+The run also creates `~/.secrets` (mode 600) from a template of commented-out placeholder tokens, which
+`.zprofile` sources on login — uncomment and fill in the ones you use. It is written only when missing, so
+re-runs never overwrite it.
 
 ### Ubuntu on WSL 2
 
@@ -198,9 +198,12 @@ converts linked settings/config files to local copies so machine-specific hooks 
 not modify their source files. Re-running setup skips current integrations and
 refreshes outdated integrations and skills.
 
-Removing the repository bundles does not automatically delete or migrate old profile
-links to them. Back up and replace those links separately. Herdr's migration requires
-readable link targets and does not repair dangling links to removed bundles.
+Older setups linked `~/.claude` and `~/.codex` paths into those bundles. On macOS and
+Debian/Ubuntu, `setup.yml` (tags `symlinks` and `herdr`) runs `scripts/migrate-agent-links.sh`,
+which replaces each such link with a local copy restored from Git history; a link whose
+content is not in history is removed with a warning. Native Windows has no such step.
+Herdr's own migration there needs readable link targets, so replace dangling links to the
+removed bundles by hand.
 
 On macOS and Debian/Ubuntu (including WSL), `setup.yml` configures installed
 Claude, Codex, Pi and Hermes profiles. It does not install agent CLIs. After
@@ -300,7 +303,7 @@ To undo a layer, delete its marked block.
 - **Neovim** with **LazyVim** - Modern vim with pre-configured IDE features
   - LSP support for intelligent code completion
   - Treesitter for advanced syntax highlighting
-  - Telescope for fuzzy finding
+  - Fuzzy finding with the Snacks picker
   - Custom keybindings and plugins
 - **Lazygit** - Terminal UI for git
 - **GitHub CLI** (`gh`) - GitHub from the command line
@@ -329,6 +332,8 @@ To undo a layer, delete its marked block.
 | Configs only, no packages | `ansible-playbook setup.yml --skip-tags packages` |
 | Just the symlinks / fonts / tmux / secrets | `ansible-playbook setup.yml --tags symlinks` (or `fonts`, `tmux`, `secrets`) |
 | Skip the 1.4 GB ollama build (Linux) | `ansible-playbook setup.yml -K --skip-tags ollama` |
+| Refresh Herdr's skill and integrations for installed agents | `ansible-playbook setup.yml --tags herdr` |
+| WSL settings only (`/etc/wsl.conf`: systemd, default user) | `ansible-playbook setup.yml -K --tags wsl` |
 | Linux desktop: Ulauncher, Ghostty, Bitwarden, draw.io, Flameshot, Cinnamon hot corners/hotkeys, xbindkeys | `ansible-playbook setup.yml -K --tags desktop` (never runs unless asked; needs a graphical session) |
 | Dry run (on an already set-up machine; `-K` on Linux) | `ansible-playbook setup.yml --check --diff` |
 | Verify | Run it again and expect `changed=0` |
@@ -348,10 +353,14 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 ```
 .
 ├── bootstrap.sh          # Installs Ansible, runs setup.yml
+├── bootstrap.ps1         # Native Windows setup, then Ubuntu/WSL through windows/setup-wsl.ps1
 ├── setup.yml             # The playbook: symlink allowlist, package/font/tmux/secrets tasks
+├── windows.yml           # Run from WSL: native Windows agent CLIs, Tailscale, default terminal
 ├── requirements.yml      # The community.general collection the playbook needs
 ├── tasks/
+│   ├── become.yml        # Classic sudo for Ansible where sudo-rs is the default (Ubuntu 26.04)
 │   ├── symlinks.yml      # Backup-then-link
+│   ├── wsl.yml           # /etc/wsl.conf: systemd and default user
 │   ├── debian.yml        # apt, zsh login shell, Homebrew on Linux, ollama
 │   ├── omarchy.yml       # Omarchy: pacman packages, Bash/tmux layers, TPM
 │   └── desktop.yml       # Linux desktop apps and Cinnamon settings (--tags desktop)
@@ -360,14 +369,19 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   ├── Debian.yml        # Linux paths, apt packages, brew exclusions
 │   └── Omarchy.yml       # Omarchy links
 ├── brew_packages.yml     # Homebrew formulae & casks
-├── .github/              # CI workflow, plus the Mint release-resolution play it runs
+├── windows/              # WinGet package list, PowerShell profile, WSL launcher, agent installers, tests
+├── scripts/              # Herdr installer, retired-link migration, agent-setup bundle tool, regression tests
+├── agent-setup/          # Agent plugins, skills and setup guides (not deployed by the playbook)
+├── docs/                 # Dated research notes and benchmarks
+├── .github/              # CI workflows, plus the Mint and sudo-compatibility plays they run
 ├── .config/              # Modern tool configs
 │   ├── nvim/             # LazyVim configuration
 │   ├── starship.toml     # Starship prompt
 │   ├── ghostty/          # Ghostty terminal
 │   ├── atuin/            # Shell history
 │   ├── sheldon/          # Zsh plugin manager
-│   └── yazi/             # Terminal file manager
+│   ├── yazi/             # Terminal file manager
+│   └── herdr/            # Herdr TUI keys and session settings
 ├── zsh/                  # .zprofile, .zshrc, .zshrc.core
 ├── omarchy/              # Bash and tmux layers on top of Omarchy's defaults
 ├── tmux/                 # .tmux.conf
@@ -391,9 +405,13 @@ ansible-lint                     # with ansible-core: ansible-galaxy collection 
 shellcheck bootstrap.sh
 ```
 
+The regression scripts under `scripts/` and `windows/` run without provisioning anything; `AGENTS.md` lists them.
+
 CI runs `bootstrap.sh` and the playbook on macOS and Ubuntu, then runs the playbook a second time and fails
 unless it reports `changed=0`. A third job checks the Linux Mint release resolution the desktop tasks depend
-on, which no runner can cover directly.
+on, which no runner can cover directly, and a lint job runs `ansible-lint`, ShellCheck and the agent-setup
+bundle checks. A second workflow covers the Windows scripts, sudo compatibility on Ubuntu 26.04 and the
+remaining regression scripts.
 
 ## Customization
 
