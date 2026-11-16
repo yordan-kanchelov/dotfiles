@@ -28,6 +28,17 @@ claude plugin install ponytail@ponytail --scope user
 
 On an existing profile, keep matching installs and inspect differences before replacing a marketplace. Remove the old Pstack plugin and its Pstack-only marketplace when replacing it. Keep unrelated marketplace entries. The Chrome DevTools manifest declares `npx chrome-devtools-mcp@1.12.0`; it needs Node, npm, Chrome, and package access. Image View is a mod that shows pasted images as thumbnails above the prompt; run `/reload-plugins` after installing it. It makes no network requests and converts non-PNG pastes with macOS `sips`.
 
+## Open in Editor mod
+
+[mods/open-in-editor/](mods/open-in-editor/) is written in this repo. It has no upstream pin, so `sources.json` and staging leave it out. The `dotfiles-mods` marketplace in [mods/](mods/.claude-plugin/marketplace.json) serves it from the checkout. Run from the repository root:
+
+```sh
+claude plugin marketplace add "$PWD/agent-setup/claude/mods" --scope user
+claude plugin install open-in-editor@dotfiles-mods --scope user
+```
+
+The mod links inline code paths that name an existing file. A click runs `code <git root> -g <file[:line]>`, so VS Code's `code` command must be on `PATH`. Run `/reload-plugins` after installing, and keep the checkout in place. On macOS, `setup.yml` also makes VS Code the default app for the same file types.
+
 ## Profile instructions
 
 Resolve the profile with `claude_config_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"`. Merge all rules from the [CLAUDE.md](CLAUDE.md) template into `$claude_config_home/CLAUDE.md`. Remove earlier skill routing from that file and delete `$claude_config_home/engineering-defaults.md` if present.

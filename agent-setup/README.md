@@ -25,6 +25,7 @@ agent-setup/
     skills.md                Hand-maintained index of bundled skills
   claude/                    Claude setup, manifests, hooks, and Chrome DevTools
     mods/image-view/         Pinned Image View mod payload
+    mods/open-in-editor/     Local Open in Editor mod, served by the dotfiles-mods marketplace
     README.md                Setup steps
     CLAUDE.md                Global instructions template
     inventory.json           Sanitized machine inventory

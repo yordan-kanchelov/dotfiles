@@ -16,6 +16,8 @@ param(
     [string]$RoamingAppDataDirectory = $env:APPDATA,
     [string]$ProfilePath,
     [string]$FontRegistryPath = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts',
+    # URL or local path of the Nerd Fonts 0xProto archive; the fonts are not kept in the repository.
+    [string]$FontArchive = 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip',
     [string]$NodeVersion = '22'
 )
 
@@ -147,18 +149,47 @@ if (-not $SkipTerminal) {
 if (-not $SkipFonts) {
     $fontDestination = Join-Path $LocalAppDataDirectory 'Microsoft\Windows\Fonts'
     $fontRegistry = $FontRegistryPath
-    $fonts = Get-ChildItem -LiteralPath (Join-Path $repo 'fonts\0xProto') -Filter '0xProtoNerdFont-*.ttf'
+    $fontStyles = @('Bold', 'Italic', 'Regular')
+    $missingStyles = @($fontStyles | Where-Object { -not (Test-Path -LiteralPath (Join-Path $fontDestination "0xProtoNerdFont-$_.ttf")) })
     $newFonts = @()
-    foreach ($font in $fonts) {
-        $target = Join-Path $fontDestination $font.Name
-        $same = (Test-Path -LiteralPath $target) -and ((Get-FileHash -LiteralPath $font.FullName).Hash -eq (Get-FileHash -LiteralPath $target).Hash)
-        if (-not $same -and $PSCmdlet.ShouldProcess($target, 'Install per-user Nerd Font')) {
-            Backup-Config $target
-            New-Item -ItemType Directory -Path $fontDestination -Force | Out-Null
-            Copy-Item -LiteralPath $font.FullName -Destination $target -Force
-            $newFonts += $target
+    # Faces that are already installed are kept as they are; only missing ones are fetched.
+    if ($missingStyles.Count -and $PSCmdlet.ShouldProcess($fontDestination, "Install 0xProto Nerd Font from $FontArchive")) {
+        $downloaded = $null
+        if ($FontArchive -notmatch '^https?://') {
+            # ZipFile resolves relative paths against the process directory, not the PowerShell location.
+            $archive = (Resolve-Path -LiteralPath $FontArchive).Path
+        } else {
+            $downloaded = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-0xProto-' + [guid]::NewGuid().ToString('N') + '.zip')
+            $archive = $downloaded
+            $previousProgress = $ProgressPreference
+            # The progress bar makes Windows PowerShell 5 downloads many times slower.
+            $ProgressPreference = 'SilentlyContinue'
+            try { Invoke-WebRequest -UseBasicParsing -Uri $FontArchive -OutFile $downloaded } finally { $ProgressPreference = $previousProgress }
         }
-        $fontName = '0xProto Nerd Font ' + ($font.BaseName -replace '^0xProtoNerdFont-', '') + ' (TrueType)'
+        try {
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            New-Item -ItemType Directory -Path $fontDestination -Force | Out-Null
+            # Extract just the wanted faces: no staging directory to clean up afterwards.
+            $zip = [IO.Compression.ZipFile]::OpenRead($archive)
+            try {
+                foreach ($style in $missingStyles) {
+                    $name = "0xProtoNerdFont-$style.ttf"
+                    $entry = $zip.GetEntry($name)
+                    if (-not $entry) { throw "$name is missing from $FontArchive" }
+                    $target = Join-Path $fontDestination $name
+                    [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $false)
+                    $newFonts += $target
+                }
+            } finally {
+                $zip.Dispose()
+            }
+        } finally {
+            if ($downloaded) { Remove-Item -LiteralPath $downloaded -Force -ErrorAction SilentlyContinue }
+        }
+    }
+    foreach ($style in $fontStyles) {
+        $target = Join-Path $fontDestination "0xProtoNerdFont-$style.ttf"
+        $fontName = "0xProto Nerd Font $style (TrueType)"
         $registered = Get-ItemProperty -LiteralPath $fontRegistry -Name $fontName -ErrorAction SilentlyContinue
         if ((-not $registered -or $registered.$fontName -ne $target) -and $PSCmdlet.ShouldProcess($fontName, 'Register per-user font')) {
             # Registry New-Item -Force empties an existing key, including unrelated fonts.

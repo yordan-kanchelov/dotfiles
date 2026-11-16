@@ -13,35 +13,20 @@ deb_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64', 'arm64': 'arm64'}.get(ansi
 # fetches the upstream build instead. duti sets macOS default apps.
 brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten | difference(['cirruslabs/cli/tart', 'telnet', 'pipx', 'ollama', 'duti']) }}"
 
-# apt first: Homebrew's installer needs build-essential, curl and git, and brew then
-# supplies current builds of nearly everything else in brew_packages.yml.
+# apt covers the base system and what Homebrew's installer needs (build-essential,
+# curl, git). Every CLI tool in brew_packages.yml comes from brew only: a second apt
+# copy is an older build, sometimes under another name (batcat, fdfind), and which
+# one runs would depend on PATH order.
 apt_packages:
-  # core
-  - bat
-  - btop
-  - eza
-  - fd-find
-  - fzf
-  - htop
-  - ncdu
-  - ripgrep
-  - tmux
-  - tree
   # development
   - git
-  - git-lfs
   - telnet # excluded from brew_formulae above, so apt must actually supply it
-  - golang-go
-  - neovim
-  - pipx
+  - pipx # likewise excluded from brew_formulae
   - python3
   - python3-pip
-  - shellcheck
   # shell
-  - zoxide
   - zsh
   # build essentials
-  - apt-transport-https
   - build-essential
   - ca-certificates
   - curl
@@ -49,5 +34,6 @@ apt_packages:
   - gnupg
   - lsb-release
   - software-properties-common
+  - unzip # the Nerd Fonts archives
   - wget
   - zstd # tar needs it for ollama's .tar.zst

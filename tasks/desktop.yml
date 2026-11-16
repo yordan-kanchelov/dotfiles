@@ -33,10 +33,12 @@
 # rofi: Cinnamon has no per-app window overview, so App Exposé is rofi's window
 # mode filtered to one WM_CLASS (xbindkeys/app-expose). wmctrl: xbindkeys/tile
 # moves windows through EWMH messages. x11-utils: those scripts also shell out
-# to xprop/xwininfo, which cinnamon-core does not guarantee.
+# to xprop/xwininfo, which cinnamon-core does not guarantee. xclip: tmux-yank
+# rebinds copy-mode y/Y at plugin load and, with no clipboard tool on PATH, binds
+# them to an "Error! tmux-yank dependencies not installed!" message instead.
 - name: Desktop packages
   ansible.builtin.apt:
-    name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl, x11-utils]
+    name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl, x11-utils, xclip]
   become: true
 
 # Ghostty reached the Ubuntu archive in 26.04. Older bases (Mint 22 sits on

@@ -1,6 +1,6 @@
 # Shared skills
 
-Shared plugin payloads live under `plugins/`; standalone `unslop` and Sloptrim live under `skills/`. Each harness supplies its native manifests separately. Keep each package intact so relative references, agent prompts, and licenses remain available.
+Shared plugin payloads live under `plugins/`; standalone `unslop`, Sloptrim and the `herdr-core` router live under `skills/`. Each harness supplies its native manifests separately. Keep each package intact so relative references, agent prompts, and licenses remain available.
 
 | Payload | Version | Skills | Used by |
 | --- | --- | --- | --- |
@@ -9,6 +9,7 @@ Shared plugin payloads live under `plugins/`; standalone `unslop` and Sloptrim l
 | `plugins/ponytail/` | 5.3.2 | 6 | Claude and Codex |
 | `skills/unslop/` | pinned from 1.16.0 | 1 | Claude, Codex, Hermes, and Pi |
 | `skills/sloptrim/` | 0.9.6 | 1 | Claude, Codex, Hermes, and Pi |
+| `skills/herdr-core/` | pinned at `2e8ebb3` | 1 | Claude and Codex |
 
 [Agent Skills](https://github.com/addyosmani/agent-skills) replaces Open Pstack. It is pinned to `aeac41d4d005999432bb7312f7ff06383a91d59d`. Its root `references/` directory is retained because per-skill copies alone lose shared checklists. Native manifests do not wire the standalone SessionStart helper. Keep the `using-agent-skills` body out of always-on instructions.
 
@@ -25,6 +26,12 @@ Keep existing model choices, native permission boundaries, and hook trust. Workf
 Merge all global rules from the harness guide into the destination's instructions. Claude and Codex templates include prose, context, and external agent rules. Preserve other user guidance. Skills use native discovery; keep obsolete Pstack routing out of the profile.
 
 Ponytail defaults to full mode. Its task ledger and optional webhook remain destination settings; this bundle contains no user configuration or data.
+
+## sync-worktrees MCP
+
+`scripts/install-sync-worktrees.sh` installs [sync-worktrees](https://github.com/yordan-kanchelov/sync-worktrees) and registers its stdio MCP server, `sync-worktrees-mcp`, with Claude Code and Codex when their CLIs are installed. It uses `claude mcp add --scope user` and `codex mcp add`, and skips a harness that already has a server named `sync-worktrees`. `ansible-playbook setup.yml --tags sync-worktrees` runs it; `--check` previews the changes.
+
+The CLI needs Node 24, so the script installs that version through fnm beside the default Node. Its launchers go in `~/.local/bin`, and the registrations point at the launcher's absolute path. Pi, Hermes, and OpenCode are not configured. Add the same command to their own MCP settings by hand.
 
 ## Sloptrim
 
