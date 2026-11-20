@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Integration check: conflicting configs, profile preservation, repeatability, dry run.
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-windows-' + [guid]::NewGuid().ToString('N'))
@@ -37,4 +36,3 @@ if (([regex]::Matches($profileOnce, '# >>> dotfiles Windows >>>')).Count -ne 1) 
 if (@(Get-ChildItem -LiteralPath (Join-Path $testHome '.dotfiles_backup') -Recurse -File).Count -ne $backupCount) { throw 'Second run made backups.' }
 if ((Get-FileHash -LiteralPath $fragment).Hash -ne $fragmentHash) { throw 'Second run changed terminal config.' }
 Write-Host "PASS: dry run, backup, junction, profile preservation and second-run stability. Fixtures: $testRoot"
-# Leave fixtures in Temp: do not recursively delete a tree containing repo junctions.

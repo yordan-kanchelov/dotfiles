@@ -1,39 +1,25 @@
 ---
-# Debian/Ubuntu/Mint values, loaded by setup.yml from ansible_facts['os_family'].
 brew_prefix: /home/linuxbrew/.linuxbrew
 fonts_dir: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts"
 zsh_path: /usr/bin/zsh
-# Unknown arches pass through by name, so a download fails naming the real arch
-# instead of fetching an arm64 binary that cannot run.
 deb_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64', 'arm64': 'arm64'}.get(ansible_facts['architecture'], ansible_facts['architecture']) }}"
 
-# Formulae brew must not install on Linux. Checked against the homebrew-core API:
-# the first three have no Linux bottle (tart runs Apple Silicon VMs; apt already
-# covers telnet and pipx). ollama does, but it is CPU-only — tasks/debian.yml
-# fetches the upstream build instead. duti sets macOS default apps.
 brew_formulae: "{{ formulae | dict2items | map(attribute='value') | flatten | difference(['cirruslabs/cli/tart', 'telnet', 'pipx', 'ollama', 'duti']) }}"
 
-# apt covers the base system and what Homebrew's installer needs (build-essential,
-# curl, git). Every CLI tool in brew_packages.yml comes from brew only: a second apt
-# copy is an older build, sometimes under another name (batcat, fdfind), and which
-# one runs would depend on PATH order.
 apt_packages:
-  # development
   - git
-  - telnet # excluded from brew_formulae above, so apt must actually supply it
-  - pipx # likewise excluded from brew_formulae
+  - telnet
+  - pipx
   - python3
   - python3-pip
-  # shell
   - zsh
-  # build essentials
   - build-essential
   - ca-certificates
   - curl
-  - fontconfig # fc-cache; absent on minimal installs
+  - fontconfig
   - gnupg
   - lsb-release
   - software-properties-common
-  - unzip # the Nerd Fonts archives
+  - unzip
   - wget
-  - zstd # tar needs it for ollama's .tar.zst
+  - zstd

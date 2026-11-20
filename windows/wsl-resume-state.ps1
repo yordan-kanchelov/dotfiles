@@ -1,4 +1,3 @@
-# Shared by the launcher and its isolated registry/file regression test.
 function Register-WslResume {
     [CmdletBinding(SupportsShouldProcess)]
     param(

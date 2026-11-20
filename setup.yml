@@ -1,31 +1,23 @@
 ---
-# Dotfiles setup. bootstrap.sh runs this on macOS, Debian and Omarchy.
-#   ansible-playbook setup.yml -K      # Linux — apt/pacman/usermod need sudo
-#   ansible-playbook setup.yml         # macOS
-# Tags:  --skip-tags packages | --tags desktop | --tags symlinks,fonts,tmux,secrets,herdr,sync-worktrees,wsl | --skip-tags ollama
-# Verify: run it again and expect changed=0, or --check --diff.
 - name: Dotfiles
   hosts: localhost
   connection: local
   vars_files:
-    - brew_packages.yml # -> formulae (dict), casks (list)
+    - brew_packages.yml
   vars:
-    home: "{{ ansible_facts['env']['HOME'] }}" # not `~`: become tasks would expand it to /root
+    home: "{{ ansible_facts['env']['HOME'] }}"
     dotfiles: "{{ playbook_dir }}"
     backup_dir: "{{ home }}/.dotfiles_backup/{{ ansible_facts['date_time']['iso8601_basic_short'] }}"
     node_version: "22"
-    nerd_fonts: [0xProto, FiraCode, RobotoMono] # archive names in the Nerd Fonts release
+    nerd_fonts: [0xProto, FiraCode, RobotoMono]
     is_wsl: "{{ ansible_facts['system'] == 'Linux' and 'microsoft' in (ansible_facts['kernel'] | lower) }}"
-    # Ansible reports Omarchy as plain Archlinux; os-release carries ID=omarchy.
     is_omarchy: >-
       {{ ansible_facts['os_family'] == 'Archlinux'
          and lookup('ansible.builtin.file', '/etc/os-release', errors='ignore') is search('(?m)^ID="?omarchy"?$') }}
     is_legacy_platform: "{{ ansible_facts['os_family'] in ['Darwin', 'Debian'] and not is_omarchy }}"
-    # For the tasks that call brew/fnm/tmux: on PATH now, not just at next login.
     tool_env:
       PATH: "{{ brew_prefix }}/bin:{{ home }}/.local/bin:{{ ansible_facts['env']['PATH'] }}"
       HOMEBREW_NO_AUTO_UPDATE: "1"
-    # Explicit allowlist — never glob ~/.claude or ~/.codex (machine state, caches, credentials).
     dotfile_links:
       - { src: .config/ghostty, dest: .config/ghostty }
       - { src: .config/starship.toml, dest: .config/starship.toml }
@@ -77,11 +69,7 @@
       when: is_legacy_platform
       tags: packages
 
-    # Tap-qualified names (cirruslabs/cli/tart) bypass the module: it fails on any stderr from
-    # `brew info`, and taps print deprecation warnings. Newer brews also refuse formulae from
-    # untrusted taps (tart pulls softnet from its own tap), so the tap is trusted first; the
-    # `|| true` covers brews too old to have `brew trust` -- the install is the real check.
-    - name: Homebrew tap formulae # ponytail: assumes the formula installs bin/<name>
+    - name: Homebrew tap formulae
       ansible.builtin.shell: >
         brew tap {{ item | dirname }} &&
         (brew trust {{ item | dirname }} 2>/dev/null || true) &&
@@ -101,7 +89,6 @@
       when: is_legacy_platform and ansible_facts['os_family'] == 'Darwin'
       tags: packages
 
-    # Skipped until duti (packages) and VS Code (installed by hand) are both present.
     - name: VS Code as the default app for code and text files
       ansible.builtin.shell: |
         set -o pipefail
@@ -119,10 +106,6 @@
       environment: "{{ tool_env }}"
       when: is_legacy_platform and ansible_facts['os_family'] == 'Darwin'
 
-    # fnm picks its data dir itself (legacy ~/.fnm, XDG_DATA_HOME, per-OS default), so ask it
-    # what is installed instead of guessing the path for `creates`. grep without -q: it must
-    # drain fnm's output, or pipefail turns fnm's EPIPE panic into a bogus failure. `fnm
-    # default` runs unconditionally so a drifted default gets repaired, not just fresh installs.
     - name: Node via fnm
       ansible.builtin.shell: |
         set -o pipefail
@@ -138,7 +121,6 @@
       when: is_legacy_platform
       tags: packages
 
-    # copy/unarchive do not create parent dirs. No mode: ~/Library/Fonts pre-exists as 0700.
     - name: Fonts dir # noqa: risky-file-permissions
       ansible.builtin.file:
         path: "{{ fonts_dir }}"
@@ -146,17 +128,12 @@
       when: is_legacy_platform
       tags: fonts
 
-    # Fetched from the Nerd Fonts release instead of vendored: the three families are
-    # ~150 MB of binaries. Real files, not links: macOS CoreText is unreliable about
-    # symlinked faces in ~/Library/Fonts. `creates` keys on one face per family, so a
-    # family that is already installed is neither downloaded nor replaced. .zip, not
-    # .tar.xz: unarchive needs GNU tar for tarballs and macOS ships bsdtar.
     - name: Nerd Fonts
       ansible.builtin.unarchive:
         src: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/{{ item }}.zip"
         dest: "{{ fonts_dir }}"
         remote_src: true
-        include: ["*.ttf"] # the archives also carry a README and a licence that would collide
+        include: ["*.ttf"]
         creates: "{{ fonts_dir }}/{{ item }}NerdFont-Regular.ttf"
       loop: "{{ nerd_fonts }}"
       register: fonts
@@ -183,22 +160,9 @@
         dest: "{{ home }}/.secrets"
         mode: "0600"
         force: false
-        content: |
-          #!/bin/bash
-          # This file contains sensitive credentials and is not tracked by git
-          # Generated by dotfiles setup
-
-          # Uncomment and fill in the ones you use. Left commented so no tool
-          # picks a placeholder up as a real credential.
-          # export BITBUCKET_USERNAME="your.username"
-          # export BITBUCKET_TOKEN="your-token-here"
-          # export OPENAI_API_KEY="your-api-key-here"
-
-          # Add other secrets below as needed
+        src: "{{ playbook_dir }}/files/secrets.template"
       tags: secrets
 
-    # copy force:false never touches an existing file, so a pre-existing
-    # world-readable ~/.secrets would stay that way forever without this.
     - name: Secrets file permissions
       ansible.builtin.file:
         path: "{{ home }}/.secrets"
@@ -212,7 +176,6 @@
       when: is_legacy_platform
       tags: symlinks
 
-    # Older setups linked ~/.claude and ~/.codex paths into the retired claude/ and codex/ bundles.
     - name: Replace retired Claude/Codex links with local copies
       ansible.builtin.command:
         argv: "{{ ['/bin/bash', dotfiles ~ '/scripts/migrate-agent-links.sh'] + (['--check'] if ansible_check_mode else []) }}"
@@ -234,10 +197,6 @@
       when: is_legacy_platform
       tags: herdr
 
-    # Needs Node 24+, so the script gives it its own Node through fnm beside
-    # node_version, then registers its MCP server with the installed Claude Code and
-    # Codex through their own CLIs. After "Node via fnm": the first Node fnm installs
-    # becomes the default.
     - name: Sync-worktrees CLI and MCP server
       ansible.builtin.command:
         argv: "{{ ['/bin/bash', dotfiles ~ '/scripts/install-sync-worktrees.sh'] + (['--check'] if ansible_check_mode else []) }}"
@@ -248,8 +207,6 @@
       when: is_legacy_platform
       tags: [packages, sync-worktrees]
 
-    # tpm's installer shells out to tmux, so a configs-only run (--skip-tags
-    # packages) on a box without tmux must skip, not fail.
     - name: Tmux plugins
       ansible.builtin.shell: |
         command -v tmux >/dev/null || { echo 'tmux not installed, skipping'; exit 0; }
@@ -260,10 +217,6 @@
       when: is_legacy_platform
       tags: tmux
 
-    # A launcher and global hotkeys only mean anything in a graphical session. Never
-    # runs unless asked for:  ansible-playbook setup.yml -K --tags desktop
-    # (desktop.yml itself asserts a graphical session — an explicit --tags desktop
-    # over SSH should fail loudly, not skip every task and report success.)
     - name: Linux desktop
       ansible.builtin.import_tasks: tasks/desktop.yml
       when: ansible_facts['os_family'] == 'Debian' and not is_omarchy

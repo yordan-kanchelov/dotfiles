@@ -1,4 +1,3 @@
-# Run after installation. Checks real native tools using only persistent Windows PATH.
 $ErrorActionPreference = 'Stop'
 $userPathBefore = [Environment]::GetEnvironmentVariable('Path', 'User')
 foreach ($run in 1..2) {

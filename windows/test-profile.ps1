@@ -1,4 +1,3 @@
-# Run with pwsh -NoLogo -File .\windows\test-profile.ps1 after installation.
 $ErrorActionPreference = 'Stop'
 $packages = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'packages.json') -Raw | ConvertFrom-Json
 foreach ($package in $packages) {
@@ -13,7 +12,6 @@ if (-not (Test-Path -LiteralPath $env:YAZI_FILE_ONE)) { throw 'Missing Yazi file
 & node --version
 if ($LASTEXITCODE -ne 0) { throw 'fnm did not initialize Node.' }
 
-# Exercise the Yazi wrapper with a path containing spaces, without launching a TUI.
 $previousDirectory = Get-Location
 $destination = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles cwd ' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null

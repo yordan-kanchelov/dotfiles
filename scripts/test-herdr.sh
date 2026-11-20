@@ -45,7 +45,6 @@ case "$*" in
 esac
 MOCK
 chmod +x "$fixture/bin/herdr"
-# Keep host agent executables out of autodetection, even on developer machines.
 mkdir -p "$fixture/no-agent-bin"
 cat > "$fixture/no-agent-bin/herdr" <<'MOCK'
 #!/bin/bash

@@ -1,5 +1,3 @@
-// The key after the prefix -> [command, args]. Mirrors .config/herdr/config.toml
-// on top of the Herdr TUI's defaults.
 const picker = ["mod.open", { name: "picker" }];
 const openMod = (name) => ["mod.open", { name }];
 
@@ -42,8 +40,6 @@ export const KEYS = {
 };
 for (let index = 1; index <= 9; index++) KEYS[index] = ["tab.select", { index }];
 
-// Shifted punctuation arrives as e.g. keystroke "shift-5" with key_char "%".
-// Only unmodified or Shift-only keys fall back to key_char, so ctrl-x cancels.
 const modified = (keystroke = "") => /(^|-)(ctrl|alt|cmd|super|fn)-/.test(keystroke);
 export const commandFor = (event) =>
   KEYS[event.keystroke] ??

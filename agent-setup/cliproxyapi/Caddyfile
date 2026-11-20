@@ -3,7 +3,6 @@
 	admin off
 }
 
-# The API serves streamed replies, so flush each chunk as it arrives.
 http://local-cliproxyapi.localhost {
 	reverse_proxy cliproxyapi:8317 {
 		flush_interval -1

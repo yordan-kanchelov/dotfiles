@@ -6,6 +6,14 @@ This file provides guidance to coding agents (Claude Code, Codex, etc.) when wor
 
 When changing a configuration or instruction in this repo, apply the matching change to the current machine unless the user asks for repo-only changes. Use the existing install or symlink workflow. Merge agent instructions and settings into the active user profile. Back up regular files before editing. Preserve credentials, permissions, model choices, and unrelated settings. Verify the live result and report anything that could not be applied.
 
+## No code comments
+
+Code in this repository carries no comments ([ADR 0001](docs/adr/0001-no-code-comments.md)). Put the *why* in the
+ADR for the area (index: `docs/adr/README.md`) and update it in the same change. File a GitHub issue for a
+workaround instead of writing a comment that excuses it. `python3 scripts/check-comments.py` enforces this as a ratchet
+against `scripts/comment-baseline.json`. The `/delete-comment` skill (`.claude/skills/delete-comment/`) triages any
+comments that remain.
+
 ## Shared agent tooling
 
 For shared tooling, proxies, hooks, logging, or agent configuration, inspect every installed harness, including Claude Code, Codex, Pi, Hermes, and OpenCode. Apply and verify supported integrations within the user's requested scope. Report which harnesses were configured, excluded, unsupported, or untested.
@@ -33,6 +41,7 @@ ansible-playbook setup.yml --check --diff         # Dry run (already set-up mach
 ansible-playbook setup.yml --syntax-check
 ansible-lint                                      # With ansible-core: ansible-galaxy collection install -r requirements.yml first
 shellcheck bootstrap.sh
+python3 scripts/check-comments.py                 # Comment ratchet; --list shows what is left
 ```
 
 Verify = run the playbook again and expect `changed=0`.
@@ -72,6 +81,10 @@ Verify = run the playbook again and expect `changed=0`.
   `node_version`. Registers its MCP server through `claude mcp add` and `codex mcp add` when those CLIs
   are installed. A copy already on `PATH` is left alone. Pi, Hermes and OpenCode are not configured.
 - `scripts/install-herdr.sh` and `windows/install-herdr.ps1` — release-matched Herdr skills and integrations. Unix setup detects installed Claude, Codex, Pi and Hermes; Windows agent setup includes Claude/Codex.
+- `docs/adr/` — architecture decision records, one per area; the rationale that used to live in comments.
+- `scripts/check-comments.py` — the comment ratchet. `--list`, `--strip <paths>`, `--update` (lowers only);
+  pinned upstream payloads are skipped by reading `agent-setup/*/sources.json`.
+- `files/secrets.template` — the `~/.secrets` template that setup copies.
 - `.config/` (nvim, ghostty, atuin, sheldon, yazi, herdr/config.toml, starship.toml), `zsh/`, `tmux/`, `xbindkeys/` — the linked content.
 
 ## Key Implementation Details
@@ -87,7 +100,7 @@ symlink is left alone, so a no-op run creates no backup directory. Parent direct
 `mode` so pre-existing dirs keep theirs.
 
 ### Copy-if-absent Files
-`~/.secrets` (mode 600, sourced by `.zprofile` and `personal.bash`) is copied only when missing. Its
+`~/.secrets` (mode 600, sourced by `.zprofile` and `personal.bash`) is copied from `files/secrets.template` only when missing. Its
 template entries are commented out, so no placeholder is ever exported as a credential.
 
 Setup does not deploy repository Claude or Codex configuration. CLI installation and Herdr skills
@@ -115,13 +128,13 @@ The other regression scripts need no provisioning either: `scripts/test-herdr.sh
 `scripts/test-agent-migration.sh`, `scripts/test-bootstrap-sudo.sh` and
 `scripts/test-wsl-bootstrap.sh` (both need `TMPDIR` set), `scripts/test-ansible-facts.py` (rejects injected
 `ansible_*` fact aliases in every play, including the ones under `.github/`), and
-`scripts/test-agent-setup-bundle.py`. `windows/test-*.ps1` cover the PowerShell side.
+`scripts/test-agent-setup-bundle.py` and `scripts/test-check-comments.py`. `windows/test-*.ps1` cover the PowerShell side.
 
 CI (`.github/workflows/test-setup-ci.yml`) runs `bootstrap.sh` + the playbook on `macos-latest` and
 `ubuntu-latest` with `--skip-tags ollama`, then runs the playbook again and fails unless the recap shows
 `changed=0`. A third job runs `.github/mint-release.yml`, which asserts the release
 resolution the desktop tasks rely on against fixtured Linux Mint 22.3 identity files (no runner ships Mint,
-and the official container reports `ID=ubuntu` — it carries Mint's package base, not its identity). A lint job runs `ansible-lint`, the agent-setup bundle checks, the Herdr App key-map test and `shellcheck`.
+and the official container reports `ID=ubuntu` — it carries Mint's package base, not its identity). A lint job runs `ansible-lint`, the agent-setup bundle checks, the comment ratchet and its tests, the Herdr App key-map test and `shellcheck`.
 `.github/workflows/test-windows.yml` runs the Windows scripts on `windows-latest`, the sudo compatibility
 play in an Ubuntu 26.04 container, and the remaining shell/Python regression scripts. The desktop and ollama
 tasks are not exercised in CI.

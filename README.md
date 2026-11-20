@@ -379,10 +379,11 @@ Existing files in the way of a symlink are moved to `~/.dotfiles_backup/<timesta
 │   ├── Debian.yml        # Linux paths, apt packages, brew exclusions
 │   └── Omarchy.yml       # Omarchy links
 ├── brew_packages.yml     # Homebrew formulae & casks
+├── files/                # The ~/.secrets template
 ├── windows/              # WinGet package list, PowerShell profile, WSL launcher, agent installers, tests
-├── scripts/              # Herdr and sync-worktrees installers, retired-link migration, agent-setup bundle tool, regression tests
+├── scripts/              # Herdr and sync-worktrees installers, retired-link migration, agent-setup bundle tool, comment ratchet, regression tests
 ├── agent-setup/          # Agent plugins, skills and setup guides (not deployed by the playbook)
-├── docs/                 # Dated research notes
+├── docs/                 # Architecture decision records (adr/) and dated research notes
 ├── .github/              # CI workflows, plus the Mint and sudo-compatibility plays they run
 ├── .config/              # Modern tool configs
 │   ├── nvim/             # LazyVim configuration

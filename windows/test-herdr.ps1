@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Exercise the real Herdr binary against an isolated profile, without touching user hooks.
 $ErrorActionPreference = 'Stop'
 $original = @{}
 foreach ($name in @('USERPROFILE', 'HOME', 'APPDATA', 'LOCALAPPDATA', 'CLAUDE_CONFIG_DIR', 'CODEX_HOME')) {
@@ -12,7 +11,6 @@ try {
     $env:HOME = $taskProfile
     $env:APPDATA = Join-Path $taskProfile 'Roaming'
     $env:LOCALAPPDATA = Join-Path $taskProfile 'Local'
-    # An inherited redirect would send the installer outside the isolated profile.
     $env:CLAUDE_CONFIG_DIR = $null
     $env:CODEX_HOME = $null
     $installer = Join-Path $PSScriptRoot 'install-herdr.ps1'
@@ -39,6 +37,5 @@ try {
     Write-Host 'PASS: isolated real Herdr install, skills, repeatability and preview.'
 } finally {
     foreach ($name in $original.Keys) { [Environment]::SetEnvironmentVariable($name, $original[$name], 'Process') }
-    # Leave the isolated profile available for inspection; never recursively delete a computed path.
     Write-Host "Test profile: $taskProfile"
 }

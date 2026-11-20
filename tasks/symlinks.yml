@@ -1,9 +1,4 @@
 ---
-# Link every entry of `links` (src relative to the repo, dest relative to $HOME),
-# moving whatever is in the way into a timestamped backup first. Imported from
-# setup.yml and again from tasks/desktop.yml.
-# No mode on purpose: most of these pre-exist and must keep whatever mode they
-# have; the umask default is right for the rest.
 - name: Parent dirs # noqa: risky-file-permissions
   ansible.builtin.file:
     path: "{{ home }}/{{ item }}"
@@ -18,10 +13,6 @@
     label: "{{ item.dest }}"
   register: link_stat
 
-# Anything that exists (a file, a directory, a dangling or wrong link) and is not
-# already the exact link gets moved aside. `file state=link` refuses to replace a
-# real directory, so this must run first. mkdir lives inside the gated task so a
-# no-op run leaves no empty backup dir behind.
 - name: Back up whatever is in the way
   ansible.builtin.shell: >
     mkdir -p "{{ backup_dir }}" &&

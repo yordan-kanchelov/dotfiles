@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Exercise the real bootstrap only in a copied repository with a harmless WSL stub.
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-bootstrap-wsl-' + [guid]::NewGuid().ToString('N'))
@@ -141,7 +140,6 @@ try {
         Assert-True ($result.Failure.ToString() -match 'ResumeStatus') 'Unrecognized status failure was not clear.'
         Assert-True ($result.Output -notmatch '(?i)setup complete') "$status WSL status claimed completion."
     }
-    # Real setup-wsl intentionally emits no ResumeStatus for a dry run.
     $env:DOTFILES_BOOTSTRAP_STATUS = 'Missing'
     $result = Invoke-BootstrapCase 'preview-no-status' @{ WhatIf = $true }
     Assert-True ($result.Output -match 'Preview complete') 'Preview requires a real-run status.'
@@ -162,4 +160,3 @@ try {
     $env:DOTFILES_BOOTSTRAP_STATUS = $savedStatus
     $env:Path = $savedPath
 }
-# Leave generated fixtures in Temp; never recursively delete trees containing junctions.

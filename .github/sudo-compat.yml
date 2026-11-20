@@ -1,5 +1,4 @@
 ---
-# Run as the password-protected fixture user in the Ubuntu 26.04 CI container.
 - name: Verify Ubuntu sudo compatibility
   hosts: localhost
   connection: local

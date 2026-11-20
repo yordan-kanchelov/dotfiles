@@ -14,7 +14,6 @@ import sys
 import yaml
 
 
-# Gathered facts, not connection settings, magic variables, or registered results.
 FACT_NAMES = frozenset({
     "architecture", "date_time", "distribution", "distribution_release",
     "distribution_version", "env", "kernel", "os_family", "service_mgr",
@@ -50,8 +49,6 @@ def audit(text):
 
 
 def main():
-    # Prove the scanner rejects every audited alias and dot-style fact access,
-    # but accepts ordinary Ansible settings/magic variables/registered results.
     for name in sorted(FACT_NAMES):
         assert audit("value: '{{ ansible_" + name + " }}'\n")[0], name
         assert not audit('value: "{{ ansible_facts[\'' + name + '\'] }}"\n')[0], name

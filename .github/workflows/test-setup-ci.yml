@@ -17,13 +17,11 @@ jobs:
         os: [macos-latest, ubuntu-latest]
     defaults:
       run:
-        shell: bash # -eo pipefail: a failed playbook behind `| tee` must fail the step
+        shell: bash
     env:
       CI: "true"
       ANSIBLE_INJECT_FACT_VARS: "false"
       HOMEBREW_NO_ANALYTICS: "1"
-      # The playbook's tool_env sets this for its own tasks, but bootstrap.sh's
-      # `brew install ansible` runs before that and would trigger a full update.
       HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +31,6 @@ jobs:
           bash scripts/test-herdr.sh
           bash scripts/test-sync-worktrees.sh
 
-      # ollama: a 1.4 GB download and a user systemd the runner does not have.
       - name: Bootstrap and run the playbook
         run: ./bootstrap.sh --skip-tags ollama
 
@@ -45,24 +42,11 @@ jobs:
       - name: Smoke-test linked configs
         run: |
           ls -la ~/.zshrc ~/.zprofile ~/.zshrc.core ~/.tmux.conf ~/.config/nvim
-          # .zshrc.core is pulled in by a runtime `source`, so parsing .zshrc alone proves nothing about it
           zsh -n ~/.zshrc ~/.zshrc.core ~/.zprofile
-          # First start bootstraps every LazyVim plugin (+ Mason, treesitter); bound it, don't fail on it.
-          # 300s: compiling the 40 treesitter parsers alone takes about two minutes on the macOS runner.
-          # perl's alarm, not timeout(1): macOS has no timeout, so the check never ran there.
           perl -e 'alarm shift; exec @ARGV' 300 nvim --headless -c quit || echo "::warning::nvim did not exit cleanly within 300s"
           tmux -f ~/.tmux.conf list-keys >/dev/null
-          # The launcher must start the real CLI on its own Node, not the default one.
           ~/.local/bin/sync-worktrees --version
 
-  # Mint is the reason several tasks branch: it reports its own codename
-  # ("zena", which no PPA publishes) and keeps the Ubuntu release it derives
-  # from in a separate file. No runner ships Mint, and the official container
-  # turns out to report ID=ubuntu -- it carries Mint's package base, not its
-  # identity -- so the identity files are written here from a real 22.3 install
-  # and the resolution logic is asserted against them. That logic is the part
-  # unique to Mint; the packages themselves are already covered by
-  # ubuntu-latest, which shares the same noble base.
   mint:
     name: Mint release resolution
     runs-on: ubuntu-latest
@@ -71,7 +55,7 @@ jobs:
       run:
         shell: bash
     env:
-      ANSIBLE_INJECT_FACT_VARS: "false" # same as the setup job: the play must not lean on injected facts
+      ANSIBLE_INJECT_FACT_VARS: "false"
     steps:
       - name: Ansible
         run: |
@@ -80,7 +64,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      # After the install, so apt still sees the image's own identity.
       - name: Identify as Linux Mint 22.3
         run: |
           mkdir -p /etc/upstream-release
@@ -117,8 +100,11 @@ jobs:
           python3 scripts/agent-setup-bundle.py
           python3 scripts/test-agent-setup-bundle.py
 
-      # keys.js is an ES module without a package.json; Node 22 (the playbook's
-      # node_version) detects that, older runner defaults do not.
+      - name: Comment ratchet
+        run: |
+          python3 scripts/check-comments.py
+          python3 scripts/test-check-comments.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -131,5 +117,4 @@ jobs:
         with:
           severity: error
           scandir: "."
-          # Keep pinned upstream payloads unchanged; verify them with the bundle checks above.
           ignore_paths: "zsh agent-setup/universal/plugins"

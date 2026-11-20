@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Run elevated only for the Windows feature; Linux/user provisioning stays unelevated.
 [CmdletBinding(SupportsShouldProcess)]
 param([Parameter(Mandatory)][string]$ResultPath, [switch]$InstallPackage)
 $ErrorActionPreference = 'Stop'

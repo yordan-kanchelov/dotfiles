@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Exercise a copied bootstrap with isolated commands; never run sudo or install packages.
 set -euo pipefail
 : "${TMPDIR:?Set TMPDIR to a scratch directory before running these tests}"
 script_dir=$(cd "$(dirname "$0")" && pwd)
@@ -18,14 +17,11 @@ new_case() {
   case_dir="$fixture/$case_name"
   bin="$case_dir/bin"
   mkdir -p "$bin"
-  # A closed PATH prevents a missing fixture from invoking a real package manager.
   ln -s "$(command -v dirname)" "$bin/dirname"
   ln -s "$(command -v grep)" "$bin/grep"
   printf 'ID=ubuntu\nID_LIKE=debian\n' > "$case_dir/os-release"
-  # Substitute only absolute platform paths, not bootstrap logic.
   local content
   content=$(< "$bootstrap")
-  # Windows checkouts may use CRLF; run the fixture with Linux line endings.
   content=${content//$'\r'/}
   content=${content//\/etc\/os-release/$case_dir/os-release}
   content=${content//\/usr\/bin\/sudo.ws/$bin/sudo.ws}
@@ -42,14 +38,12 @@ printf '\n' >> "$CALLS"
 if [[ ${1:-} == -n ]]; then
   policy=$DEFAULT_POLICY
   if [[ $implementation == sudo.ws ]]; then policy=$CLASSIC_POLICY; fi
-  # Cached auth passes the old probe, but not the timestamp-ignoring -k probe.
   case "$policy:$*" in
     passwordless:*) exit 0 ;;
     cached:'-n true') exit 0 ;;
     *) exit 1 ;;
   esac
 fi
-# Simulate apt refreshing this implementation's credential cache without sudo.
 case "$*" in
   'apt-get update -y') exit 0 ;;
   'apt-get install -y ansible')
@@ -74,7 +68,6 @@ STUB
 printf 'apt-get must only be passed to the sudo stub\n' >&2
 exit 99
 STUB
-  # chmod follows command-line symlinks; never touch the system tools linked above.
   chmod +x "$bin/sudo" "$bin/ansible-playbook" "$bin/ansible-galaxy" \
     "$bin/apt-get" "$case_dir/playbook-stub"
   default_policy=cached
@@ -143,8 +136,6 @@ assert_args -K
 printf 'PASS: classic cached credentials require -K despite passwordless default sudo\n'
 
 new_case nonexecutable-classic
-# A symlink into the native filesystem also works when TMPDIR is a DrvFS mount
-# without Unix permission metadata (where chmod -x would have no effect).
 ln -s /etc/hosts "$bin/sudo.ws"
 [[ ! -x "$bin/sudo.ws" ]] || fail 'fixture target unexpectedly executable'
 run_bootstrap

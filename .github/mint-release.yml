@@ -1,8 +1,4 @@
 ---
-# Asserted by the Mint CI job against fixtured 22.3 identity files. The two
-# expressions below are copied from tasks/desktop.yml; Mint is the only distro
-# where they differ from the plain facts, and --tags desktop cannot run in CI
-# (it needs a graphical session), so this is the only cover they get.
 - name: Mint release resolution
   hosts: localhost
   connection: local
@@ -12,13 +8,11 @@
       ansible.builtin.assert:
         that:
           - ansible_facts['distribution'] == 'Linux Mint'
-          - ansible_facts['os_family'] == 'Debian' # picks vars/Debian.yml
-          - ansible_facts['distribution_release'] == 'zena' # what a PPA would choke on
+          - ansible_facts['os_family'] == 'Debian'
+          - ansible_facts['distribution_release'] == 'zena'
         fail_msg: "got {{ ansible_facts['distribution'] }}/{{ ansible_facts['os_family'] }}/{{ ansible_facts['distribution_release'] }}"
         quiet: true
 
-    # Ulauncher's PPA only has Ubuntu series, so the repo task passes this
-    # explicitly rather than letting apt_repository default to 'zena'.
     - name: Ulauncher PPA codename
       ansible.builtin.assert:
         that: codename == 'noble'
@@ -27,8 +21,6 @@
       vars:
         codename: "{{ lookup('ansible.builtin.ini', 'UBUNTU_CODENAME', type='properties', file='/etc/os-release') }}"
 
-    # Ghostty's community .deb names Ubuntu assets by version, so Mint must
-    # resolve 24.04 from upstream-release, never its own 22.3.
     - name: Ghostty .deb release
       ansible.builtin.assert:
         that: release == '24.04'

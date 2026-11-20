@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Full launcher regression with isolated paths, native WSL stub and elevation/reboot seams.
 $ErrorActionPreference = 'Stop'
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-wsl-launcher-' + [guid]::NewGuid().ToString('N'))
 $original = @{}

@@ -3,8 +3,6 @@
 param([ValidateSet('claude', 'codex')][string[]]$Targets = @('claude', 'codex'), [switch]$OutputJson)
 $ErrorActionPreference = 'Stop'
 $herdr = (Get-Command herdr.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-# Native output is decoded with the console code page; Herdr writes UTF-8. Restore the
-# caller's console afterwards. Without a console the setter throws and nothing changes.
 $savedEncoding = [Console]::OutputEncoding
 try { [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false } catch { $savedEncoding = $null }
 try {
@@ -17,23 +15,18 @@ try {
 }
 $changed = $false
 $planned = @()
-# The same redirects scripts/install-herdr.sh honours; Herdr and the agents read them too.
 $profiles = @{ claude = $env:CLAUDE_CONFIG_DIR; codex = $env:CODEX_HOME }
 foreach ($target in $Targets) {
     $profileDirectory = $profiles[$target]
     if (-not $profileDirectory) { $profileDirectory = Join-Path $env:USERPROFILE ".$target" }
     $skillsDirectory = Join-Path $profileDirectory 'skills'
-    # Older dotfiles linked the entire Claude skills directory into the checkout.
     if ((Test-Path -LiteralPath $skillsDirectory) -and (Get-Item -LiteralPath $skillsDirectory).LinkType) {
         $planned += "Make $target skills a local directory"
         if ($PSCmdlet.ShouldProcess($skillsDirectory, 'Replace directory link with a local copy')) {
-            # Directory moves in Windows PowerShell 5.1 must stay on one drive, so stage
-            # inside the profile directory itself (a redirected one may sit on another drive).
             $temporary = Join-Path $profileDirectory ('.dotfiles-skills-' + [guid]::NewGuid().ToString('N'))
             New-Item -ItemType Directory -Path $temporary | Out-Null
             $stagedSkills = Join-Path $temporary 'skills'
             Copy-Item -LiteralPath $skillsDirectory -Destination $stagedSkills -Recurse
-            # Directory.Delete removes the link itself, without traversing its target.
             [IO.Directory]::Delete($skillsDirectory)
             Move-Item -LiteralPath $stagedSkills -Destination $skillsDirectory
             Remove-Item -LiteralPath $temporary

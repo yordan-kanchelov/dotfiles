@@ -16,7 +16,6 @@ param(
     [string]$RoamingAppDataDirectory = $env:APPDATA,
     [string]$ProfilePath,
     [string]$FontRegistryPath = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts',
-    # URL or local path of the Nerd Fonts 0xProto archive; the fonts are not kept in the repository.
     [string]$FontArchive = 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip',
     [string]$NodeVersion = '22'
 )
@@ -31,7 +30,6 @@ if (-not $ProfilePath) {
 }
 
 function Update-SessionPath {
-    # Preserve injected tool paths as well as paths just added by installers.
     $paths = @([Environment]::GetEnvironmentVariable('Path', 'Machine'),
         [Environment]::GetEnvironmentVariable('Path', 'User'), $env:Path,
         (Join-Path $LocalAppDataDirectory 'Microsoft\WinGet\Links'),
@@ -72,7 +70,6 @@ function Set-ConfigJunction([string]$Source, [string]$Destination) {
     }
     if ($PSCmdlet.ShouldProcess($Destination, "Back up conflict and junction to $Source")) {
         if ($existing) {
-            # Move the entry itself; never recursively delete or follow an existing link.
             New-Item -ItemType Directory -Path $backupRoot -Force | Out-Null
             $backup = Join-Path $backupRoot ([IO.Path]::GetFileName($Destination) + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
             Move-Item -LiteralPath $Destination -Destination $backup
@@ -89,7 +86,6 @@ if (-not $SkipPackages) {
     $packages = Get-Content -LiteralPath (Join-Path $repo 'windows\packages.json') -Raw | ConvertFrom-Json
     foreach ($package in $packages) {
         $available = Get-Command $package.command -ErrorAction SilentlyContinue
-        # Codex injects its private rg.exe into this process; regular terminals cannot use it.
         if ($available -and $available.Source -notlike '*\.codex\packages\*') {
             Write-Host "Available: $($package.command)"
             continue
@@ -122,7 +118,6 @@ if (-not $SkipNode) {
 
 Set-ConfigJunction (Join-Path $repo '.config\nvim') (Join-Path $LocalAppDataDirectory 'nvim')
 Set-ConfigJunction (Join-Path $repo '.config\yazi') (Join-Path $RoamingAppDataDirectory 'yazi\config')
-# A file, not a directory, so it cannot be a junction; copy it like the profile block.
 Write-ManagedFile (Join-Path $RoamingAppDataDirectory 'herdr\config.toml') ([IO.File]::ReadAllText((Join-Path $repo '.config\herdr\config.toml')))
 
 $start = '# >>> dotfiles Windows >>>'
@@ -152,24 +147,20 @@ if (-not $SkipFonts) {
     $fontStyles = @('Bold', 'Italic', 'Regular')
     $missingStyles = @($fontStyles | Where-Object { -not (Test-Path -LiteralPath (Join-Path $fontDestination "0xProtoNerdFont-$_.ttf")) })
     $newFonts = @()
-    # Faces that are already installed are kept as they are; only missing ones are fetched.
     if ($missingStyles.Count -and $PSCmdlet.ShouldProcess($fontDestination, "Install 0xProto Nerd Font from $FontArchive")) {
         $downloaded = $null
         if ($FontArchive -notmatch '^https?://') {
-            # ZipFile resolves relative paths against the process directory, not the PowerShell location.
             $archive = (Resolve-Path -LiteralPath $FontArchive).Path
         } else {
             $downloaded = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-0xProto-' + [guid]::NewGuid().ToString('N') + '.zip')
             $archive = $downloaded
             $previousProgress = $ProgressPreference
-            # The progress bar makes Windows PowerShell 5 downloads many times slower.
             $ProgressPreference = 'SilentlyContinue'
             try { Invoke-WebRequest -UseBasicParsing -Uri $FontArchive -OutFile $downloaded } finally { $ProgressPreference = $previousProgress }
         }
         try {
             Add-Type -AssemblyName System.IO.Compression.FileSystem
             New-Item -ItemType Directory -Path $fontDestination -Force | Out-Null
-            # Extract just the wanted faces: no staging directory to clean up afterwards.
             $zip = [IO.Compression.ZipFile]::OpenRead($archive)
             try {
                 foreach ($style in $missingStyles) {
@@ -192,7 +183,6 @@ if (-not $SkipFonts) {
         $fontName = "0xProto Nerd Font $style (TrueType)"
         $registered = Get-ItemProperty -LiteralPath $fontRegistry -Name $fontName -ErrorAction SilentlyContinue
         if ((-not $registered -or $registered.$fontName -ne $target) -and $PSCmdlet.ShouldProcess($fontName, 'Register per-user font')) {
-            # Registry New-Item -Force empties an existing key, including unrelated fonts.
             if (-not (Test-Path -LiteralPath $fontRegistry)) {
                 New-Item -Path $fontRegistry | Out-Null
             }
@@ -221,7 +211,6 @@ if (-not $SkipWsl) {
     }
     $wslResult = $null
     $wslStatusCount = 0
-    # Native/Ansible progress shares the success pipeline with the final status.
     & (Join-Path $repo 'windows\setup-wsl.ps1') @wslOptions | ForEach-Object {
         if ($null -ne $_ -and $_.PSObject.Properties['ResumeStatus']) {
             $wslResult = $_

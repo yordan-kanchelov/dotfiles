@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Release-matched skills and integrations for installed dotfiles harnesses.
 set -euo pipefail
 check=false
 if [[ "${1:-}" == --check ]]; then check=true; shift; fi
@@ -12,7 +11,6 @@ if (( ${#targets[@]} == 0 )); then
 fi
 skill=$(herdr --skill)
 status=$(herdr integration status)
-# Bash 3.2 (macOS) treats an empty array as unset under nounset.
 for target in ${targets[@]+"${targets[@]}"}; do
   case "$target" in
     claude) profile="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ;;
