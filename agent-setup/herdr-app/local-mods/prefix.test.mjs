@@ -1,4 +1,3 @@
-// node --test agent-setup/herdr-app/local-mods/prefix.test.mjs
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { commandFor } from "./prefix/keys.js";

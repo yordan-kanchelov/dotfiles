@@ -1,6 +1,4 @@
-// A lone-backtick code span: `path` or `path:12`; ``double`` spans are left alone.
 const SPAN = /(?<!`)`([^`\s:]+)(?::(\d+))?`(?!`)/g
-// Existing links (inline, reference, autolink) and longer-delimiter code spans.
 const TAKEN = /\[[^\]\n]*\](?:\([^)\n]*\)|\[[^\]\n]*\])|<[a-z][\w+.-]*:[^>\s]*>|(``+)(?!`)[^\n]*?(?<!`)\1(?!`)/gi
 const OPEN = /^ {0,3}(`{3,}|~{3,})/
 const PATHLIKE = /\/|\.\w+$/
@@ -9,7 +7,6 @@ export type Target = { path: string; line?: number }
 
 const blank = (s: string) => s.replace(/[^\n]/g, ' ')
 
-// The text with fenced code, existing links and longer code spans blanked, so offsets still match the original.
 const prose = (text: string): string => {
   let fence: string | undefined
   const lines = text.split('\n').map(line => {
@@ -34,7 +31,6 @@ export const fromHref = (href: string): Target | undefined => {
   return { path: decodeURIComponent(url.pathname), line: line ? Number(line) : undefined }
 }
 
-// Wraps each span the resolver maps to a file in a markdown link; returns the hrefs it made.
 export const linkify = async (text: string, resolve: (path: string) => Promise<string | undefined>) => {
   let out = ''
   let at = 0

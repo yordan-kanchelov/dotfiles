@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Exercise install-sync-worktrees.sh against mock fnm, claude and codex; nothing
-# is downloaded and no real profile is read.
 set -euo pipefail
 installer="$(cd "$(dirname "$0")" && pwd)/install-sync-worktrees.sh"
 fixture=$(mktemp -d)
@@ -37,7 +35,6 @@ esac
 MOCK
 done
 chmod +x "$fixture/bin/fnm" "$fixture/agents/claude" "$fixture/agents/codex"
-# Closed PATH: host fnm, agents and any real sync-worktrees stay out of the run.
 run() {
   local path=$1
   shift
@@ -60,7 +57,6 @@ grep -qx 'fnm <exec> <--using=24> <npm> <install> <-g> <sync-worktrees>' "$CALLS
 [[ -x "$HOME/.local/bin/sync-worktrees" && -x "$launcher" ]]
 diff -u <(printf '%s\n' --scope user sync-worktrees -- "$launcher") "$fixture/claude-mcp"
 diff -u <(printf '%s\n' sync-worktrees -- "$launcher") "$fixture/codex-mcp"
-# The launcher hands its arguments to the pinned Node, with spaces intact.
 "$launcher" --flag 'two words'
 grep -qx 'fnm <exec> <--using=24> <sync-worktrees-mcp> <--flag> <two words>' "$CALLS"
 
@@ -68,7 +64,6 @@ grep -qx 'fnm <exec> <--using=24> <sync-worktrees-mcp> <--flag> <two words>' "$C
 [[ -z "$(run "$path")" && -z "$(run "$path" --check)" ]]
 if grep -q 'install' "$CALLS"; then echo 'FAIL: a repeat run installed again' >&2; exit 1; fi
 
-# A copy that is already on PATH is used as it is: no Node, no launchers.
 export HOME="$fixture/developer"
 mkdir -p "$fixture/dev-bin" "$HOME"
 printf '#!/bin/sh\n' > "$fixture/dev-bin/sync-worktrees"

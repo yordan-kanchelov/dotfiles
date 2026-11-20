@@ -1,6 +1,3 @@
-// Prefix mode, as in the Herdr TUI: shows a hint and takes the next key. There
-// is no timeout, and no key reaches the terminal. Any other key or Esc cancels.
-
 import { View, div } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { closeOverlay, props, run, theme } from "herdr";

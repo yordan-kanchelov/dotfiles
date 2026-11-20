@@ -30,7 +30,6 @@ foreach ($agent in @(
             $version = (& $command.Source --version 2>&1 | Out-String).Trim()
             $working = $LASTEXITCODE -eq 0
         } catch {
-            # Windows PowerShell 5 can turn native stderr into a terminating error.
             $working = $false
         }
     }

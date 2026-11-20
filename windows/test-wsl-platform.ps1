@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Isolated feature-enablement tests: never enables features or requests elevation.
 $ErrorActionPreference = 'Stop'
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-wsl-platform-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $fixture | Out-Null

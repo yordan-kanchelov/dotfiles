@@ -25,7 +25,6 @@ function Request-WslRestart {
         Write-Host ('Manual resume command: powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -NoExit -File "' + $resumeScript + '" -StateFile "' + $stateFile + '"')
         if ($RestartAndResume) {
             Write-Host 'Setup will resume in a PowerShell console after your next login. Restarting Windows now.'
-            # No -Force: do not forcibly close applications with unsaved work.
             Restart-Computer -ErrorAction Stop
             return [pscustomobject]@{ ResumeStatus = 'RestartScheduled' }
         }
@@ -34,7 +33,6 @@ function Request-WslRestart {
     return [pscustomobject]@{ ResumeStatus = 'RestartRequired' }
 }
 function Invoke-WslCapture([string[]]$Arguments) {
-    # Treat native stderr as data, including under Windows PowerShell 5.
     $ErrorActionPreference = 'Continue'
     $output = & $wslExe @Arguments 2>&1
     $code = $LASTEXITCODE
@@ -42,7 +40,6 @@ function Invoke-WslCapture([string[]]$Arguments) {
 }
 function Invoke-WslList {
     $response = Invoke-WslCapture -Arguments @('--list', '--quiet')
-    # With no distributions, wsl.exe exits non-zero; its error code is not localized.
     if ($response.ExitCode -ne 0 -and $response.Text -match 'WSL_E_DEFAULT_DISTRO_NOT_FOUND') {
         return [pscustomobject]@{ ExitCode = 0; Text = '' }
     }
@@ -55,8 +52,6 @@ function Resolve-WslFailure($Response, [string]$Context) {
     }
     throw "$Context (exit $($Response.ExitCode)): $($Response.Text)"
 }
-# System32 dispatches both MSIX/Store and MSI WSL installations. Do not pin
-# the old Program Files layout: current Microsoft.WSL packages use MSIX.
 $wslExe = Join-Path $env:WINDIR 'System32\wsl.exe'
 $version = Invoke-WslCapture -Arguments @('--version')
 $installPackage = $version.ExitCode -ne 0
@@ -67,8 +62,6 @@ if ($WhatIfPreference) {
     if ($RestartAndResume) { Write-Host 'Would save options, restart Windows if needed, and resume at next login.' }
     return
 }
-# Installing the WSL MSI alone does not enable the WSL 2 Windows feature.
-# CIM can inspect it without admin rights, so working reruns do not ask for UAC.
 $platform = Get-CimInstance -ClassName Win32_OptionalFeature | Where-Object Name -eq 'VirtualMachinePlatform'
 if (-not $platform) { throw 'This Windows installation does not expose the VirtualMachinePlatform feature required by WSL 2.' }
 if ($installPackage -or $platform.InstallState -ne 1) {
@@ -125,8 +118,6 @@ if ($linuxUser -eq 'root') {
         throw "Open $Distribution once and create your normal Linux username/password, then rerun this command. Ansible must not install the user tools as root."
     }
     Write-Host 'Create your Linux account in the Ubuntu window opening now. Setup will continue automatically when it is ready.'
-    # This is intentionally visible: Ubuntu asks the user for their username/password.
-    # Do not wait for that shell to exit after OOBE has already created the account.
     $quotedDistribution = '"' + $Distribution.Replace('"', '') + '"'
     Start-Process -FilePath $wslExe -ArgumentList @('--distribution', $quotedDistribution) -WindowStyle Normal | Out-Null
     $deadline = (Get-Date).AddMinutes(15)
@@ -142,7 +133,6 @@ if ($linuxUser -eq 'root') {
 }
 if (-not $PSCmdlet.ShouldProcess("$Distribution ($linuxUser)", 'Run the Ubuntu Ansible dotfiles setup')) { return }
 
-# Write LF even from a CRLF Windows checkout, and pass arguments without bash -c interpolation.
 $tempScript = [IO.Path]::GetTempFileName()
 try {
     $content = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'bootstrap-wsl.sh')).Replace("`r`n", "`n")

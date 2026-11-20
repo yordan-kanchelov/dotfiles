@@ -18,7 +18,6 @@ git -C "$repo" add -A
 git -C "$repo" commit -qm bundles
 git -C "$repo" rm -rq claude codex
 git -C "$repo" commit -qm 'retire bundles'
-# Ignored skills Claude synced through the old link stay behind in the checkout.
 mkdir -p "$repo/claude/skills/synced/docs"
 echo synced > "$repo/claude/skills/synced/docs/SKILL.md"
 ln -s "$repo/claude/settings.json" "$HOME/.claude/settings.json"

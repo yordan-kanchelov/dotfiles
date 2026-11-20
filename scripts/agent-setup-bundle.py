@@ -17,7 +17,6 @@ def components():
 
 
 def require(ok, message):
-    # Not assert: python -O would strip the integrity checks.
     if not ok:
         raise SystemExit(message)
 

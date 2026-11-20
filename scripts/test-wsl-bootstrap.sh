@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Local Git integration tests; no WSL, network, package installs or Ansible needed.
-# On Git Bash, set TMPDIR to a native C:/... scratch directory before running.
 set -euo pipefail
 : "${TMPDIR:?Set TMPDIR to a scratch directory before running these tests}"
 
@@ -24,7 +22,6 @@ if command -v cygpath >/dev/null; then
 else
   export PATH="$fixture/bin:$PATH"
 fi
-# Stubs are only for provisioning, never Git. Real clones/fetches/merges run below.
 cat > "$fixture/bin/ansible-playbook" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -38,7 +35,6 @@ echo 'Unexpected sudo/package installation during regression test' >&2
 exit 99
 STUB
 chmod +x "$fixture/bin/ansible-playbook" "$fixture/bin/sudo"
-# Linux CI may run as root: stub only the uid check, not checkout operations.
 cat > "$fixture/bin/id" <<'STUB'
 #!/usr/bin/env bash
 [[ "$*" == -u ]] || exit 99

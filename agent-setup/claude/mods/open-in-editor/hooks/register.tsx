@@ -3,7 +3,6 @@ import type { Register } from 'claude-code'
 import { fromHref, linkify } from './links'
 
 export const register: Register = on => {
-  // Files found so far; replies redraw on every scroll. Misses are re-checked, as the file may appear later.
   const found = new Set<string>()
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {

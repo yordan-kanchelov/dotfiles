@@ -6,7 +6,6 @@
       - ansible_facts['user_id'] != 'root'
     fail_msg: Launch the WSL distribution and finish creating your normal Linux user before running bootstrap.sh
 
-# Preserve automount/network/interop settings rather than replacing wsl.conf.
 - name: WSL systemd and default user
   community.general.ini_file:
     path: /etc/wsl.conf

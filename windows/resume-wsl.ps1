@@ -9,7 +9,6 @@ try {
         Repository = [string]$saved.Repository
         Ref = [string]$saved.Ref
         IncludeOllama = [bool]$saved.IncludeOllama
-        # Resume never grants reboot permission that the initial run did not save.
         RestartAndResume = [bool]$saved.RestartAndResume
         RestartAttempt = [int]$saved.RestartAttempt
         Resume = $true

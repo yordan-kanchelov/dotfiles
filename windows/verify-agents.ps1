@@ -2,7 +2,6 @@
 [CmdletBinding()]
 param([switch]$OutputJson)
 $ErrorActionPreference = 'Stop'
-# Deliberately discard inherited process PATH: this is what a fresh Windows login receives.
 $env:Path = [Environment]::ExpandEnvironmentVariables(([Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')))
 $tools = foreach ($name in @('codex', 'claude', 'herdr')) {
     $command = Get-Command ($name + '.exe') -CommandType Application -ErrorAction Stop | Select-Object -First 1

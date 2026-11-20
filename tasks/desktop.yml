@@ -1,9 +1,4 @@
 ---
-# Linux desktop: Ulauncher, Ghostty, Flameshot, Bitwarden, draw.io, Cinnamon
-# settings, xbindkeys.
-# Only reached via --tags desktop (see setup.yml). Failing loudly beats the
-# alternative — every task silently skipping on an SSH run that asked for
-# desktop by name.
 - name: Debian desktop boundary
   ansible.builtin.assert:
     that:
@@ -21,8 +16,6 @@
 - name: Installed packages
   ansible.builtin.package_facts:
 
-# Mint reports its own codename (zena); the PPA only has Ubuntu series, so pass
-# the base one explicitly.
 - name: Ulauncher PPA
   ansible.builtin.apt_repository:
     repo: ppa:agornostal/ulauncher
@@ -30,30 +23,16 @@
   become: true
   when: ansible_facts['distribution'] != 'Debian' and 'ulauncher' not in ansible_facts['packages']
 
-# rofi: Cinnamon has no per-app window overview, so App Exposé is rofi's window
-# mode filtered to one WM_CLASS (xbindkeys/app-expose). wmctrl: xbindkeys/tile
-# moves windows through EWMH messages. x11-utils: those scripts also shell out
-# to xprop/xwininfo, which cinnamon-core does not guarantee. xclip: tmux-yank
-# rebinds copy-mode y/Y at plugin load and, with no clipboard tool on PATH, binds
-# them to an "Error! tmux-yank dependencies not installed!" message instead.
 - name: Desktop packages
   ansible.builtin.apt:
     name: [ulauncher, flameshot, xbindkeys, rofi, wmctrl, x11-utils, xclip]
   become: true
 
-# Ghostty reached the Ubuntu archive in 26.04. Older bases (Mint 22 sits on
-# 24.04) have no apt candidate and upstream ships no binaries, so fall back to
-# the community .deb builds, which name Ubuntu assets by version ("24.04") and
-# Debian ones by codename, and spell the version ".ppaN" where the tag says "-ppaN".
 - name: Ghostty
   when: "'ghostty' not in ansible_facts['packages']"
   vars:
-    # Not `'(none)' not in stdout`: apt-cache policy prints "Installed: (none)"
-    # for any not-installed package, and this block only runs for those.
     ghostty_in_apt: "{{ 'Candidate:' in ghostty_policy.stdout and 'Candidate: (none)' not in ghostty_policy.stdout }}"
   block:
-    # check_mode: false on the read-only probes: --check skips them otherwise,
-    # and the when-clauses below dereference their results.
     - name: Ghostty apt candidate
       ansible.builtin.command: apt-cache policy ghostty
       register: ghostty_policy
@@ -88,24 +67,14 @@
       become: true
       when: not ghostty_in_apt
 
-# Neither ships an apt repo, so both come from an upstream .deb. Gated on
-# package_facts: the URLs always serve the current build, so an ungated task
-# would re-download on every run and reinstall whenever upstream moved.
 - name: Bitwarden
   ansible.builtin.apt:
-    # /download redirects to the current versioned .deb; there is no stable URL
-    # to pin. apt follows the redirect itself, and dpkg reads the file's
-    # contents rather than its name, so the query string costs nothing.
     deb: https://vault.bitwarden.com/download/?app=desktop&platform=linux
   become: true
-  # "bitwarden", not "Bitwarden": the desktop app is @bitwarden/desktop, so
-  # electron-builder falls back to the product name and fpm downcases it.
   when: "'bitwarden' not in ansible_facts['packages']"
 
-# Upstream publishes no "latest" asset URL, so resolve the release first, the
-# same way Ghostty's community .deb is resolved above.
 - name: Drawio
-  when: "'draw.io' not in ansible_facts['packages']" # package.json name, not the "drawio" the assets carry
+  when: "'draw.io' not in ansible_facts['packages']"
   block:
     - name: Drawio latest release
       ansible.builtin.uri:
@@ -114,8 +83,6 @@
       register: drawio_latest
       check_mode: false
 
-    # Pick the asset instead of rebuilding its name from the tag: the release
-    # also carries an .AppImage and an .rpm, so match the arch and the suffix.
     - name: Drawio .deb
       ansible.builtin.apt:
         deb: "{{ drawio_latest.json.assets | map(attribute='browser_download_url') | select('search', 'drawio-' ~ deb_arch ~ '-.*\\.deb$') | first }}"
@@ -126,8 +93,6 @@
     path: "{{ home }}/.config/autostart"
     state: directory
 
-# The hotkey is useless without a live daemon; neither the autostart entry nor
-# starting it needs root.
 - name: Ulauncher autostart
   ansible.builtin.copy:
     dest: "{{ home }}/.config/autostart/ulauncher.desktop"
@@ -140,7 +105,6 @@
       Icon=ulauncher
       X-GNOME-Autostart-enabled=true
 
-# -x matches the process name exactly; -f would match this very play's command line.
 - name: Ulauncher running
   ansible.builtin.command: pgrep -x ulauncher
   register: ulauncher_pgrep
@@ -153,8 +117,6 @@
   changed_when: true
   when: ulauncher_pgrep.rc != 0
 
-# The spawn discards output and backgrounds, so it succeeds even when the
-# daemon dies on startup; only pgrep proves it came up (same as xbindkeys).
 - name: Ulauncher alive
   ansible.builtin.command: pgrep -x ulauncher
   register: ulauncher_alive
@@ -173,8 +135,6 @@
       changed_when: false
       check_mode: false
 
-    # expo = Mission Control, scale = App Exposé. Only touched while every corner
-    # is still off, so a hand-tuned layout survives a re-run.
     - name: Hot corners (top-left Expo, top-right App Exposé)
       ansible.builtin.command: >
         gsettings set org.cinnamon hotcorner-layout
@@ -182,9 +142,6 @@
       when: "':true:' not in hotcorners.stdout"
       changed_when: true
 
-    # Cinnamon ships Alt+Space on the window menu; the launcher never sees the key
-    # until that one is cleared. Remove just that element — wiping the whole list
-    # would take any other binding (e.g. the Menu key) down with it.
     - name: Free Alt+Space from the window menu
       ansible.builtin.shell: |
         set -e -o pipefail
@@ -198,14 +155,6 @@
       register: window_menu
       changed_when: "'changed' in window_menu.stdout"
 
-    # Cinnamon keeps custom shortcuts as custom0/custom1/... under a relocatable
-    # schema plus a list naming the live ones. Reuse the slot already holding
-    # this command, or re-runs stack duplicates. Fill the slot before advertising
-    # it in custom-list, or a failure in between leaves a blank shortcut nothing
-    # can reclaim. Super sits where Cmd does, so Shift+Super+4 becomes
-    # Cmd+Shift+4 under a Mac-style remapper and is harmless before that.
-    # set -e: without it a failed `gsettings set` would fall through to `echo
-    # changed` and report success while nothing was written.
     - name: Custom hotkeys
       ansible.builtin.shell: |
         set -e -o pipefail
@@ -240,9 +189,6 @@
       register: hotkey
       changed_when: "'changed' in hotkey.stdout"
 
-# Cinnamon's keyboard panel only accepts key combos, so the mouse side buttons
-# (X numbers them 8/9) need xbindkeys holding a grab on them. Under Wayland it
-# starts, binds nothing and reports success — worse than not running at all.
 - name: Xbindkeys
   when: >-
     'cinnamon' in (ansible_facts['env']['XDG_CURRENT_DESKTOP'] | lower)
@@ -269,10 +215,6 @@
           X-GNOME-Autostart-enabled=true
           NoDisplay=true
 
-    # Unconditional: xbindkeys reads ~/.xbindkeysrc once at startup, so a leftover
-    # instance keeps serving stale bindings. pkill returns once the signal is
-    # sent, not once the process is gone — spawn into the old instance's live
-    # grabs and the new one comes up bound to nothing.
     - name: Restart xbindkeys
       ansible.builtin.shell: |
         pkill -x xbindkeys || true
@@ -280,8 +222,6 @@
         setsid xbindkeys >/dev/null 2>&1 &
       changed_when: true
 
-    # xbindkeys exits on a config it cannot parse, and its output is discarded
-    # above, so spawning it proves nothing on its own.
     - name: Xbindkeys alive
       ansible.builtin.command: pgrep -x xbindkeys
       register: xbindkeys_pgrep

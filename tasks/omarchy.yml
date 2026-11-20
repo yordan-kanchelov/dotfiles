@@ -1,8 +1,4 @@
 ---
-# Omarchy: keep its Bash, prompt, theme and tmux defaults, and layer personal
-# config on top. Each layer is a repo file linked under ~/.config/dotfiles and
-# sourced from a marked block at the end of the Omarchy-owned file, so Omarchy
-# updates to those files keep working and removing the block undoes the layer.
 - name: Omarchy packages
   community.general.pacman:
     name: [tmux, atuin, bash-preexec]
@@ -25,7 +21,6 @@
     insertafter: EOF
   tags: symlinks
 
-# Omarchy seeds ~/.config/tmux/tmux.conf on install; restore it if it went missing.
 - name: Omarchy tmux config
   ansible.builtin.copy:
     src: "{{ omarchy_path }}/config/tmux/tmux.conf"
@@ -51,12 +46,10 @@
     update: false
   tags: tmux
 
-# install_plugins asks the tmux server where plugins go, so give it a private
-# server that loads the config fresh instead of the one the user is working in.
 - name: Tmux plugins
   ansible.builtin.shell: |
     set -e
-    export TMUX_TMPDIR="$(mktemp -d /tmp/dotfiles-tpm.XXXXXX)"  # short: socket paths max ~100 chars
+    export TMUX_TMPDIR="$(mktemp -d /tmp/dotfiles-tpm.XXXXXX)"
     unset TMUX
     trap 'tmux kill-server 2>/dev/null || true; rm -rf "$TMUX_TMPDIR"' EXIT
     {{ home }}/.config/tmux/plugins/tpm/bin/install_plugins

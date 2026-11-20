@@ -1,35 +1,19 @@
 # shellcheck shell=bash
-# Personal layer on top of Omarchy's Bash. Sourced from a managed block at the
-# end of ~/.bashrc, so Omarchy's rc (starship, fzf, zoxide, mise, aliases) has
-# already run and anything here wins. Omarchy owns `ls`, `c` and the prompt.
 [[ $- == *i* ]] || return 0
 
-# ============================================
-# ENVIRONMENT
-# ============================================
 export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
 case ":$PATH:" in *":$PNPM_HOME:"*) ;; *) PATH="$PNPM_HOME:$PATH" ;; esac
 
-# herdr passes OSC 8 links through, but its TERM_PROGRAM is unknown to
-# supports-hyperlinks, so Claude Code would print each link's URL after it.
 [[ $TERM_PROGRAM == herdr ]] && export FORCE_HYPERLINK=1
 
 # shellcheck source=/dev/null
 [[ -r ~/.secrets ]] && source ~/.secrets
 
-# ============================================
-# VI MODE
-# ============================================
-# Omarchy's rc binds its inputrc in emacs mode; re-bind it into vi-insert so
-# TAB completion and prefix Up/Down history keep working after the switch.
 set -o vi
 if [[ -r ${OMARCHY_PATH:-/usr/share/omarchy}/default/bash/inputrc ]]; then
   bind -m vi-insert -f "${OMARCHY_PATH:-/usr/share/omarchy}/default/bash/inputrc"
 fi
 
-# ============================================
-# ALIASES
-# ============================================
 alias reload='exec bash'
 alias ':q'='exit'
 alias tkp='exit'
@@ -49,21 +33,12 @@ alias sw='sync-worktrees'
 alias cleanc='clean_dev_caches'
 alias cleanp='clean_project'
 
-# ============================================
-# FUNCTIONS
-# ============================================
-# Also drop tmux scrollback, so an old error can't be scrolled back into view.
 clear() {
   command clear
   [[ -n $TMUX ]] && tmux clear-history
   return 0
 }
 
-# Pin a per-pane session id so tmux-resurrect restores each pane into its own
-# conversation. Bare `claude` -> mint a new id. Resurrect re-types
-# `claude --session-id <uuid>`; if that transcript already exists, resume it
-# (claude itself only resumes via --resume, not --session-id). Anything else passes
-# through (-c, -r, -p, subcommands like `claude mcp`).
 claude() {
   if [[ $1 == --session-id && -n $2 ]]; then
     local id=$2
@@ -96,8 +71,6 @@ fvim() {
   [[ -n $selected_file ]] && nvim -- "$selected_file"
 }
 
-# bat for text, glow for markdown, viu for images. Plain cat when piped or
-# redirected, and the function isn't exported, so scripts never see it.
 cat() {
   if [[ ! -t 1 ]] || ! command -v bat >/dev/null; then
     command cat "$@"
@@ -159,8 +132,6 @@ clean_dev_caches() {
   fi
 }
 
-# Subshell body: job control is off in subshells, so the parallel rm jobs don't
-# print [1] PID / Done lines (zsh used setopt no_monitor no_notify).
 clean_project() (
   echo "Cleaning project files..."
   count=0
@@ -187,9 +158,6 @@ clean_project() (
   fi
 )
 
-# ============================================
-# ATUIN (last: it must bind Ctrl-R and Up after fzf and the vi-mode inputrc)
-# ============================================
 if command -v atuin >/dev/null && [[ -r /usr/share/bash-preexec/bash-preexec.sh ]]; then
   # shellcheck source=/dev/null
   source /usr/share/bash-preexec/bash-preexec.sh

@@ -1,6 +1,4 @@
 #Requires -Version 5.1
-# Exercise the real font installer without touching the user's font registry key.
-# Default: a local fixture archive, no network. -Download fetches the real Nerd Fonts archive.
 param([switch]$Download)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
@@ -17,7 +15,6 @@ $arguments = @{
 }
 $archiveFiles = @()
 if (-not $Download) {
-    # Outside $fixtureRoot: the dry run below must leave that directory absent.
     $archiveSource = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-font-archive-' + $id)
     New-Item -ItemType Directory -Path $archiveSource | Out-Null
     foreach ($style in @('Bold', 'Italic', 'Regular')) {
@@ -47,9 +44,7 @@ try {
     if (Test-Path -LiteralPath (Join-Path $fixtureRoot 'home\.dotfiles_backup')) { throw 'Second run changed installed fonts.' }
     Write-Host 'PASS: font dry run, unrelated registration preservation and repeated font installation.'
 } finally {
-    # Only this generated leaf key is removed; no recursive registry removal.
     Remove-Item -LiteralPath $registryPath -Force
-    # The fixture archive and its three source files, one by one; nothing recursive.
     if ($archiveFiles.Count) {
         Remove-Item -LiteralPath (@($archiveFiles) + $arguments.FontArchive) -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath $archiveSource -ErrorAction SilentlyContinue

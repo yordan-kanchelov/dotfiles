@@ -1,10 +1,8 @@
-# Loaded by the managed block in PowerShell 7's current-user, all-hosts profile.
 $dotfilesRoot = Split-Path -Parent $PSScriptRoot
 $env:STARSHIP_CONFIG = Join-Path $dotfilesRoot '.config\starship.toml'
 $env:EDITOR = 'nvim'
 $env:VISUAL = 'nvim'
 
-# Yazi needs Git for Windows' file.exe for MIME detection.
 if (-not $env:YAZI_FILE_ONE) {
     $gitCommand = Get-Command git -ErrorAction SilentlyContinue
     if ($gitCommand) {
@@ -21,7 +19,6 @@ $interactiveTerminal = -not [Console]::IsOutputRedirected -and $env:TERM -ne 'du
 if ($interactiveTerminal -and (Get-Module -ListAvailable PSReadLine)) {
     Import-Module PSReadLine
     Set-PSReadLineOption -EditMode Vi
-    # History suggestions stay local; no account or history sync is configured.
     if ((Get-Module PSReadLine).Version -ge [version]'2.2') {
         Set-PSReadLineOption -PredictionSource History
     }
@@ -33,7 +30,6 @@ if ($interactiveTerminal -and (Get-Command starship -ErrorAction SilentlyContinu
     starship init powershell | Out-String | Invoke-Expression
 }
 
-# Familiar tmux shortcuts, backed by native Herdr on Windows.
 function global:tn {
     param([Parameter(Mandatory, Position = 0)][ValidateNotNullOrEmpty()][string]$Name)
     & herdr --session $Name

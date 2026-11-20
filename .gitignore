@@ -1,19 +1,15 @@
 **/.DS_Store*
 
-# Secrets and environment files
 .secrets
 .secrets.*
 .env
 .env.*
 *_local.sh
 
-# Local backups and temporary files
 .tmp/
 
-# ansible-galaxy/ansible-lint scratch dir, created next to the playbook
 .ansible/
 
-# AI tool machine state — must never be committed even if copied in by accident
 auth.json
 .credentials*
 settings.local.json
@@ -23,11 +19,8 @@ sessions/
 shell-snapshots/
 shell_snapshots/
 
-# Agent worktree scratch state
 .claude/worktrees/
 
-# Older setups linked ~/.claude/skills here, so Claude synced skills into the
-# checkout. scripts/migrate-agent-links.sh copies them out; leftovers are not ours.
 claude/skills/synced/
 claude/skills/session-start-hook/
 __pycache__/

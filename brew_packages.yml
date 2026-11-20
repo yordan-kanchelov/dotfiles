@@ -1,41 +1,41 @@
 formulae:
   languages:
-    - fnm            # Fast Node.js version manager
+    - fnm
     - go
-    - gopls          # Go language server
+    - gopls
     - openjdk
-    - pipx           # Install Python CLI tools in isolated envs
+    - pipx
     - python@3.13
     - rust
 
   shell:
-    - atuin          # Shell history sync & search
-    - sheldon        # Zsh plugin manager
+    - atuin
+    - sheldon
     - starship
-    - zoxide         # Smarter cd (tracks frecency)
+    - zoxide
 
   terminal:
-    - bat            # cat with syntax highlighting
+    - bat
     - btop
-    - duti           # macOS default-app associations (setup.yml)
+    - duti
     - eza
-    - fd             # Fast find alternative
+    - fd
     - fzf
-    - glow           # Terminal markdown renderer
-    - herdr          # Agent multiplexer
+    - glow
+    - herdr
     - htop
-    - ncdu           # Disk usage analyzer with ncurses UI
+    - ncdu
     - ripgrep
-    - tlrc           # Rust client for tldr pages
+    - tlrc
     - tmux
     - tree
-    - tree-sitter-cli # The `tree-sitter` command nvim-treesitter needs; the tree-sitter formula is only the library
-    - yazi           # Terminal file manager
+    - tree-sitter-cli
+    - yazi
 
   development:
     - gh
     - git-lfs
-    - hadolint       # Dockerfile linter
+    - hadolint
     - lazygit
     - neovim
     - ollama
@@ -43,10 +43,10 @@ formulae:
     - shellcheck
 
   api-and-testing:
-    - ghz            # gRPC benchmarking tool
-    - jq             # JSON processor
-    - jqp            # Interactive jq playground
-    - k6             # Load testing tool (Grafana)
+    - ghz
+    - jq
+    - jqp
+    - k6
 
   devops:
     - awscli
@@ -57,7 +57,7 @@ formulae:
     - pandoc
 
 casks:
-  - cap            # Screen recording
+  - cap
   - ghostty
   - oracle-jdk
   - postman

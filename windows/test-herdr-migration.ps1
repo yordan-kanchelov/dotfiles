@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Enforce profile-local staging without requiring a second physical drive or Herdr.
 $ErrorActionPreference = 'Stop'
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-migration-' + [guid]::NewGuid().ToString('N'))
 $originalProfile = $env:USERPROFILE
@@ -8,13 +7,11 @@ $originalClaudeHome = $env:CLAUDE_CONFIG_DIR
 New-Item -ItemType Directory -Path $fixture | Out-Null
 try {
     $env:USERPROFILE = Join-Path $fixture 'profile'
-    # An inherited redirect would send the installer outside the fixture profile.
     $env:CLAUDE_CONFIG_DIR = $null
     $bin = Join-Path $fixture 'bin'
     $source = Join-Path $fixture 'repo-skills'
     New-Item -ItemType Directory -Path $bin, $source, (Join-Path $env:USERPROFILE '.claude') -Force | Out-Null
     [IO.File]::WriteAllText((Join-Path $source 'existing.txt'), 'preserve')
-    # Exercise real native-command invocation; status is current so no user hooks run.
     $stub = @'
 using System;
 public class HerdrMigrationFixture {
@@ -30,8 +27,6 @@ public class HerdrMigrationFixture {
     }
 }
 '@
-    # Compile a .NET Framework executable that runs under both Windows PS 5.1
-    # and PS 7; Add-Type in PS 7 cannot emit console applications.
     $sourceFile = Join-Path $fixture 'herdr.cs'
     [IO.File]::WriteAllText($sourceFile, $stub)
     $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe'
@@ -43,7 +38,6 @@ public class HerdrMigrationFixture {
     $moveState = [pscustomobject]@{ Count = 0 }
     function Move-Item {
         param([string]$LiteralPath, [string]$Destination)
-        # Reject the old system-temp staging, just as cross-drive directory moves fail.
         $profilePrefix = [IO.Path]::GetFullPath($env:USERPROFILE).TrimEnd('\') + '\'
         if (-not [IO.Path]::GetFullPath($LiteralPath).StartsWith($profilePrefix, [StringComparison]::OrdinalIgnoreCase)) {
             throw 'Skills migration must stage under USERPROFILE, not system TEMP.'
@@ -68,7 +62,6 @@ public class HerdrMigrationFixture {
     $env:USERPROFILE = $originalProfile
     $env:Path = $originalPath
     $env:CLAUDE_CONFIG_DIR = $originalClaudeHome
-    # Never recurse through a junction left behind by a failed regression run.
     $link = Join-Path $fixture 'profile\.claude\skills'
     if ((Test-Path -LiteralPath $link) -and (Get-Item -LiteralPath $link).LinkType) { [IO.Directory]::Delete($link) }
     Remove-Item -LiteralPath $fixture -Recurse -Force

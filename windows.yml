@@ -1,6 +1,4 @@
 ---
-# Controller: Ubuntu/WSL. Target: this machine's native Windows user via WSL interop.
-# No WinRM listener, Windows SSH server or Linux coding-agent install is needed.
 - name: Native Windows coding agents, Tailscale and Windows Terminal
   hosts: localhost
   connection: local
@@ -27,7 +25,6 @@
               (windows_agent_script.stdout | trim) ~ '\\' ~ item, '-OutputJson']
              + (['-WhatIf'] if ansible_check_mode else []) }}
       register: windows_agents
-      # ShouldProcess writes human-readable preview lines before the final compact JSON.
       changed_when: >-
         (windows_agents.stdout_lines | last | from_json).changed or
         ((windows_agents.stdout_lines | last | from_json).planned | length > 0 and ansible_check_mode)

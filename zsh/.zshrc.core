@@ -1,44 +1,19 @@
 #!/usr/bin/env zsh
 
-# ============================================
-# CORE ZSH CONFIGURATION
-# Interactive shell settings: plugins, prompt, aliases, functions
-# Environment setup is in .zprofile
-# ============================================
-
-# Increase function nesting limit
 FUNCNEST=1000
 
-# herdr passes OSC 8 links through, but its TERM_PROGRAM is unknown to
-# supports-hyperlinks, so Claude Code would print each link's URL after it.
 [[ $TERM_PROGRAM == herdr ]] && export FORCE_HYPERLINK=1
 
-# ============================================
-# HISTORY
-# Atuin has its own DB; this feeds zsh-autosuggestions
-# ============================================
 HISTFILE=~/.zsh_history
 HISTSIZE=50000
 SAVEHIST=50000
 setopt inc_append_history hist_ignore_dups hist_ignore_space
 
-# ============================================
-# PLUGIN MANAGER (sheldon)
-# ============================================
-# Guarded like every tool init below: after a configs-only run
-# (--skip-tags packages) a missing tool must not print an error in every new shell.
 if command -v sheldon &> /dev/null; then
   eval "$(sheldon source)"
 fi
 
-# ============================================
-# COMPLETIONS
-# ============================================
 autoload -Uz compinit
-# -u skips compaudit permission checks (single-user machine, no need).
-# The (#q...) glob qualifier only expands under extendedglob — without it the
-# test is a literal non-empty string, always true, and every shell start pays
-# the full dump rebuild. Anonymous function keeps the setopt local.
 () {
   setopt localoptions extendedglob
   if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
@@ -48,26 +23,12 @@ autoload -Uz compinit
   fi
 }
 
-# ============================================
-# INTERACTIVE TOOL INITIALIZATIONS
-# ============================================
-# fzf and atuin must init after zsh-vi-mode finishes recreating keymaps,
-# otherwise their bindings get overwritten. Use array form so multiple
-# hooks can compose; fall back to direct init if plugin not loaded.
-# `fzf --zsh` arrived in fzf 0.48. Debian/Ubuntu still ship 0.44, where it
-# aborts startup with "unknown option: --zsh" and silently costs us Ctrl-T and
-# Alt-C, so fall back to the integration scripts older packages do install.
-# Homebrew is not exempt: the playbook installs formulae with state: present,
-# which never upgrades an fzf that predates the flag. Each layout keeps the
-# scripts somewhere else -- Debian as doc examples, Homebrew in the opt prefix.
 _init_fzf() {
   if fzf --zsh >/dev/null 2>&1; then
     source <(fzf --zsh)
     return 0
   fi
   local -a dirs=(/usr/share/doc/fzf/examples)
-  # .zprofile's shellenv exports HOMEBREW_PREFIX; only shell out to brew when a
-  # non-login shell left it unset, and only here, where the flag already failed.
   local prefix=${HOMEBREW_PREFIX:-$(command -v brew >/dev/null && brew --prefix)}
   [[ -n $prefix ]] && dirs+=("$prefix/opt/fzf/shell")
   local dir
@@ -99,9 +60,6 @@ if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"
 fi
 
-# ============================================
-# ALIASES
-# ============================================
 alias lg='lazygit'
 alias ta="tmux attach-session -t"
 alias tn="tmux new -s"
@@ -117,7 +75,6 @@ if command -v nvim &> /dev/null; then
   alias vim="nvim"
 fi
 alias ':q'='exit'
-# Only with eza present: an unconditional alias would leave no working `ls` without it.
 if command -v eza &> /dev/null; then
   alias l='eza -l -b --all --header --git --icons --group-directories-first'
   alias ls='eza -l -b --all --header --git --icons --group-directories-first'
@@ -128,21 +85,13 @@ alias supd='sheldon lock --update'
 alias sw='sync-worktrees'
 alias c='claude -c'
 
-# CLIProxyAPI routes (see agent-setup/cliproxyapi). Plain claude/codex/pi/hermes stay direct.
-# The client key is read from the local stack's config, not stored in dotfiles.
-# .localhost resolves to loopback with no hosts entry; port 80 comes from the README's
-# docker-compose.port80.yml. Override with CPA_URL.
 _cpa_url() { printf '%s' "${CPA_URL:-http://local-cliproxyapi.localhost}"; }
 _cpa_key() { sed -n '/^api-keys:/{n;s/^ *- *"\(.*\)"$/\1/p;}' "$HOME/.local/share/cliproxyapi-dashboard/config.local.yaml"; }
-# Claude Code on the GPT model. Env goes through --settings so it beats the user settings.json env.
 codexx() {
   ANTHROPIC_AUTH_TOKEN=$(_cpa_key) CLAUDE_CODE_MAX_CONTEXT_TOKENS=872000 CLAUDE_CODE_AUTO_COMPACT_WINDOW=500000 claude --model gpt-6.1-sol \
     --settings '{"env":{"ANTHROPIC_BASE_URL":"'"$(_cpa_url)"'","CLAUDE_CODE_SUBAGENT_MODEL":"gpt-6.1-sol","CLAUDE_CODE_ALWAYS_ENABLE_EFFORT":"1","CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY":"3","ENABLE_TOOL_SEARCH":"false"}}' "$@"
 }
 
-# ============================================
-# FUNCTIONS
-# ============================================
 clean_dev_caches() {
   echo "Cleaning npm cache..."
   npm cache clean --force
@@ -214,8 +163,6 @@ fvim() {
 }
 
 cat() {
-  # When piped or redirected, behave like plain cat to avoid bat's pager/color escapes.
-  # Same without bat (configs-only run): every branch below falls back to it.
   if [ ! -t 1 ] || ! command -v bat &> /dev/null; then
     command cat "$@"
     return
@@ -232,7 +179,6 @@ cat() {
     local mime=$(file --mime-type -b "$file" 2>/dev/null)
     case "$mime" in
         image/*)
-            # viu is optional (not in brew_packages.yml); say so instead of "command not found".
             if command -v viu &> /dev/null; then
                 local term_width=$(tput cols)
                 viu -w $((term_width - 2)) "$@"
@@ -281,14 +227,8 @@ clear() {
   fi
 }
 
-# Quick reload of zsh configuration (exec avoids double plugin init from re-sourcing)
 alias reload='exec zsh'
 
-# Pin a per-pane session id so tmux-resurrect restores each pane into its own
-# conversation. Bare `claude` -> mint a new id. Resurrect re-types
-# `claude --session-id <uuid>`; if that transcript already exists, resume it
-# (claude itself only resumes via --resume, not --session-id). Anything else passes
-# through (c/-c, -r, -p, subcommands like `claude mcp`).
 claude() {
   if [[ "$1" == "--session-id" && -n "$2" ]]; then
     local id="$2"; local existing=(~/.claude/projects/*/"$id".jsonl(N))

@@ -1,5 +1,4 @@
 #!/bin/bash
-# Runs inside Ubuntu as its normal user. All tool/config provisioning is Ansible.
 set -euo pipefail
 repository=$1
 ref=$2
@@ -23,14 +22,12 @@ else
   [[ -z "$branch" || "$branch" == "$ref" ]] || { echo "$checkout is on another branch; select $ref before rerunning" >&2; exit 1; }
   git -C "$checkout" fetch origin "$ref"
   if [[ -z "$branch" ]]; then
-    # Tag clones detach HEAD. Only rerun at the fetched commit; never move it.
     [[ $(git -C "$checkout" rev-parse HEAD) == $(git -C "$checkout" rev-parse 'FETCH_HEAD^{commit}') ]] || { echo "$checkout is detached at another commit; check out $ref before rerunning" >&2; exit 1; }
   else
     git -C "$checkout" merge --ff-only FETCH_HEAD
   fi
 fi
 cd "$checkout"
-# Ansible logs persist across console closure/restarts, without storing passwords.
 state_dir="$HOME/.local/state/dotfiles"
 export ANSIBLE_LOG_PATH="$state_dir/ansible-setup.log"
 (

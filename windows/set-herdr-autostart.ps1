@@ -5,7 +5,6 @@ $ErrorActionPreference = 'Stop'
 $terminal = (Get-Command wt.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $startup = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup'
 $shortcutPath = Join-Path $startup 'Herdr.lnk'
-# Resolve Herdr from the login PATH instead of pinning a versioned installation.
 $arguments = '-w new new-tab --startingDirectory "' + $env:USERPROFILE + '" powershell.exe -NoLogo -NoProfile -Command herdr'
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)

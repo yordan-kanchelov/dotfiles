@@ -25,4 +25,3 @@ if ($command) {
 }
 $result = [pscustomobject]@{ changed = $changed; planned = $planned; tools = $tools }
 if ($OutputJson) { $result | ConvertTo-Json -Depth 4 -Compress } else { $tools | Format-Table -AutoSize }
-# Installation only: joining a tailnet requires the user's separate sign-in.

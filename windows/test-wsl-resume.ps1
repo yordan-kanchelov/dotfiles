@@ -1,5 +1,4 @@
 #Requires -Version 5.1
-# Test persistence without scheduling a real login action or restarting Windows.
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'wsl-resume-state.ps1')
 $id = [guid]::NewGuid().ToString('N')
@@ -21,7 +20,6 @@ try {
         if ($key.GetValue('DotfilesWslSetup') -notlike '*resume-wsl.ps1*') { throw 'Missing resume command.' }
         if ($key.GetValueNames().Count -ne 2) { throw 'Duplicate resume entries.' }
     }
-    # Exercise the actual resume loader against an isolated setup stub, never real WSL/reboot.
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'resume-wsl.ps1') -Destination (Join-Path $stateDirectory 'resume-wsl.ps1')
     $stub = @'
 param($Distribution, $Repository, $Ref, [switch]$IncludeOllama, [switch]$RestartAndResume, [int]$RestartAttempt, [switch]$Resume)
